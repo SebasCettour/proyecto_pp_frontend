@@ -12,6 +12,8 @@ import {
   CircularProgress,
 } from "@mui/material";
 
+import Footer from "../../components/Footer"; // Asegúrate de importar el footer
+
 const novedadSchema = z.object({
   contenido: z.string().min(1, "El contenido es obligatorio"),
 });
@@ -53,7 +55,14 @@ const PublicarNovedad: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: "#C0C0C0" }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh",
+        backgroundColor: "#C0C0C0",
+      }}
+    >
       {/* Encabezado */}
       <Box
         sx={{
@@ -77,7 +86,8 @@ const PublicarNovedad: React.FC = () => {
         </Typography>
       </Box>
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4 }}>
+      {/* Botón Volver */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4, px: 4 }}>
         <Button
           component={Link}
           to="/rrhh-principal"
@@ -100,100 +110,105 @@ const PublicarNovedad: React.FC = () => {
       </Box>
 
       {/* Contenedor */}
-      <Box sx={{ px: 4, mt: 8, width: "100%" }}>
-        <Box
-          component="form"
-          onSubmit={handleSubmit(onSubmit)}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          px: 4,
+          mt: 8,
+          width: "100%",
+          maxWidth: "1000px",
+          mx: "auto",
+          backgroundColor: "white",
+          borderRadius: 2,
+          p: 4,
+          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Typography
+          component="h1"
+          variant="h4"
           sx={{
-            maxWidth: "1000px",
-            mx: "auto",
-            backgroundColor: "white",
-            borderRadius: 2,
-            p: 4,
-            boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
+            mb: 4,
+            fontFamily: "Tektur, sans-serif",
+            fontWeight: 600,
+            color: "#333",
           }}
         >
+          Publicar Novedad
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ width: "100%", mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {mensajeExito && (
+          <Alert severity="success" sx={{ width: "100%", mb: 3 }}>
+            {mensajeExito}
+          </Alert>
+        )}
+
+        <Box sx={{ width: "100%", mb: 4 }}>
           <Typography
-            component="h1"
-            variant="h4"
+            component="label"
+            htmlFor="contenido"
             sx={{
-              mb: 4,
+              display: "block",
+              mb: 1,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
+              fontWeight: 500,
               color: "#333",
             }}
           >
-            Publicar Novedad
+            Mensaje:
           </Typography>
-
-          {error && (
-            <Alert severity="error" sx={{ width: "100%", mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-
-          {mensajeExito && (
-            <Alert severity="success" sx={{ width: "100%", mb: 3 }}>
-              {mensajeExito}
-            </Alert>
-          )}
-
-          <Box sx={{ width: "100%", mb: 4 }}>
-            <Typography
-              component="label"
-              htmlFor="contenido"
-              sx={{
-                display: "block",
-                mb: 1,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 500,
-                color: "#333",
-              }}
-            >
-              Contenido de la novedad:
-            </Typography>
-            <TextField
-              fullWidth
-              id="contenido"
-              multiline
-              rows={6}
-              {...register("contenido")}
-              error={!!errors.contenido}
-              helperText={errors.contenido?.message}
-              disabled={isLoading}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
-              }}
-            />
-          </Box>
-
-          <Button
-            type="submit"
-            variant="contained"
+          <TextField
             fullWidth
+            id="contenido"
+            multiline
+            rows={6}
+            {...register("contenido")}
+            error={!!errors.contenido}
+            helperText={errors.contenido?.message}
             disabled={isLoading}
             sx={{
-              py: 1.5,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: "1.1rem",
-              borderRadius: 1,
-              textTransform: "none",
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 1,
+              },
             }}
-          >
-            {isLoading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Publicar"
-            )}
-          </Button>
+          />
         </Box>
+
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={isLoading}
+          onClick={handleSubmit(onSubmit)}
+          sx={{
+            py: 1.5,
+            width:200,
+            fontFamily: "Tektur, sans-serif",
+            fontWeight: 600,
+            fontSize: "1.1rem",
+            borderRadius: 1,
+            textTransform: "none",
+            letterSpacing:2
+          }}
+        >
+          {isLoading ? (
+            <CircularProgress size={24} color="inherit" />
+          ) : (
+            "Enviar"
+          )}
+        </Button>
       </Box>
+
+      <Footer />
     </Box>
   );
 };

@@ -1,6 +1,7 @@
 import React from "react";
 import { Typography, Box, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import Footer from "../../components/Footer";
 
 export const RRHHPrincipal = () => {
   const navigate = useNavigate();
@@ -11,8 +12,20 @@ export const RRHHPrincipal = () => {
   const handleIrALicencias = () => {
     navigate("/licencias");
   };
+  const handleCerrarSesion = () => {
+    navigate("/");
+  };
+
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: "#C0C0C0" }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        backgroundColor: "#C0C0C0",
+        display: "flex",
+        flexDirection: "column",
+        overflowX: "hidden",
+      }}
+    >
       {/* Encabezado */}
       <Box
         sx={{
@@ -20,6 +33,8 @@ export const RRHHPrincipal = () => {
           py: 4,
           backgroundColor: "#000000",
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          width: "100%",
+          boxSizing: "border-box",
         }}
       >
         <Typography
@@ -29,6 +44,7 @@ export const RRHHPrincipal = () => {
             fontWeight: 700,
             color: "#333",
             marginLeft: "10px",
+            userSelect: "none",
           }}
         >
           <span style={{ color: "#CC5500" }}>360</span>
@@ -36,8 +52,37 @@ export const RRHHPrincipal = () => {
         </Typography>
       </Box>
 
-      {/* Contenedor */}
-      <Box sx={{ px: 4, mt: 8, width: "100%" }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          px: 4,
+          mt: 8,
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 4 }}>
+          <Button
+            onClick={handleCerrarSesion}
+            variant="outlined"
+            fullWidth
+            sx={{
+              backgroundColor: "#1565C0",
+              color: "#ffffff",
+              width: 220,
+              letterSpacing: 3,
+              fontSize: 20,
+              borderRadius: 3,
+              mr: 5,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 500,
+              textTransform: "none",
+              "&:hover": { backgroundColor: "#0D47A1" },
+            }}
+          >
+            Cerrar Sesión
+          </Button>
+        </Box>
         <Box
           sx={{
             maxWidth: "1000px",
@@ -49,6 +94,8 @@ export const RRHHPrincipal = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            boxSizing: "border-box",
+            overflowWrap: "break-word",
           }}
         >
           <Typography
@@ -59,6 +106,7 @@ export const RRHHPrincipal = () => {
               fontFamily: "Tektur, sans-serif",
               fontWeight: 600,
               color: "#333",
+              textAlign: "center",
             }}
           >
             Portal Recursos Humanos
@@ -70,6 +118,7 @@ export const RRHHPrincipal = () => {
             fullWidth
             sx={{
               py: 1.5,
+              letterSpacing: 2,
               fontFamily: "Tektur, sans-serif",
               width: 350,
               fontWeight: 600,
@@ -86,7 +135,8 @@ export const RRHHPrincipal = () => {
             variant="contained"
             fullWidth
             sx={{
-              mt: 2,
+              mt: 5,
+              letterSpacing: 2,
               py: 1.5,
               fontFamily: "Tektur, sans-serif",
               width: 350,
@@ -100,6 +150,9 @@ export const RRHHPrincipal = () => {
           </Button>
         </Box>
       </Box>
+
+      {/* Footer */}
+      <Footer />
     </Box>
   );
 };
