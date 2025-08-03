@@ -42,7 +42,6 @@ const PublicarNovedad: React.FC = () => {
 
       console.log("Publicando novedad:", data);
 
-      // Simulamos delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       setMensajeExito("Novedad publicada exitosamente");
@@ -109,7 +108,7 @@ const PublicarNovedad: React.FC = () => {
         </Button>
       </Box>
 
-      {/* Contenedor */}
+      {/* Contenedor principal */}
       <Box
         component="main"
         sx={{
@@ -153,59 +152,67 @@ const PublicarNovedad: React.FC = () => {
           </Alert>
         )}
 
-        <Box sx={{ width: "100%", mb: 4 }}>
-          <Typography
-            component="label"
-            htmlFor="contenido"
-            sx={{
-              display: "block",
-              mb: 1,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 500,
-              color: "#333",
-            }}
-          >
-            Mensaje:
-          </Typography>
-          <TextField
-            fullWidth
-            id="contenido"
-            multiline
-            rows={6}
-            {...register("contenido")}
-            error={!!errors.contenido}
-            helperText={errors.contenido?.message}
-            disabled={isLoading}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 1,
-              },
-            }}
-          />
-        </Box>
-
-        <Button
-          type="submit"
-          variant="contained"
-          disabled={isLoading}
-          onClick={handleSubmit(onSubmit)}
-          sx={{
-            py: 1.5,
-            width:200,
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 600,
-            fontSize: "1.1rem",
-            borderRadius: 1,
-            textTransform: "none",
-            letterSpacing:2
-          }}
+        {/* Formulario */}
+        <Box
+          component="form"
+          onSubmit={handleSubmit(onSubmit)}
+          sx={{ width: "100%" }}
         >
-          {isLoading ? (
-            <CircularProgress size={24} color="inherit" />
-          ) : (
-            "Enviar"
-          )}
-        </Button>
+          <Box sx={{ width: "100%", mb: 4 }}>
+            <Typography
+              component="label"
+              htmlFor="contenido"
+              sx={{
+                display: "block",
+                mb: 1,
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 500,
+                color: "#333",
+              }}
+            >
+              Mensaje:
+            </Typography>
+            <TextField
+              fullWidth
+              id="contenido"
+              multiline
+              rows={6}
+              {...register("contenido")}
+              error={!!errors.contenido}
+              helperText={errors.contenido?.message}
+              disabled={isLoading}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 1,
+                },
+              }}
+            />
+          </Box>
+
+          <Box sx={{ textAlign: "center" }}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={isLoading}
+              sx={{
+                py: 1.5,
+                width: 200,
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 600,
+                fontSize: "1.1rem",
+                borderRadius: 1,
+                textTransform: "none",
+                letterSpacing: 2,
+              }}
+            >
+              {isLoading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Enviar"
+              )}
+            </Button>
+          </Box>
+        </Box>
       </Box>
 
       <Footer />
