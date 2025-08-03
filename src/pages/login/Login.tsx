@@ -12,7 +12,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-import Footer from "../components/Footer";
+import Footer from "../../components/Footer";
 
 const loginSchema = z.object({
   username: z.string().min(1, "El nombre de usuario es requerido"),
@@ -54,7 +54,7 @@ const Login: React.FC = () => {
         backgroundColor: "#C0C0C0",
         display: "flex",
         flexDirection: "column",
-        overflowX: "hidden", // evita scroll horizontal
+        overflowX: "hidden",
       }}
     >
       {/* Encabezado */}

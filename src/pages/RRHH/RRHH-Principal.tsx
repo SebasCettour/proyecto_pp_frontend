@@ -15,6 +15,9 @@ export const RRHHPrincipal = () => {
   const handleCerrarSesion = () => {
     navigate("/");
   };
+  const handleIrAlTablon = () => {
+    navigate("/tablon");
+  };
 
   return (
     <Box
@@ -147,6 +150,25 @@ export const RRHHPrincipal = () => {
             }}
           >
             Publicar Novedades
+          </Button>
+
+          <Button
+            onClick={handleIrAlTablon}
+            variant="contained"
+            fullWidth
+            sx={{
+              mt: 5,
+              letterSpacing: 2,
+              py: 1.5,
+              fontFamily: "Tektur, sans-serif",
+              width: 350,
+              fontWeight: 600,
+              fontSize: "1.1rem",
+              borderRadius: 1,
+              textTransform: "none",
+            }}
+          >
+            Tablón
           </Button>
         </Box>
       </Box>

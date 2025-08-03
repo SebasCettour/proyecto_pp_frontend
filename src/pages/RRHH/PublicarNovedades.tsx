@@ -12,7 +12,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-import Footer from "../../components/Footer"; // Asegúrate de importar el footer
+import Footer from "../../components/Footer";
 
 const novedadSchema = z.object({
   contenido: z.string().min(1, "El contenido es obligatorio"),
