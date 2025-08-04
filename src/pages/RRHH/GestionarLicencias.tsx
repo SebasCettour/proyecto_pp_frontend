@@ -52,7 +52,7 @@ export default function GestionarLicencias() {
       </Box>
 
       <Box sx={{ flexGrow: 1, px: 4, mt: 4, boxSizing: "border-box" }}>
-        {/* Botón Volver */}
+   
         <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 4 }}>
           <Button
             component={RouterLink}

@@ -6,8 +6,8 @@ import Footer from "../../components/Footer";
 export const Empleados = () => {
   const navigate = useNavigate();
 
-  const handleIrANovedades = () => {
-    navigate("/novedades");
+  const handleIrARecibos = () => {
+    navigate("/mis-recibos");
   };
   const handleIrALicencias = () => {
     navigate("/solicitar-licencia");
@@ -16,7 +16,7 @@ export const Empleados = () => {
     navigate("/");
   };
   const handleIrAlTablon = () => {
-    navigate("/tablon");
+    navigate("/ver-novedades");
   };
 
   return (
@@ -134,7 +134,7 @@ export const Empleados = () => {
           </Button>
 
           <Button
-            onClick={handleIrANovedades}
+            onClick={handleIrARecibos}
             variant="contained"
             fullWidth
             sx={{
