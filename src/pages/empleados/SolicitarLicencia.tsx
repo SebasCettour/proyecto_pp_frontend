@@ -69,7 +69,7 @@ export default function SolicitarLicencia() {
     const hasErrors = Object.values(newErrors).some((error) => error);
     if (!hasErrors) {
       console.log("Formulario enviado:", form);
-      // Aquí puedes manejar el envío del formulario (ej: a una API)
+   
     }
   };
 
@@ -134,7 +134,7 @@ export default function SolicitarLicencia() {
         sx={{
           flexGrow: 1,
           px: 4,
-          mt: 8,
+          mt: 2,
           width: "100%",
           display: "flex",
           justifyContent: "center",
@@ -270,7 +270,7 @@ export default function SolicitarLicencia() {
             <Button
               variant="contained"
               fullWidth
-              onClick={handleSubmit}
+              onClick={handleSubmit} 
               sx={{
                 py: 1.5,
                 letterSpacing: 2,
@@ -282,7 +282,7 @@ export default function SolicitarLicencia() {
                 mt: 2,
               }}
             >
-              Enviar Solicitud
+              Enviar Solicitud 
             </Button>
           </Box>
         </Box>
