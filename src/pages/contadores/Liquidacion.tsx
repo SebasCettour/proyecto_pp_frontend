@@ -3,7 +3,7 @@ import { Typography, Box, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 
-const MiComponente = () => {
+const Liquidacion = () => {
   const navigate = useNavigate();
 
   return (
@@ -47,4 +47,4 @@ const MiComponente = () => {
   );
 };
 
-export default MiComponente;
+export default Liquidacion;
