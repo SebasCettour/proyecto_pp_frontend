@@ -9,6 +9,7 @@ import SolicitarLicencia from "../pages/empleados/SolicitarLicencia";
 import TablonEmpleados from "../pages/empleados/Tablon-Empleados";
 import RecibosSueldo from "../pages/empleados/Ver-Recibos";
 import { Contadores } from "../pages/contadores/Contadores";
+import Liquidacion from "../pages/contadores/Liquidacion";
 
 export function AppRoutes() {
   return (
@@ -23,6 +24,7 @@ export function AppRoutes() {
       <Route path="/ver-novedades" element={<TablonEmpleados />} />
       <Route path="/mis-recibos" element={<RecibosSueldo />} />
       <Route path="/contadores" element={<Contadores />} />
+      <Route path="/liquidacion" element={<Liquidacion />} />
     </Routes>
   );
 }
