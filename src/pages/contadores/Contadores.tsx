@@ -6,8 +6,8 @@ import Footer from "../../components/Footer";
 export const Contadores = () => {
   const navigate = useNavigate();
 
-  const handleIrARecibos = () => {
-    navigate("/generar-recibo");
+  const handleIrALiquidacion = () => {
+    navigate("/liquidacion");
   };
 
   const handleCerrarSesion = () => {
@@ -110,7 +110,7 @@ export const Contadores = () => {
             Portal Contadores
           </Typography>
           <Button
-            onClick={handleIrARecibos}
+            onClick={handleIrALiquidacion}
             variant="contained"
             fullWidth
             sx={{
@@ -124,7 +124,7 @@ export const Contadores = () => {
               textTransform: "none",
             }}
           >
-            Ir a Generar Recibo
+            Ir a Liquidacion
           </Button>
         </Box>
       </Box>
