@@ -52,7 +52,6 @@ export default function GestionarLicencias() {
       </Box>
 
       <Box sx={{ flexGrow: 1, px: 4, mt: 4, boxSizing: "border-box" }}>
-   
         <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 4 }}>
           <Button
             component={RouterLink}
@@ -119,13 +118,12 @@ export default function GestionarLicencias() {
                   </Button>
                 </TableCell>
               </TableRow>
-              {/* Más filas dinámicas aquí */}
             </TableBody>
           </Table>
         </TableContainer>
       </Box>
 
-      {/* Footer pegado abajo */}
+      {/* Footer */}
       <Footer />
     </Box>
   );

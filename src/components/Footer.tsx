@@ -14,7 +14,7 @@ const Footer = () => {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        px: 4, // padding horizontal para separación con bordes
+        px: 4,
       }}
     >
       <Typography
@@ -27,7 +27,6 @@ const Footer = () => {
           flex: 1,
         }}
       >
-        {/* Texto izquierda */}
         Contacto: contacto@360sueldos.com
       </Typography>
 
@@ -41,8 +40,7 @@ const Footer = () => {
           flex: 1,
         }}
       >
-        {/* Texto centro */}© {currentYear} 360Sueldos. Todos los derechos
-        reservados.
+        © {currentYear} 360Sueldos. Todos los derechos reservados.
       </Typography>
 
       <Typography
@@ -55,7 +53,6 @@ const Footer = () => {
           flex: 1,
         }}
       >
-        {/* Texto derecha */}
         Política de privacidad
       </Typography>
     </Box>
