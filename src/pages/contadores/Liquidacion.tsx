@@ -70,9 +70,8 @@ const Liquidacion = () => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Aquí pones la lógica para enviar o procesar la liquidación
+
     console.log(form);
-    // navigate(...) si quieres redirigir luego
   };
 
   return (

@@ -10,7 +10,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 
-// Simulamos datos de RRHH
+// Msjs simulados
 const mensajesRRHH = [
   {
     id: 1,
