@@ -51,7 +51,7 @@ const Login: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#C0C0C0",
+        backgroundColor: "#d9d6d6ff",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
