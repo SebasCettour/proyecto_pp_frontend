@@ -16,6 +16,7 @@ import PrivateRoute from "../components/PrivateRoute";
 export function AppRoutes() {
   return (
     <Routes>
+      {/* Ruta pública */}
       <Route path="/" element={<Login />} />
 
       {/* Rutas RRHH */}
