@@ -22,7 +22,7 @@ export function AppRoutes() {
       <Route
         path="/novedades"
         element={
-          <PrivateRoute role="RRHH">
+          <PrivateRoute role="rrhh">
             <PublicarNovedades />
           </PrivateRoute>
         }
@@ -30,7 +30,7 @@ export function AppRoutes() {
       <Route
         path="/rrhh-principal"
         element={
-          <PrivateRoute role="RRHH">
+          <PrivateRoute role="rrhh">
             <RRHHPrincipal />
           </PrivateRoute>
         }
@@ -38,7 +38,7 @@ export function AppRoutes() {
       <Route
         path="/licencias"
         element={
-          <PrivateRoute role="RRHH">
+          <PrivateRoute role="rrhh">
             <GestionarLicencias />
           </PrivateRoute>
         }
@@ -46,7 +46,7 @@ export function AppRoutes() {
       <Route
         path="/tablon"
         element={
-          <PrivateRoute role="RRHH">
+          <PrivateRoute role="rrhh">
             <Tablon />
           </PrivateRoute>
         }
@@ -108,7 +108,7 @@ export function AppRoutes() {
       <Route
         path="/superAdmin"
         element={
-          <PrivateRoute role="superAdmin">
+          <PrivateRoute role="superadmin">
             <SuperAdminView />
           </PrivateRoute>
         }
