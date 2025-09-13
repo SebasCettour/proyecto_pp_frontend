@@ -11,6 +11,7 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 import Footer from "../../components/Footer";
 
@@ -22,6 +23,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login: React.FC = () => {
+  const navigate = useNavigate(); // 🔹 Hook para redirigir
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string>("");
 
@@ -37,11 +39,33 @@ const Login: React.FC = () => {
     try {
       setIsLoading(true);
       setError("");
-      console.log("Datos del formulario:", data);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Login exitoso:", data);
+
+      const response = await fetch("http://localhost:4000/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || "Error al iniciar sesión");
+        return;
+      }
+
+      // Guardar token y rol en localStorage
+      localStorage.setItem("token", result.token);
+      localStorage.setItem("role", result.role);
+
+      console.log("Login exitoso:", result);
+
+      // Redirigir según el rol o a una ruta fija
+      navigate("/rrhh-principal"); // 🔹 Cambia según tu ruta
     } catch (err) {
       setError("Error al iniciar sesión. Verifica tus credenciales.");
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -198,16 +222,12 @@ const Login: React.FC = () => {
               textTransform: "none",
             }}
           >
-            {isLoading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Ingresar"
-            )}
+            {isLoading ? <CircularProgress size={24} color="inherit" /> : "Ingresar"}
           </Button>
         </Box>
       </Container>
 
-      {/* Footer al fondo */}
+      {/* Footer */}
       <Footer />
     </Box>
   );
