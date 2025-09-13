@@ -1,39 +1,21 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Box,
-  Button,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-} from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import Footer from "../../components/Footer";
 
 export const SuperAdminView: React.FC = () => {
   const navigate = useNavigate();
 
   // Funciones de navegación
-  const handleIrANovedades = () => navigate("/novedades");
+  const handleIrARRHH = () => navigate("/rrhh-principal");
   const handleIrALicencias = () => navigate("/licencias");
   const handleIrAlTablon = () => navigate("/tablon");
   const handleIrALiquidacion = () => navigate("/liquidacion");
   const handleIrARecibos = () => navigate("/mis-recibos");
   const handleCerrarSesion = () => {
-    localStorage.clear(); // Limpiar token y role
+    localStorage.clear();
     navigate("/");
   };
-
-  // Datos de ejemplo para la tabla (puedes reemplazarlos por datos reales)
-  const usuarios = [
-    { id: 1, nombre: "Juan Pérez", rol: "RRHH" },
-    { id: 2, nombre: "Ana Gómez", rol: "Contador" },
-    { id: 3, nombre: "Carlos Díaz", rol: "Empleado" },
-  ];
 
   return (
     <Box
@@ -71,78 +53,104 @@ export const SuperAdminView: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Contenido principal */}
+      {/* Botón Cerrar Sesión */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", px: 4, mt: 4 }}>
+        <Button
+          onClick={handleCerrarSesion}
+          variant="contained"
+          sx={{
+            backgroundColor: "#1565C0",
+            color: "#ffffff",
+            width: 220,
+            letterSpacing: 2,
+            fontSize: 18,
+            borderRadius: 3,
+            fontFamily: "Tektur, sans-serif",
+            fontWeight: 500,
+            textTransform: "none",
+            "&:hover": { backgroundColor: "#0D47A1" },
+          }}
+        >
+          Cerrar Sesión
+        </Button>
+      </Box>
+
+      {/* Botones de navegación centrados */}
       <Box
         sx={{
           flexGrow: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 2,
           px: 4,
-          mt: 8,
-          width: "100%",
-          boxSizing: "border-box",
         }}
       >
-        {/* Botón de cerrar sesión */}
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 4 }}>
-          <Button
-            onClick={handleCerrarSesion}
-            variant="outlined"
-            sx={{
-              backgroundColor: "#1565C0",
-              color: "#ffffff",
-              width: 220,
-              letterSpacing: 2,
-              fontSize: 18,
-              borderRadius: 3,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 500,
-              textTransform: "none",
-              "&:hover": { backgroundColor: "#0D47A1" },
-            }}
-          >
-            Cerrar Sesión
-          </Button>
-        </Box>
+        <Button
+          onClick={handleIrARRHH}
+          variant="contained"
+          sx={{
+            backgroundColor: "#4CAF50",
+            color: "#fff",
+            width: 250,
+            "&:hover": { backgroundColor: "#388E3C" },
+          }}
+        >
+          RR. HH.
+        </Button>
 
-        {/* Botones de navegación rápida */}
-        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 4 }}>
-          <Button onClick={handleIrANovedades} variant="contained">
-            Novedades
-          </Button>
-          <Button onClick={handleIrALicencias} variant="contained">
-            Licencias
-          </Button>
-          <Button onClick={handleIrAlTablon} variant="contained">
-            Tablón
-          </Button>
-          <Button onClick={handleIrALiquidacion} variant="contained">
-            Liquidación
-          </Button>
-          <Button onClick={handleIrARecibos} variant="contained">
-            Recibos
-          </Button>
-        </Box>
+        <Button
+          onClick={handleIrALicencias}
+          variant="contained"
+          sx={{
+            backgroundColor: "#FF9800",
+            color: "#fff",
+            width: 250,
+            "&:hover": { backgroundColor: "#F57C00" },
+          }}
+        >
+          Licencias
+        </Button>
 
-        {/* Tabla de ejemplo de usuarios */}
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Rol</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {usuarios.map((u) => (
-                <TableRow key={u.id}>
-                  <TableCell>{u.id}</TableCell>
-                  <TableCell>{u.nombre}</TableCell>
-                  <TableCell>{u.rol}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <Button
+          onClick={handleIrAlTablon}
+          variant="contained"
+          sx={{
+            backgroundColor: "#9C27B0",
+            color: "#fff",
+            width: 250,
+            "&:hover": { backgroundColor: "#7B1FA2" },
+          }}
+        >
+          Tablón
+        </Button>
+
+        <Button
+          onClick={handleIrALiquidacion}
+          variant="contained"
+          sx={{
+            backgroundColor: "#2196F3",
+            color: "#fff",
+            width: 250,
+            "&:hover": { backgroundColor: "#1976D2" },
+          }}
+        >
+          Liquidación
+        </Button>
+
+        <Button
+          onClick={handleIrARecibos}
+          variant="contained"
+          sx={{
+            backgroundColor: "#E91E63",
+            color: "#fff",
+            width: 250,
+            "&:hover": { backgroundColor: "#C2185B" },
+          }}
+        >
+          Recibos
+        </Button>
       </Box>
 
       {/* Footer */}
@@ -151,5 +159,4 @@ export const SuperAdminView: React.FC = () => {
   );
 };
 
-// 🔹 Esto convierte el archivo en módulo y soluciona TS1208
 export {};
