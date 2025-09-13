@@ -14,6 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import Footer from "../../components/Footer";
+import { useAuthStore } from "../../stores/authStore";
 
 const loginSchema = z.object({
   username: z.string().min(1, "El nombre de usuario es requerido"),
@@ -23,7 +24,8 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login: React.FC = () => {
-  const navigate = useNavigate(); // 🔹 Hook para redirigir
+  const navigate = useNavigate();
+  const { login } = useAuthStore();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string>("");
 
@@ -40,6 +42,8 @@ const Login: React.FC = () => {
       setIsLoading(true);
       setError("");
 
+      console.log("Enviando datos de login:", data);
+
       const response = await fetch("http://localhost:4000/auth/login", {
         method: "POST",
         headers: {
@@ -48,7 +52,13 @@ const Login: React.FC = () => {
         body: JSON.stringify(data),
       });
 
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
+
       const result = await response.json();
+      console.log("Resultado del login:", result);
+      console.log("Result.role:", result.role);
+      console.log("Result.token:", result.token);
 
       if (!response.ok) {
         setError(result.error || "Error al iniciar sesión");
@@ -59,13 +69,49 @@ const Login: React.FC = () => {
       localStorage.setItem("token", result.token);
       localStorage.setItem("role", result.role);
 
-      console.log("Login exitoso:", result);
+      console.log("Token guardado:", result.token);
+      console.log("Rol guardado:", result.role);
 
-      // Redirigir según el rol o a una ruta fija
-      navigate("/rrhh-principal"); // 🔹 Cambia según tu ruta
+      // Actualizar el store de autenticación
+      login({
+        id: 1, // ID temporal, debería venir del backend
+        email: data.username, // Usar username como email temporalmente
+        nombre: data.username,
+        apellido: "",
+        rol: {
+          id: 1,
+          nombre: result.role as any,
+          descripcion: "",
+          permisos: [],
+          activo: true,
+          createdAt: "",
+          updatedAt: ""
+        },
+        token: result.token
+      });
+
+      console.log("Store actualizado");
+
+      // Redirigir según el rol
+      if (result.role === "superadmin") {
+        console.log("Redirigiendo a /superAdmin");
+        navigate("/superAdmin");
+      } else if (result.role === "rrhh") {
+        console.log("Redirigiendo a /rrhh-principal");
+        navigate("/rrhh-principal");
+      } else if (result.role === "empleado") {
+        console.log("Redirigiendo a /empleados");
+        navigate("/empleados");
+      } else if (result.role === "contador") {
+        console.log("Redirigiendo a /contadores");
+        navigate("/contadores");
+      } else {
+        console.log("Rol no reconocido, redirigiendo por defecto a /rrhh-principal");
+        navigate("/rrhh-principal"); // Ruta por defecto
+      }
     } catch (err) {
       setError("Error al iniciar sesión. Verifica tus credenciales.");
-      console.error(err);
+      console.error("Error en login:", err);
     } finally {
       setIsLoading(false);
     }
