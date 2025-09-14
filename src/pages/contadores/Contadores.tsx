@@ -14,6 +14,12 @@ export const Contadores = () => {
     navigate("/");
   };
 
+  const handleIrAtras = () => {
+    navigate(-1);
+  };
+
+  const userRole = localStorage.getItem("role") || "";
+
   return (
     <Box
       sx={{
@@ -59,11 +65,55 @@ export const Contadores = () => {
           boxSizing: "border-box",
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 4,
+          }}
+        >
+          {/* Botón solo visible para superadmin */}
+          {userRole === "superadmin" && (
+            <Button
+              onClick={handleIrAtras}
+              variant="contained"
+              sx={{
+                backgroundColor: "#1565C0",
+                color: "#ffffff",
+                width: 220,
+                letterSpacing: 3,
+                fontSize: 20,
+                borderRadius: 3,
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 500,
+                textTransform: "none",
+                "&:hover": { backgroundColor: "#0D47A1" },
+              }}
+            >
+              Atrás
+            </Button>
+          )}
+
+          <Typography
+            variant="h1"
+            sx={{
+              flexGrow: 1,
+              textAlign: "center",
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 50,
+              color: "#333",
+              letterSpacing: 3,
+            }}
+          >
+            Portal Contadores
+          </Typography>
+
+          {/* Botón de cerrar sesión */}
           <Button
             onClick={handleCerrarSesion}
             variant="outlined"
-            fullWidth
             sx={{
               backgroundColor: "#1565C0",
               color: "#ffffff",
@@ -71,7 +121,6 @@ export const Contadores = () => {
               letterSpacing: 3,
               fontSize: 20,
               borderRadius: 3,
-              mr: 5,
               fontFamily: "Tektur, sans-serif",
               fontWeight: 500,
               textTransform: "none",
@@ -81,10 +130,12 @@ export const Contadores = () => {
             Cerrar Sesión
           </Button>
         </Box>
+
         <Box
           sx={{
             maxWidth: "1000px",
             mx: "auto",
+            mt: 28,
             backgroundColor: "white",
             borderRadius: 2,
             p: 4,
@@ -92,23 +143,9 @@ export const Contadores = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            boxSizing: "border-box",
-            overflowWrap: "break-word",
           }}
         >
-          <Typography
-            component="h1"
-            variant="h4"
-            sx={{
-              mb: 4,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              color: "#333",
-              textAlign: "center",
-            }}
-          >
-            Portal Contadores
-          </Typography>
+          {/* Botón Ir a Liquidación */}
           <Button
             onClick={handleIrALiquidacion}
             variant="contained"
