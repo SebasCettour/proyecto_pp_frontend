@@ -7,11 +7,9 @@ export const SuperAdminView: React.FC = () => {
   const navigate = useNavigate();
 
   // Funciones de navegación
+  const handleIrAEmpleados = () => navigate("/empleados");
+  const handleIrAContador = () => navigate("/contadores");
   const handleIrARRHH = () => navigate("/rrhh-principal");
-  const handleIrALicencias = () => navigate("/licencias");
-  const handleIrAlTablon = () => navigate("/tablon");
-  const handleIrALiquidacion = () => navigate("/liquidacion");
-  const handleIrARecibos = () => navigate("/mis-recibos");
   const handleCerrarSesion = () => {
     localStorage.clear();
     navigate("/");
@@ -75,7 +73,21 @@ export const SuperAdminView: React.FC = () => {
         </Button>
       </Box>
 
-      {/* Botones de navegación centrados */}
+      <Typography
+        variant="h1"
+        sx={{
+          textAlign: "center",
+          fontFamily: "Tektur, sans-serif",
+          fontWeight: 600,
+          fontSize: 50,
+          color: "#333",
+          letterSpacing: 3,
+        }}
+      >
+        Portal Administrador
+      </Typography>
+
+      {/* Botones de navegación */}
       <Box
         sx={{
           flexGrow: 1,
@@ -88,68 +100,56 @@ export const SuperAdminView: React.FC = () => {
         }}
       >
         <Button
+          onClick={handleIrAContador}
+          variant="contained"
+          sx={{
+            backgroundColor: "#4c77afff",
+            color: "#fff",
+            width: 350,
+            height: 60,
+            fontSize: 20,
+            fontWeight: "bold",
+            letterSpacing: 2,
+            borderRadius: 2,
+            "&:hover": { backgroundColor: "#0a386fff" },
+          }}
+        >
+          Contadores
+        </Button>
+        <Button
+          onClick={handleIrAEmpleados}
+          variant="contained"
+          sx={{
+            backgroundColor: "#4c77afff",
+            color: "#fff",
+            width: 350,
+            height: 60,
+            fontSize: 20,
+            fontWeight: "bold",
+            letterSpacing: 2,
+            borderRadius: 2,
+            "&:hover": { backgroundColor: "#0a386fff" },
+          }}
+        >
+          Empleados
+        </Button>
+
+        <Button
           onClick={handleIrARRHH}
           variant="contained"
           sx={{
-            backgroundColor: "#4CAF50",
+            backgroundColor: "#4c77afff",
             color: "#fff",
-            width: 250,
-            "&:hover": { backgroundColor: "#388E3C" },
+            width: 350,
+            height: 60,
+            fontSize: 20,
+            fontWeight: "bold",
+            letterSpacing: 2,
+            borderRadius: 2,
+            "&:hover": { backgroundColor: "#0a386fff" },
           }}
         >
-          RR. HH.
-        </Button>
-
-        <Button
-          onClick={handleIrALicencias}
-          variant="contained"
-          sx={{
-            backgroundColor: "#FF9800",
-            color: "#fff",
-            width: 250,
-            "&:hover": { backgroundColor: "#F57C00" },
-          }}
-        >
-          Licencias
-        </Button>
-
-        <Button
-          onClick={handleIrAlTablon}
-          variant="contained"
-          sx={{
-            backgroundColor: "#9C27B0",
-            color: "#fff",
-            width: 250,
-            "&:hover": { backgroundColor: "#7B1FA2" },
-          }}
-        >
-          Tablón
-        </Button>
-
-        <Button
-          onClick={handleIrALiquidacion}
-          variant="contained"
-          sx={{
-            backgroundColor: "#2196F3",
-            color: "#fff",
-            width: 250,
-            "&:hover": { backgroundColor: "#1976D2" },
-          }}
-        >
-          Liquidación
-        </Button>
-
-        <Button
-          onClick={handleIrARecibos}
-          variant="contained"
-          sx={{
-            backgroundColor: "#E91E63",
-            color: "#fff",
-            width: 250,
-            "&:hover": { backgroundColor: "#C2185B" },
-          }}
-        >
-          Recibos
+          Recursos Humanos
         </Button>
       </Box>
 
