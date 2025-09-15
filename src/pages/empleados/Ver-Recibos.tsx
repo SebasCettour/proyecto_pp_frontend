@@ -43,7 +43,7 @@ export default function RecibosSueldo() {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#C0C0C0",
+        backgroundColor: "#ECEFF1",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",

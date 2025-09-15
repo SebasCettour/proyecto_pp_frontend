@@ -59,7 +59,7 @@ const PublicarNovedad: React.FC = () => {
         display: "flex",
         flexDirection: "column",
         minHeight: "100vh",
-        backgroundColor: "#C0C0C0",
+        backgroundColor: "#ECEFF1",
       }}
     >
       {/* Encabezado */}
@@ -67,8 +67,8 @@ const PublicarNovedad: React.FC = () => {
         sx={{
           textAlign: "left",
           py: 4,
-          backgroundColor: "#000000",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          backgroundColor: "#000",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
         }}
       >
         <Typography
@@ -76,7 +76,7 @@ const PublicarNovedad: React.FC = () => {
           sx={{
             fontFamily: "Tektur, sans-serif",
             fontWeight: 700,
-            color: "#333",
+            color: "#fff",
             marginLeft: "10px",
           }}
         >
@@ -86,22 +86,22 @@ const PublicarNovedad: React.FC = () => {
       </Box>
 
       {/* Botón Volver */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4, px: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
         <Button
           component={Link}
           to="/rrhh-principal"
-          variant="outlined"
+          variant="contained"
           sx={{
             backgroundColor: "#1565C0",
-            color: "#ffffff",
+            color: "#fff",
             width: 180,
-            letterSpacing: 3,
-            fontSize: 20,
+            letterSpacing: 2,
+            fontSize: 18,
             borderRadius: 3,
-            mr: 5,
             fontFamily: "Tektur, sans-serif",
             fontWeight: 500,
             textTransform: "none",
+            "&:hover": { backgroundColor: "#0D47A1" },
           }}
         >
           Volver
@@ -114,14 +114,11 @@ const PublicarNovedad: React.FC = () => {
         sx={{
           flexGrow: 1,
           px: 4,
-          mt: 8,
+          mt: 4,
           width: "100%",
-          maxWidth: "1000px",
+          maxWidth: "800px",
           mx: "auto",
-          backgroundColor: "white",
-          borderRadius: 2,
-          p: 4,
-          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+          p: 5,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -131,23 +128,30 @@ const PublicarNovedad: React.FC = () => {
           component="h1"
           variant="h4"
           sx={{
-            mb: 4,
+            mb: 5,
             fontFamily: "Tektur, sans-serif",
-            fontWeight: 600,
+            fontWeight: 700,
             color: "#333",
+            letterSpacing: 1,
           }}
         >
           Publicar Novedad
         </Typography>
 
         {error && (
-          <Alert severity="error" sx={{ width: "100%", mb: 3 }}>
+          <Alert
+            severity="error"
+            sx={{ width: "100%", mb: 3, borderRadius: 2, fontWeight: 500 }}
+          >
             {error}
           </Alert>
         )}
 
         {mensajeExito && (
-          <Alert severity="success" sx={{ width: "100%", mb: 3 }}>
+          <Alert
+            severity="success"
+            sx={{ width: "100%", mb: 3, borderRadius: 2, fontWeight: 500 }}
+          >
             {mensajeExito}
           </Alert>
         )}
@@ -158,36 +162,25 @@ const PublicarNovedad: React.FC = () => {
           onSubmit={handleSubmit(onSubmit)}
           sx={{ width: "100%" }}
         >
-          <Box sx={{ width: "100%", mb: 4 }}>
-            <Typography
-              component="label"
-              htmlFor="contenido"
-              sx={{
-                display: "block",
-                mb: 1,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 500,
-                color: "#333",
-              }}
-            >
-              Mensaje:
-            </Typography>
-            <TextField
-              fullWidth
-              id="contenido"
-              multiline
-              rows={6}
-              {...register("contenido")}
-              error={!!errors.contenido}
-              helperText={errors.contenido?.message}
-              disabled={isLoading}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
-              }}
-            />
-          </Box>
+          <TextField
+            fullWidth
+            id="contenido"
+            label="Mensaje"
+            multiline
+            rows={6}
+            {...register("contenido")}
+            error={!!errors.contenido}
+            helperText={errors.contenido?.message}
+            disabled={isLoading}
+            sx={{
+              mb: 4,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                backgroundColor: "#f9f9f9",
+              },
+              "& .MuiFormHelperText-root": { ml: 0 },
+            }}
+          />
 
           <Box sx={{ textAlign: "center" }}>
             <Button
@@ -196,13 +189,15 @@ const PublicarNovedad: React.FC = () => {
               disabled={isLoading}
               sx={{
                 py: 1.5,
-                width: 200,
+                width: 220,
                 fontFamily: "Tektur, sans-serif",
                 fontWeight: 600,
                 fontSize: "1.1rem",
-                borderRadius: 1,
+                borderRadius: 3,
                 textTransform: "none",
                 letterSpacing: 2,
+                backgroundColor: "#4c77afff",
+                "&:hover": { backgroundColor: "#0a386fff" },
               }}
             >
               {isLoading ? (

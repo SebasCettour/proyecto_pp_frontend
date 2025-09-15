@@ -1,22 +1,17 @@
-import React from "react";
 import { Typography, Box, Button } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Logout } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 
 export const Contadores = () => {
   const navigate = useNavigate();
 
-  const handleIrALiquidacion = () => {
-    navigate("/liquidacion");
-  };
-
+  const handleIrALiquidacion = () => navigate("/liquidacion");
   const handleCerrarSesion = () => {
+    localStorage.clear();
     navigate("/");
   };
-
-  const handleIrAtras = () => {
-    navigate("/superadmin");
-  };
+  const handleIrAtras = () => navigate("/superadmin");
 
   const userRole = localStorage.getItem("role") || "";
 
@@ -24,149 +19,133 @@ export const Contadores = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#C0C0C0",
         display: "flex",
         flexDirection: "column",
-        overflowX: "hidden",
+        backgroundColor: "#ECEFF1",
       }}
     >
       {/* Encabezado */}
       <Box
         sx={{
-          textAlign: "left",
-          py: 4,
-          backgroundColor: "#000000",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-          width: "100%",
-          boxSizing: "border-box",
+          py: 3,
+          backgroundColor: "#000",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          px: 4,
+          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
         }}
       >
         <Typography
-          variant="h2"
+          variant="h4"
           sx={{
             fontFamily: "Tektur, sans-serif",
             fontWeight: 700,
-            color: "#333",
-            marginLeft: "10px",
+            color: "#fff",
             userSelect: "none",
           }}
         >
-          <span style={{ color: "#CC5500" }}>360</span>
-          <span style={{ color: "#ffffff" }}>Sueldos</span>
+          <span style={{ color: "#CC5500" }}>360</span> Sueldos
         </Typography>
-      </Box>
 
-      <Box
-        sx={{
-          flexGrow: 1,
-          px: 4,
-          mt: 8,
-          width: "100%",
-          boxSizing: "border-box",
-        }}
-      >
-        <Box
+        {/* Botón Cerrar Sesión */}
+        <Button
+          onClick={handleCerrarSesion}
+          startIcon={<Logout />}
+          variant="outlined"
           sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            mb: 4,
+            marginRight: 8,
+            borderColor: "#fff",
+            color: "#fff",
+            textTransform: "none",
+            "&:hover": { backgroundColor: "#1565C0", borderColor: "#1565C0" },
           }}
         >
-          {/* Botón solo visible para superadmin */}
-          {userRole === "superadmin" && (
-            <Button
-              onClick={handleIrAtras}
-              variant="contained"
-              sx={{
-                backgroundColor: "#1565C0",
-                color: "#ffffff",
-                width: 220,
-                letterSpacing: 3,
-                fontSize: 20,
-                borderRadius: 3,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 500,
-                textTransform: "none",
-                "&:hover": { backgroundColor: "#0D47A1" },
-              }}
-            >
-              Atrás
-            </Button>
-          )}
+          Cerrar Sesión
+        </Button>
+      </Box>
 
-          <Typography
-            variant="h1"
-            sx={{
-              flexGrow: 1,
-              textAlign: "center",
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 50,
-              color: "#333",
-              letterSpacing: 3,
-            }}
-          >
-            Portal Contadores
-          </Typography>
-
-          {/* Botón de cerrar sesión */}
+      {userRole === "superadmin" && (
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4, px: 4 }}>
           <Button
-            onClick={handleCerrarSesion}
+            onClick={handleIrAtras}
+            component={Link}
+            to="/superadmin"
             variant="outlined"
             sx={{
               backgroundColor: "#1565C0",
+              marginRight: 3,
               color: "#ffffff",
-              width: 220,
+              width: 180,
               letterSpacing: 3,
               fontSize: 20,
               borderRadius: 3,
+              mr: 5,
               fontFamily: "Tektur, sans-serif",
               fontWeight: 500,
               textTransform: "none",
-              "&:hover": { backgroundColor: "#0D47A1" },
             }}
           >
-            Cerrar Sesión
+            Volver
           </Button>
         </Box>
+      )}
 
-        <Box
+      {/* Título */}
+      <Typography
+        variant="h1"
+        sx={{
+          mt: 4,
+          textAlign: "center",
+          fontFamily: "Tektur, sans-serif",
+          fontWeight: 600,
+          fontSize: 50,
+          color: "#333",
+          letterSpacing: 3,
+        }}
+      >
+        Portal Contadores
+      </Typography>
+
+      {/* Botón principal */}
+      <Box
+        sx={{
+          maxWidth: "1000px",
+          mx: "auto",
+          mt: 8,
+          mb: 4,
+          p: 4,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Button
+          onClick={handleIrALiquidacion}
+          variant="contained"
+          fullWidth
           sx={{
-            maxWidth: "1000px",
-            mx: "auto",
-            mt: 28,
-            backgroundColor: "white",
-            borderRadius: 2,
-            p: 4,
-            boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
+            py: 2,
+            letterSpacing: 2,
+            fontFamily: "Tektur, sans-serif",
+            width: 350,
+            fontWeight: 600,
+            fontSize: 18,
+            borderRadius: 3,
+            textTransform: "none",
+            backgroundColor: "#4c77afff",
+            "&:hover": { backgroundColor: "#0a386fff" },
+            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
           }}
         >
-          <Button
-            onClick={handleIrALiquidacion}
-            variant="contained"
-            fullWidth
-            sx={{
-              py: 1.5,
-              letterSpacing: 2,
-              fontFamily: "Tektur, sans-serif",
-              width: 350,
-              fontWeight: 600,
-              fontSize: "1.1rem",
-              borderRadius: 1,
-              textTransform: "none",
-            }}
-          >
-            Ir a Liquidacion
-          </Button>
-        </Box>
+          Ir a Liquidacion
+        </Button>
       </Box>
 
       {/* Footer */}
-      <Footer />
+      <Box sx={{ mt: "auto" }}>
+        <Footer />
+      </Box>
     </Box>
   );
 };
