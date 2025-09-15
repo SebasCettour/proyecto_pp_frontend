@@ -78,7 +78,8 @@ export default function SolicitarLicencia() {
     }
   };
 
-  // Debounce para la búsqueda
+// Retarda la ejecución de la búsqueda mientras el usuario escribe
+
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (cie10Search) {
@@ -327,31 +328,36 @@ export default function SolicitarLicencia() {
                           ? "Debe seleccionar un diagnóstico CIE-10"
                           : "Escriba al menos 3 caracteres para buscar"
                       }
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <>
-                            {cie10Loading ? (
-                              <CircularProgress color="inherit" size={20} />
-                            ) : null}
-                            {params.InputProps.endAdornment}
-                          </>
-                        ),
+                      slotProps={{
+                        input: {
+                          ...(params.InputProps as any),
+                          endAdornment: (
+                            <>
+                              {cie10Loading ? (
+                                <CircularProgress color="inherit" size={20} />
+                              ) : null}
+                              {params.InputProps?.endAdornment}
+                            </>
+                          ),
+                        },
                       }}
                     />
                   )}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props}>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {option.codigo}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {option.descripcion}
-                        </Typography>
+                  renderOption={(props, option) => {
+                    const { key, ...optionProps } = props as any;
+                    return (
+                      <Box component="li" key={key} {...optionProps}>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {option.codigo}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {option.descripcion}
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
-                  )}
+                    );
+                  }}
                 />
                 
                 {/* Mostrar diagnóstico seleccionado */}
@@ -378,23 +384,23 @@ export default function SolicitarLicencia() {
               label="Fecha Desde"
               name="fechaDesde"
               type="date"
-              InputLabelProps={{ shrink: true }}
               value={form.fechaDesde}
               onChange={handleInputChange}
               error={errors.fechaDesde}
               helperText={errors.fechaDesde && "Campo obligatorio"}
               sx={{ flex: "1 1 45%" }}
+              slotProps={{ inputLabel: { shrink: true } }}
             />
             <TextField
               label="Fecha Hasta"
               name="fechaHasta"
               type="date"
-              InputLabelProps={{ shrink: true }}
               value={form.fechaHasta}
               onChange={handleInputChange}
               error={errors.fechaHasta}
               helperText={errors.fechaHasta && "Campo obligatorio"}
               sx={{ flex: "1 1 45%" }}
+              slotProps={{ inputLabel: { shrink: true } }}
             />
 
             {/* Botón para subir PDF */}
