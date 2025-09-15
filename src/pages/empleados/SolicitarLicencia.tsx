@@ -69,7 +69,6 @@ export default function SolicitarLicencia() {
     const hasErrors = Object.values(newErrors).some((error) => error);
     if (!hasErrors) {
       console.log("Formulario enviado:", form);
-   
     }
   };
 
@@ -77,7 +76,7 @@ export default function SolicitarLicencia() {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#C0C0C0",
+        backgroundColor: "#ECEFF1",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
@@ -115,6 +114,7 @@ export default function SolicitarLicencia() {
           variant="outlined"
           sx={{
             backgroundColor: "#1565C0",
+            marginRight: 3,
             color: "#ffffff",
             width: 180,
             letterSpacing: 3,
@@ -270,7 +270,7 @@ export default function SolicitarLicencia() {
             <Button
               variant="contained"
               fullWidth
-              onClick={handleSubmit} 
+              onClick={handleSubmit}
               sx={{
                 py: 1.5,
                 letterSpacing: 2,
@@ -282,7 +282,7 @@ export default function SolicitarLicencia() {
                 mt: 2,
               }}
             >
-              Enviar Solicitud 
+              Enviar Solicitud
             </Button>
           </Box>
         </Box>

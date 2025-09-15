@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Typography } from "@mui/material";
+import { Logout, People, Work, Badge } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 
 export const SuperAdminView: React.FC = () => {
@@ -19,7 +20,7 @@ export const SuperAdminView: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#C0C0C0",
+        backgroundColor: "#ECEFF1",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
@@ -28,60 +29,55 @@ export const SuperAdminView: React.FC = () => {
       {/* Encabezado */}
       <Box
         sx={{
-          textAlign: "left",
-          py: 4,
-          backgroundColor: "#000000",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-          width: "100%",
-          boxSizing: "border-box",
+          py: 3,
+          backgroundColor: "#000",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          px: 4,
+          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
         }}
       >
         <Typography
-          variant="h2"
+          variant="h4"
           sx={{
             fontFamily: "Tektur, sans-serif",
             fontWeight: 700,
-            color: "#333",
-            marginLeft: "10px",
+            color: "#fff",
             userSelect: "none",
           }}
         >
-          <span style={{ color: "#CC5500" }}>360</span>
-          <span style={{ color: "#ffffff" }}>Sueldos</span>
+          <span style={{ color: "#CC5500" }}>360</span> Sueldos
         </Typography>
-      </Box>
 
-      {/* Botón Cerrar Sesión */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", px: 4, mt: 4 }}>
+        {/* Botón Cerrar Sesión */}
         <Button
           onClick={handleCerrarSesion}
-          variant="contained"
+          startIcon={<Logout />}
+          variant="outlined"
           sx={{
-            backgroundColor: "#1565C0",
-            color: "#ffffff",
-            width: 220,
-            letterSpacing: 2,
-            fontSize: 18,
-            borderRadius: 3,
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 500,
+            borderColor: "#fff",
+            color: "#fff",
             textTransform: "none",
-            "&:hover": { backgroundColor: "#0D47A1" },
+            "&:hover": { backgroundColor: "#1565C0", borderColor: "#1565C0" },
           }}
         >
           Cerrar Sesión
         </Button>
       </Box>
 
+      {/* Título */}
       <Typography
-        variant="h1"
+        variant="h3"
         sx={{
           textAlign: "center",
           fontFamily: "Tektur, sans-serif",
           fontWeight: 600,
-          fontSize: 50,
+          fontSize: { xs: 32, md: 48 },
           color: "#333",
-          letterSpacing: 3,
+          letterSpacing: 2,
+          mt: 6,
+          mb: 6,
         }}
       >
         Portal Administrador
@@ -94,41 +90,44 @@ export const SuperAdminView: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
-          gap: 2,
-          px: 4,
+          gap: 4,
+          px: { xs: 2, md: 8 },
+          mb: 6,
         }}
       >
         <Button
           onClick={handleIrAContador}
+          startIcon={<Work />}
           variant="contained"
           sx={{
-            backgroundColor: "#4c77afff",
-            color: "#fff",
-            width: 350,
-            height: 60,
-            fontSize: 20,
+            width: "100%",
+            maxWidth: 350,
+            py: 2,
+            fontSize: 18,
             fontWeight: "bold",
-            letterSpacing: 2,
-            borderRadius: 2,
+            borderRadius: 3,
+            backgroundColor: "#4c77afff",
             "&:hover": { backgroundColor: "#0a386fff" },
+            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
           }}
         >
           Contadores
         </Button>
+
         <Button
           onClick={handleIrAEmpleados}
+          startIcon={<People />}
           variant="contained"
           sx={{
-            backgroundColor: "#4c77afff",
-            color: "#fff",
-            width: 350,
-            height: 60,
-            fontSize: 20,
+            width: "100%",
+            maxWidth: 350,
+            py: 2,
+            fontSize: 18,
             fontWeight: "bold",
-            letterSpacing: 2,
-            borderRadius: 2,
+            borderRadius: 3,
+            backgroundColor: "#4c77afff",
             "&:hover": { backgroundColor: "#0a386fff" },
+            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
           }}
         >
           Empleados
@@ -136,17 +135,18 @@ export const SuperAdminView: React.FC = () => {
 
         <Button
           onClick={handleIrARRHH}
+          startIcon={<Badge />}
           variant="contained"
           sx={{
-            backgroundColor: "#4c77afff",
-            color: "#fff",
-            width: 350,
-            height: 60,
-            fontSize: 20,
+            width: "100%",
+            maxWidth: 350,
+            py: 2,
+            fontSize: 18,
             fontWeight: "bold",
-            letterSpacing: 2,
-            borderRadius: 2,
+            borderRadius: 3,
+            backgroundColor: "#4c77afff",
             "&:hover": { backgroundColor: "#0a386fff" },
+            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
           }}
         >
           Recursos Humanos

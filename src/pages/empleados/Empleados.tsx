@@ -1,6 +1,7 @@
 import React from "react";
 import { Typography, Box, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { Logout } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 
 export const Empleados = () => {
@@ -8,7 +9,10 @@ export const Empleados = () => {
 
   const handleIrARecibos = () => navigate("/mis-recibos");
   const handleIrALicencias = () => navigate("/solicitar-licencia");
-  const handleCerrarSesion = () => navigate("/");
+  const handleCerrarSesion = () => {
+    localStorage.clear();
+    navigate("/");
+  };
   const handleIrAlTablon = () => navigate("/ver-novedades");
   const handleIrAtras = () => navigate("/superadmin");
 
@@ -18,7 +22,7 @@ export const Empleados = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#C0C0C0",
+        backgroundColor: "#ECEFF1",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
@@ -27,29 +31,75 @@ export const Empleados = () => {
       {/* Encabezado */}
       <Box
         sx={{
-          textAlign: "left",
-          py: 4,
-          backgroundColor: "#000000",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-          width: "100%",
+          py: 3,
+          backgroundColor: "#000",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          px: 4,
+          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
         }}
       >
         <Typography
-          variant="h2"
+          variant="h4"
           sx={{
             fontFamily: "Tektur, sans-serif",
             fontWeight: 700,
-            color: "#333",
-            marginLeft: "10px",
+            color: "#fff",
             userSelect: "none",
           }}
         >
-          <span style={{ color: "#CC5500" }}>360</span>
-          <span style={{ color: "#ffffff" }}>Sueldos</span>
+          <span style={{ color: "#CC5500" }}>360</span> Sueldos
         </Typography>
+
+        {/* Botón Cerrar Sesión */}
+        <Button
+          onClick={handleCerrarSesion}
+          startIcon={<Logout />}
+          variant="outlined"
+          sx={{
+            marginRight: 8,
+            borderColor: "#fff",
+            color: "#fff",
+            textTransform: "none",
+            "&:hover": { backgroundColor: "#1565C0", borderColor: "#1565C0" },
+          }}
+        >
+          Cerrar Sesión
+        </Button>
       </Box>
 
-      {/* H1 centrado */}
+      {userRole === "superadmin" && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            px: 4,
+            mt: 4,
+          }}
+        >
+          <Button
+            onClick={handleIrAtras}
+            variant="contained"
+            sx={{
+              backgroundColor: "#1565C0",
+              marginRight: 3,
+              color: "#ffffff",
+              width: 180,
+              letterSpacing: 3,
+              fontSize: 20,
+              borderRadius: 3,
+              mr: 5,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 500,
+              textTransform: "none",
+            }}
+          >
+            Volver
+          </Button>
+        </Box>
+      )}
+      {/* Título */}
       <Typography
         variant="h1"
         sx={{
@@ -66,71 +116,17 @@ export const Empleados = () => {
         Portal Empleados
       </Typography>
 
-      {/* Contenedor de botones Atrás y Cerrar Sesión */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          px: 4,
-          mb: 4,
-        }}
-      >
-        {userRole === "superadmin" ? (
-          <Button
-            onClick={handleIrAtras}
-            variant="contained"
-            sx={{
-              backgroundColor: "#1565C0",
-              color: "#ffffff",
-              width: 220,
-              letterSpacing: 3,
-              fontSize: 20,
-              borderRadius: 3,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 500,
-              textTransform: "none",
-              "&:hover": { backgroundColor: "#0D47A1" },
-            }}
-          >
-            Atrás
-          </Button>
-        ) : (
-          <Box sx={{ width: 220 }} /> // Espacio vacío si no es superadmin
-        )}
-
-        <Button
-          onClick={handleCerrarSesion}
-          variant="outlined"
-          sx={{
-            backgroundColor: "#1565C0",
-            color: "#ffffff",
-            width: 220,
-            letterSpacing: 3,
-            fontSize: 20,
-            borderRadius: 3,
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 500,
-            textTransform: "none",
-            "&:hover": { backgroundColor: "#0D47A1" },
-          }}
-        >
-          Cerrar Sesión
-        </Button>
-      </Box>
-
       {/* Contenedor de los tres botones principales */}
       <Box
         sx={{
           maxWidth: "1000px",
           mx: "auto",
           mt: 4,
-          backgroundColor: "white",
-          borderRadius: 2,
           p: 4,
-          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
+          gap: 5,
         }}
       >
         <Button
@@ -156,7 +152,6 @@ export const Empleados = () => {
           variant="contained"
           fullWidth
           sx={{
-            mt: 5,
             py: 1.5,
             letterSpacing: 2,
             fontFamily: "Tektur, sans-serif",
@@ -175,7 +170,6 @@ export const Empleados = () => {
           variant="contained"
           fullWidth
           sx={{
-            mt: 5,
             py: 1.5,
             letterSpacing: 2,
             fontFamily: "Tektur, sans-serif",

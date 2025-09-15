@@ -18,7 +18,7 @@ export default function GestionarLicencias() {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#C0C0C0",
+        backgroundColor: "#ECEFF1",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
@@ -51,17 +51,18 @@ export default function GestionarLicencias() {
       </Box>
 
       <Box sx={{ flexGrow: 1, px: 4, mt: 4, boxSizing: "border-box" }}>
+        {/* Botón Volver */}
         <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 4 }}>
           <Button
             component={RouterLink}
             to="/rrhh-principal"
-            variant="outlined"
+            variant="contained"
             sx={{
               backgroundColor: "#1565C0",
               color: "#ffffff",
               width: 180,
-              letterSpacing: 3,
-              fontSize: 20,
+              letterSpacing: 2,
+              fontSize: 18,
               borderRadius: 3,
               mr: 5,
               fontFamily: "Tektur, sans-serif",
@@ -75,42 +76,61 @@ export default function GestionarLicencias() {
         </Box>
 
         {/* Tabla de solicitudes */}
-        <TableContainer component={Paper}>
+        <TableContainer
+          component={Paper}
+          sx={{
+            borderRadius: 3,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            overflow: "hidden",
+          }}
+        >
           <Table>
-            <TableHead sx={{ backgroundColor: "#eeeeee" }}>
+            <TableHead sx={{ backgroundColor: "#858789ff" }}>
               <TableRow>
-                <TableCell>
-                  <strong>Fecha</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Legajo</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Nombre y Apellido</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Descripción de Solicitud</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>Acciones</strong>
-                </TableCell>
+                {[
+                  "Fecha",
+                  "Legajo",
+                  "Nombre y Apellido",
+                  "Descripción de Solicitud",
+                  "Acciones",
+                ].map((header) => (
+                  <TableCell
+                    key={header}
+                    sx={{
+                      color: "#fff",
+                      fontWeight: 600,
+                      fontFamily: "Tektur, sans-serif",
+                      textAlign: "center",
+                    }}
+                  >
+                    {header}
+                  </TableCell>
+                ))}
               </TableRow>
             </TableHead>
             <TableBody>
               {/* Fila de ejemplo */}
-              <TableRow>
-                <TableCell>02/08/2025</TableCell>
-                <TableCell>12345</TableCell>
-                <TableCell>Juan Pérez</TableCell>
-                <TableCell>Licencia médica por 3 días</TableCell>
-                <TableCell>
+              <TableRow
+                sx={{
+                  "&:nth-of-type(odd)": { backgroundColor: "#f5f5f5" },
+                  "&:hover": { backgroundColor: "#e3f2fd" },
+                }}
+              >
+                <TableCell align="center">02/08/2025</TableCell>
+                <TableCell align="center">12345</TableCell>
+                <TableCell align="center">Juan Pérez</TableCell>
+                <TableCell align="center">Licencia médica por 3 días</TableCell>
+                <TableCell align="center">
                   <Button
                     variant="contained"
-                    size="small"
                     sx={{
                       textTransform: "none",
                       backgroundColor: "#1565C0",
                       ":hover": { backgroundColor: "#0D47A1" },
+                      fontSize: 14,
+                      py: 0.5,
+                      px: 2,
+                      borderRadius: 2,
                     }}
                   >
                     Responder
@@ -123,7 +143,9 @@ export default function GestionarLicencias() {
       </Box>
 
       {/* Footer */}
-      <Footer />
+      <Box sx={{ mt: "auto" }}>
+        <Footer />
+      </Box>
     </Box>
   );
 }
