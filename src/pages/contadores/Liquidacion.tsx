@@ -9,7 +9,7 @@ import {
   InputLabel,
   FormControl,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 import { SelectChangeEvent } from "@mui/material/Select";
 
@@ -107,6 +107,28 @@ const Liquidacion = () => {
           <span style={{ color: "#CC5500" }}>360</span>
           <span style={{ color: "#ffffff" }}>Sueldos</span>
         </Typography>
+      </Box>
+
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4, px: 4 }}>
+        <Button
+          component={Link}
+          to="/contadores"
+          variant="outlined"
+          sx={{
+            backgroundColor: "#1565C0",
+            color: "#ffffff",
+            width: 180,
+            letterSpacing: 3,
+            fontSize: 20,
+            borderRadius: 3,
+            mr: 5,
+            fontFamily: "Tektur, sans-serif",
+            fontWeight: 500,
+            textTransform: "none",
+          }}
+        >
+          Volver
+        </Button>
       </Box>
 
       {/* Formulario */}

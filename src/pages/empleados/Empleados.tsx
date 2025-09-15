@@ -6,18 +6,13 @@ import Footer from "../../components/Footer";
 export const Empleados = () => {
   const navigate = useNavigate();
 
-  const handleIrARecibos = () => {
-    navigate("/mis-recibos");
-  };
-  const handleIrALicencias = () => {
-    navigate("/solicitar-licencia");
-  };
-  const handleCerrarSesion = () => {
-    navigate("/");
-  };
-  const handleIrAlTablon = () => {
-    navigate("/ver-novedades");
-  };
+  const handleIrARecibos = () => navigate("/mis-recibos");
+  const handleIrALicencias = () => navigate("/solicitar-licencia");
+  const handleCerrarSesion = () => navigate("/");
+  const handleIrAlTablon = () => navigate("/ver-novedades");
+  const handleIrAtras = () => navigate("/superadmin");
+
+  const userRole = localStorage.getItem("role") || "";
 
   return (
     <Box
@@ -37,7 +32,6 @@ export const Empleados = () => {
           backgroundColor: "#000000",
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
           width: "100%",
-          boxSizing: "border-box",
         }}
       >
         <Typography
@@ -55,20 +49,36 @@ export const Empleados = () => {
         </Typography>
       </Box>
 
-      <Box
+      {/* H1 centrado */}
+      <Typography
+        variant="h1"
         sx={{
-          flexGrow: 1,
-          px: 4,
-          mt: 8,
-          width: "100%",
-          boxSizing: "border-box",
+          mt: 6,
+          mb: 4,
+          textAlign: "center",
+          fontFamily: "Tektur, sans-serif",
+          fontWeight: 600,
+          fontSize: 50,
+          color: "#333",
+          letterSpacing: 3,
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 4 }}>
+        Portal Empleados
+      </Typography>
+
+      {/* Contenedor de botones Atrás y Cerrar Sesión */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          px: 4,
+          mb: 4,
+        }}
+      >
+        {userRole === "superadmin" ? (
           <Button
-            onClick={handleCerrarSesion}
-            variant="outlined"
-            fullWidth
+            onClick={handleIrAtras}
+            variant="contained"
             sx={{
               backgroundColor: "#1565C0",
               color: "#ffffff",
@@ -76,105 +86,114 @@ export const Empleados = () => {
               letterSpacing: 3,
               fontSize: 20,
               borderRadius: 3,
-              mr: 5,
               fontFamily: "Tektur, sans-serif",
               fontWeight: 500,
               textTransform: "none",
               "&:hover": { backgroundColor: "#0D47A1" },
             }}
           >
-            Cerrar Sesión
+            Atrás
           </Button>
-        </Box>
-        <Box
+        ) : (
+          <Box sx={{ width: 220 }} /> // Espacio vacío si no es superadmin
+        )}
+
+        <Button
+          onClick={handleCerrarSesion}
+          variant="outlined"
           sx={{
-            maxWidth: "1000px",
-            mx: "auto",
-            backgroundColor: "white",
-            borderRadius: 2,
-            p: 4,
-            boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            boxSizing: "border-box",
-            overflowWrap: "break-word",
+            backgroundColor: "#1565C0",
+            color: "#ffffff",
+            width: 220,
+            letterSpacing: 3,
+            fontSize: 20,
+            borderRadius: 3,
+            fontFamily: "Tektur, sans-serif",
+            fontWeight: 500,
+            textTransform: "none",
+            "&:hover": { backgroundColor: "#0D47A1" },
           }}
         >
-          <Typography
-            component="h1"
-            variant="h4"
-            sx={{
-              mb: 4,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              color: "#333",
-              textAlign: "center",
-            }}
-          >
-            Portal Empleados
-          </Typography>
+          Cerrar Sesión
+        </Button>
+      </Box>
 
-          <Button
-            onClick={handleIrALicencias}
-            variant="contained"
-            fullWidth
-            sx={{
-              py: 1.5,
-              letterSpacing: 2,
-              fontFamily: "Tektur, sans-serif",
-              width: 350,
-              fontWeight: 600,
-              fontSize: "1.1rem",
-              borderRadius: 1,
-              textTransform: "none",
-            }}
-          >
-            Solicitar Licencia
-          </Button>
+      {/* Contenedor de los tres botones principales */}
+      <Box
+        sx={{
+          maxWidth: "1000px",
+          mx: "auto",
+          mt: 4,
+          backgroundColor: "white",
+          borderRadius: 2,
+          p: 4,
+          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Button
+          onClick={handleIrALicencias}
+          variant="contained"
+          fullWidth
+          sx={{
+            py: 1.5,
+            letterSpacing: 2,
+            fontFamily: "Tektur, sans-serif",
+            width: 350,
+            fontWeight: 600,
+            fontSize: "1.1rem",
+            borderRadius: 1,
+            textTransform: "none",
+          }}
+        >
+          Solicitar Licencia
+        </Button>
 
-          <Button
-            onClick={handleIrARecibos}
-            variant="contained"
-            fullWidth
-            sx={{
-              mt: 5,
-              letterSpacing: 2,
-              py: 1.5,
-              fontFamily: "Tektur, sans-serif",
-              width: 350,
-              fontWeight: 600,
-              fontSize: "1.1rem",
-              borderRadius: 1,
-              textTransform: "none",
-            }}
-          >
-            Ir a Mis Recibos de Sueldo
-          </Button>
+        <Button
+          onClick={handleIrARecibos}
+          variant="contained"
+          fullWidth
+          sx={{
+            mt: 5,
+            py: 1.5,
+            letterSpacing: 2,
+            fontFamily: "Tektur, sans-serif",
+            width: 350,
+            fontWeight: 600,
+            fontSize: "1.1rem",
+            borderRadius: 1,
+            textTransform: "none",
+          }}
+        >
+          Ir a Mis Recibos de Sueldo
+        </Button>
 
-          <Button
-            onClick={handleIrAlTablon}
-            variant="contained"
-            fullWidth
-            sx={{
-              mt: 5,
-              letterSpacing: 2,
-              py: 1.5,
-              fontFamily: "Tektur, sans-serif",
-              width: 350,
-              fontWeight: 600,
-              fontSize: "1.1rem",
-              borderRadius: 1,
-              textTransform: "none",
-            }}
-          >
-            Tablón
-          </Button>
-        </Box>
+        <Button
+          onClick={handleIrAlTablon}
+          variant="contained"
+          fullWidth
+          sx={{
+            mt: 5,
+            py: 1.5,
+            letterSpacing: 2,
+            fontFamily: "Tektur, sans-serif",
+            width: 350,
+            fontWeight: 600,
+            fontSize: "1.1rem",
+            borderRadius: 1,
+            textTransform: "none",
+          }}
+        >
+          Tablón
+        </Button>
       </Box>
 
       {/* Footer */}
-      <Footer />
+      <Box sx={{ mt: "auto" }}>
+        <Footer />
+      </Box>
     </Box>
   );
 };

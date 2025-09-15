@@ -15,7 +15,7 @@ export const Contadores = () => {
   };
 
   const handleIrAtras = () => {
-    navigate(-1);
+    navigate("/superadmin");
   };
 
   const userRole = localStorage.getItem("role") || "";
@@ -145,7 +145,6 @@ export const Contadores = () => {
             alignItems: "center",
           }}
         >
-          {/* Botón Ir a Liquidación */}
           <Button
             onClick={handleIrALiquidacion}
             variant="contained"
