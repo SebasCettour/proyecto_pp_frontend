@@ -12,7 +12,7 @@ import {
   CircularProgress,
   MenuItem,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 
 const schema = z.object({
@@ -97,6 +97,30 @@ const AltaNuevo: React.FC = () => {
           <span style={{ color: "#CC5500" }}>360</span>
           <span style={{ color: "#ffffff" }}>Sueldos</span>
         </Typography>
+      </Box>
+
+      {/* Botón Volver */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
+        <Button
+          component={Link}
+          to="/empleados"
+          variant="outlined"
+          sx={{
+            backgroundColor: "#1976d2",
+            color: "#fff",
+            borderRadius: 3,
+            px: 4,
+            py: 1.5,
+            fontFamily: "Tektur, sans-serif",
+            fontWeight: 600,
+            letterSpacing: 2,
+            fontSize: 18,
+            textTransform: "none",
+            "&:hover": { backgroundColor: "#115293" },
+          }}
+        >
+          Volver
+        </Button>
       </Box>
 
       {/* Contenido principal */}
