@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Typography } from "@mui/material";
 import { Logout, People, Work, Badge } from "@mui/icons-material";
+import { PersonAdd } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 
 export const SuperAdminView: React.FC = () => {
@@ -11,6 +12,7 @@ export const SuperAdminView: React.FC = () => {
   const handleIrAEmpleados = () => navigate("/empleados");
   const handleIrAContador = () => navigate("/contadores");
   const handleIrARRHH = () => navigate("/rrhh-principal");
+  const handleIrACrearNuevo = () => navigate("/crear-nuevo");
   const handleCerrarSesion = () => {
     localStorage.clear();
     navigate("/");
@@ -150,6 +152,25 @@ export const SuperAdminView: React.FC = () => {
           }}
         >
           Recursos Humanos
+        </Button>
+
+        <Button
+          onClick={handleIrACrearNuevo}
+          startIcon={<PersonAdd />}
+          variant="contained"
+          sx={{
+            width: "100%",
+            maxWidth: 350,
+            py: 2,
+            fontSize: 18,
+            fontWeight: "bold",
+            borderRadius: 3,
+            backgroundColor: "#4c77afff",
+            "&:hover": { backgroundColor: "#0a386fff" },
+            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+          }}
+        >
+          Alta Nuevo Usuario
         </Button>
       </Box>
 
