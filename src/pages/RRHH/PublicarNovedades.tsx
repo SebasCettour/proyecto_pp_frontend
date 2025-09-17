@@ -1,7 +1,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import {
   Box,
@@ -40,9 +40,18 @@ const PublicarNovedad: React.FC = () => {
       setError("");
       setMensajeExito("");
 
-      console.log("Publicando novedad:", data);
+      const idEmpleado = 1;
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await fetch("http://localhost:4000/api/novedad/tablon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idEmpleado,
+          descripcion: data.contenido,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Error al publicar la novedad");
 
       setMensajeExito("Novedad publicada exitosamente");
       reset();
@@ -52,6 +61,9 @@ const PublicarNovedad: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  const navigate = useNavigate();
+  const handleIrAlTablon = () => navigate("/tablon");
 
   return (
     <Box
@@ -207,6 +219,27 @@ const PublicarNovedad: React.FC = () => {
               )}
             </Button>
           </Box>
+        </Box>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
+          <Button
+            onClick={handleIrAlTablon}
+            variant="contained"
+            sx={{
+              mt: 10,
+              py: 1.5,
+              width: 420,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: "1.1rem",
+              borderRadius: 3,
+              textTransform: "none",
+              letterSpacing: 2,
+              backgroundColor: "#4c77afff",
+              "&:hover": { backgroundColor: "#0a386fff" },
+            }}
+          >
+            Ir al Tablón
+          </Button>
         </Box>
       </Box>
 
