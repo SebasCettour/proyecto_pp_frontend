@@ -220,7 +220,7 @@ export default function SolicitarLicencia() {
               color: "#333",
             }}
           >
-            Solicitar Licencia Médica
+            Solicitar Licencia
           </Typography>
 
           <Box
