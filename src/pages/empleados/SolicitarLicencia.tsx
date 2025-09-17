@@ -62,7 +62,9 @@ export default function SolicitarLicencia() {
 
     setCie10Loading(true);
     try {
-      const response = await fetch(`${API_ENDPOINTS.CIE10_SEARCH}?query=${encodeURIComponent(query)}`);
+      const response = await fetch(
+        `${API_ENDPOINTS.CIE10_SEARCH}?query=${encodeURIComponent(query)}`
+      );
       if (response.ok) {
         const data = await response.json();
         setCie10Results(data);
@@ -78,7 +80,7 @@ export default function SolicitarLicencia() {
     }
   };
 
-// Retarda la ejecución de la búsqueda mientras el usuario escribe
+  // Retarda la ejecución de la búsqueda mientras el usuario escribe
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -301,15 +303,23 @@ export default function SolicitarLicencia() {
                 >
                   Diagnóstico CIE-10
                 </Typography>
-                
+
                 <Autocomplete
                   options={cie10Results}
-                  getOptionLabel={(option) => `${option.codigo} - ${option.descripcion}`}
+                  getOptionLabel={(option) =>
+                    `${option.codigo} - ${option.descripcion}`
+                  }
                   value={form.diagnosticoCIE10}
                   onChange={(_, newValue) => {
-                    setForm((prev) => ({ ...prev, diagnosticoCIE10: newValue }));
+                    setForm((prev) => ({
+                      ...prev,
+                      diagnosticoCIE10: newValue,
+                    }));
                     if (newValue) {
-                      setErrors((prev) => ({ ...prev, diagnosticoCIE10: false }));
+                      setErrors((prev) => ({
+                        ...prev,
+                        diagnosticoCIE10: false,
+                      }));
                     }
                   }}
                   onInputChange={(_, newInputValue) => {
@@ -322,6 +332,7 @@ export default function SolicitarLicencia() {
                     <TextField
                       {...params}
                       label="Buscar diagnóstico CIE-10"
+                      placeholder="Ej: A15 o tuberculosis"
                       error={errors.diagnosticoCIE10}
                       helperText={
                         errors.diagnosticoCIE10
@@ -359,14 +370,17 @@ export default function SolicitarLicencia() {
                     );
                   }}
                 />
-                
+
                 {/* Mostrar diagnóstico seleccionado */}
                 {form.diagnosticoCIE10 && (
                   <Box sx={{ mt: 2 }}>
                     <Chip
                       label={`${form.diagnosticoCIE10.codigo} - ${form.diagnosticoCIE10.descripcion}`}
                       onDelete={() => {
-                        setForm((prev) => ({ ...prev, diagnosticoCIE10: null }));
+                        setForm((prev) => ({
+                          ...prev,
+                          diagnosticoCIE10: null,
+                        }));
                       }}
                       color="primary"
                       variant="outlined"
