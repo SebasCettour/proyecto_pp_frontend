@@ -11,6 +11,7 @@ import RecibosSueldo from "../pages/empleados/Ver-Recibos";
 import { Contadores } from "../pages/contadores/Contadores";
 import Liquidacion from "../pages/contadores/Liquidacion";
 import { SuperAdminView } from "../pages/superadmin/superAdmin";
+import AltaNuevo from "../pages/superadmin/alta-nuevo";
 import PrivateRoute from "../components/PrivateRoute";
 
 export function AppRoutes() {
@@ -111,6 +112,16 @@ export function AppRoutes() {
         element={
           <PrivateRoute role="superadmin">
             <SuperAdminView />
+          </PrivateRoute>
+        }
+      />
+
+      {/* Ruta Alta Nuevo Usuario */}
+      <Route
+        path="/crear-nuevo"
+        element={
+          <PrivateRoute role="superadmin">
+            <AltaNuevo />
           </PrivateRoute>
         }
       />
