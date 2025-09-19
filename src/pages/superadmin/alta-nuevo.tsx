@@ -11,6 +11,7 @@ import {
   Alert,
   CircularProgress,
   MenuItem,
+  Grid,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
@@ -20,6 +21,16 @@ const schema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
   roleId: z.string().min(1, "El rol es requerido"),
+  area: z.string().min(1, "El área es requerida"),
+  cargo: z.string().min(1, "El cargo es requerido"),
+  domicilio: z.string().min(1, "El domicilio es requerido"),
+  estadoCivil: z.string().min(1, "El estado civil es requerido"),
+  fechaContrato: z.string().min(1, "La fecha de contrato es requerida"),
+  fechaNacimiento: z.string().min(1, "La fecha de nacimiento es requerida"),
+  legajo: z.string().min(1, "El legajo es requerido"),
+  telefono: z.string().min(1, "El teléfono es requerido"),
+  tipoDocumento: z.string().min(1, "El tipo de documento es requerido"),
+  numeroDocumento: z.string().min(1, "El número de documento es requerido"),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -36,6 +47,12 @@ const AltaNuevo: React.FC = () => {
     reset,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      tipoDocumento: "",
+      estadoCivil: "",
+      roleId: "",
+
+    },
   });
 
   const onSubmit = async (data: FormData) => {
@@ -46,9 +63,7 @@ const AltaNuevo: React.FC = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: data.username,
-          password: data.password,
-          email: data.email,
+          ...data,
           roleId: Number(data.roleId),
         }),
       });
@@ -125,7 +140,7 @@ const AltaNuevo: React.FC = () => {
 
       {/* Contenido principal */}
       <Container
-        maxWidth="sm"
+        maxWidth="md"
         sx={{
           mt: 8,
           mb: 8,
@@ -143,9 +158,7 @@ const AltaNuevo: React.FC = () => {
             borderRadius: 2,
             p: 4,
             boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
+            width: "100%",
           }}
         >
           <Typography
@@ -156,6 +169,7 @@ const AltaNuevo: React.FC = () => {
               fontFamily: "Tektur, sans-serif",
               fontWeight: 600,
               color: "#333",
+              textAlign: "center",
             }}
           >
             Alta Nuevo Usuario
@@ -167,129 +181,174 @@ const AltaNuevo: React.FC = () => {
             </Alert>
           )}
 
-          <Box sx={{ width: "100%", mb: 3 }}>
-            <Typography
-              component="label"
-              htmlFor="username"
-              sx={{
-                display: "block",
-                mb: 1,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 500,
-                color: "#333",
-              }}
-            >
-              Nombre de Usuario:
-            </Typography>
-            <TextField
-              fullWidth
-              id="username"
-              type="text"
-              {...register("username")}
-              error={!!errors.username}
-              helperText={errors.username?.message}
-              disabled={isLoading}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
-              }}
-            />
-          </Box>
-
-          <Box sx={{ width: "100%", mb: 3 }}>
-            <Typography
-              component="label"
-              htmlFor="email"
-              sx={{
-                display: "block",
-                mb: 1,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 500,
-                color: "#333",
-              }}
-            >
-              Email:
-            </Typography>
-            <TextField
-              fullWidth
-              id="email"
-              type="email"
-              {...register("email")}
-              error={!!errors.email}
-              helperText={errors.email?.message}
-              disabled={isLoading}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
-              }}
-            />
-          </Box>
-
-          <Box sx={{ width: "100%", mb: 3 }}>
-            <Typography
-              component="label"
-              htmlFor="password"
-              sx={{
-                display: "block",
-                mb: 1,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 500,
-                color: "#333",
-              }}
-            >
-              Contraseña:
-            </Typography>
-            <TextField
-              fullWidth
-              id="password"
-              type="password"
-              {...register("password")}
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              disabled={isLoading}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
-              }}
-            />
-          </Box>
-
-          <Box sx={{ width: "100%", mb: 4 }}>
-            <Typography
-              component="label"
-              htmlFor="roleId"
-              sx={{
-                display: "block",
-                mb: 1,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 500,
-                color: "#333",
-              }}
-            >
-              Rol:
-            </Typography>
-            <TextField
-              select
-              fullWidth
-              id="roleId"
-              {...register("roleId")}
-              error={!!errors.roleId}
-              helperText={errors.roleId?.message}
-              disabled={isLoading}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
-              }}
-            >
-              <MenuItem value="1">Superadmin</MenuItem>
-              <MenuItem value="2">RRHH</MenuItem>
-              <MenuItem value="3">Contador</MenuItem>
-              <MenuItem value="4">Empleado</MenuItem>
-            </TextField>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 3,
+              width: "100%",
+            }}
+          >
+            {/* Columna 1 */}
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Nombre y Apellido"
+                id="username"
+                {...register("username")}
+                error={!!errors.username}
+                helperText={errors.username?.message}
+                disabled={isLoading}
+              />
+              <TextField
+                fullWidth
+                label="Fecha de Nacimiento"
+                id="fechaNacimiento"
+                type="date"
+                {...register("fechaNacimiento")}
+                error={!!errors.fechaNacimiento}
+                helperText={errors.fechaNacimiento?.message}
+                disabled={isLoading}
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                select
+                fullWidth
+                label="Tipo de Documento"
+                id="tipoDocumento"
+                {...register("tipoDocumento")}
+                error={!!errors.tipoDocumento}
+                helperText={errors.tipoDocumento?.message}
+                disabled={isLoading}
+              >
+                <MenuItem value="">Seleccione...</MenuItem>
+                <MenuItem value="DNI">DNI</MenuItem>
+                <MenuItem value="Pasaporte">Pasaporte</MenuItem>
+                <MenuItem value="LC">LC</MenuItem>
+                <MenuItem value="LE">LE</MenuItem>
+                <MenuItem value="Otro">Otro</MenuItem>
+              </TextField>
+              <TextField
+                fullWidth
+                label="Número de Documento"
+                id="numeroDocumento"
+                {...register("numeroDocumento")}
+                error={!!errors.numeroDocumento}
+                helperText={errors.numeroDocumento?.message}
+                disabled={isLoading}
+              />
+              <TextField
+                fullWidth
+                label="Email"
+                id="email"
+                type="email"
+                {...register("email")}
+                error={!!errors.email}
+                helperText={errors.email?.message}
+                disabled={isLoading}
+              />
+              <TextField
+                fullWidth
+                label="Teléfono"
+                id="telefono"
+                {...register("telefono")}
+                error={!!errors.telefono}
+                helperText={errors.telefono?.message}
+                disabled={isLoading}
+              />
+              <TextField
+                fullWidth
+                label="Domicilio"
+                id="domicilio"
+                {...register("domicilio")}
+                error={!!errors.domicilio}
+                helperText={errors.domicilio?.message}
+                disabled={isLoading}
+              />
+              <TextField
+                select
+                fullWidth
+                label="Estado Civil"
+                id="estadoCivil"
+                {...register("estadoCivil")}
+                error={!!errors.estadoCivil}
+                helperText={errors.estadoCivil?.message}
+                disabled={isLoading}
+              >
+                <MenuItem value="">Seleccione...</MenuItem>
+                <MenuItem value="Soltero/a">Soltero/a</MenuItem>
+                <MenuItem value="Casado/a">Casado/a</MenuItem>
+                <MenuItem value="Divorciado/a">Divorciado/a</MenuItem>
+                <MenuItem value="Viudo/a">Viudo/a</MenuItem>
+                <MenuItem value="Otro">Otro</MenuItem>
+              </TextField>
+            </Box>
+            {/* Columna 2 */}
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Contraseña"
+                id="password"
+                type="password"
+                {...register("password")}
+                error={!!errors.password}
+                helperText={errors.password?.message}
+                disabled={isLoading}
+              />
+              <TextField
+                select
+                fullWidth
+                label="Rol"
+                id="roleId"
+                {...register("roleId")}
+                error={!!errors.roleId}
+                helperText={errors.roleId?.message}
+                disabled={isLoading}
+              >
+                <MenuItem value="1">Superadmin</MenuItem>
+                <MenuItem value="2">RRHH</MenuItem>
+                <MenuItem value="3">Contador</MenuItem>
+                <MenuItem value="4">Empleado</MenuItem>
+              </TextField>
+              <TextField
+                fullWidth
+                label="Área"
+                id="area"
+                {...register("area")}
+                error={!!errors.area}
+                helperText={errors.area?.message}
+                disabled={isLoading}
+              />
+              <TextField
+                fullWidth
+                label="Cargo"
+                id="cargo"
+                {...register("cargo")}
+                error={!!errors.cargo}
+                helperText={errors.cargo?.message}
+                disabled={isLoading}
+              />
+              <TextField
+                fullWidth
+                label="Fecha de Contrato"
+                id="fechaContrato"
+                type="date"
+                {...register("fechaContrato")}
+                error={!!errors.fechaContrato}
+                helperText={errors.fechaContrato?.message}
+                disabled={isLoading}
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                fullWidth
+                label="Legajo"
+                id="legajo"
+                {...register("legajo")}
+                error={!!errors.legajo}
+                helperText={errors.legajo?.message}
+                disabled={isLoading}
+              />
+            </Box>
           </Box>
 
           <Button
@@ -298,6 +357,7 @@ const AltaNuevo: React.FC = () => {
             fullWidth
             disabled={isLoading}
             sx={{
+              mt: 4,
               py: 1.5,
               fontFamily: "Tektur, sans-serif",
               fontWeight: 600,
