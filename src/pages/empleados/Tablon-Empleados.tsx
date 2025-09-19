@@ -1,4 +1,4 @@
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -27,7 +27,9 @@ export default function Tablon() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
 
-  useEffect(() => {
+  // Función para cargar novedades
+  const fetchNovedades = () => {
+    setLoading(true);
     fetch("http://localhost:4000/api/novedad/tablon")
       .then((res) => res.json())
       .then((data) => {
@@ -35,6 +37,12 @@ export default function Tablon() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchNovedades();
+    const interval = setInterval(fetchNovedades, 10000); // cada 10 segundos
+    return () => clearInterval(interval);
   }, []);
 
   // Eliminar novedad
