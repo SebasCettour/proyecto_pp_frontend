@@ -1,18 +1,20 @@
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
   Typography,
   Card,
-  CardContent,
   Divider,
   CircularProgress,
   Avatar,
   IconButton,
   Tooltip,
+  Modal,
+  TextField,
 } from "@mui/material";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import Footer from "../../components/Footer";
 
 interface Novedad {
@@ -26,6 +28,12 @@ export default function Tablon() {
   const [novedades, setNovedades] = useState<Novedad[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
+
+  // Estado para edición
+  const [editOpen, setEditOpen] = useState(false);
+  const [editNovedad, setEditNovedad] = useState<Novedad | null>(null);
+  const [editDescripcion, setEditDescripcion] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     fetch("http://localhost:4000/api/novedad/tablon")
@@ -49,6 +57,41 @@ export default function Tablon() {
       // Manejo de error opcional
     } finally {
       setDeleting(null);
+    }
+  };
+
+  // Abrir modal de edición
+  const handleEditOpen = (novedad: Novedad) => {
+    setEditNovedad(novedad);
+    setEditDescripcion(novedad.Descripcion);
+    setEditOpen(true);
+  };
+
+  // Guardar edición
+  const handleEditSave = async () => {
+    if (!editNovedad) return;
+    setEditLoading(true);
+    try {
+      await fetch(
+        `http://localhost:4000/api/novedad/tablon/${editNovedad.Id_Novedad}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ descripcion: editDescripcion }),
+        }
+      );
+      setNovedades((prev) =>
+        prev.map((n) =>
+          n.Id_Novedad === editNovedad.Id_Novedad
+            ? { ...n, Descripcion: editDescripcion }
+            : n
+        )
+      );
+      setEditOpen(false);
+    } catch {
+      // Manejo de error opcional
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -184,6 +227,20 @@ export default function Tablon() {
                   </Typography>
                 </Box>
                 <Box sx={{ flexGrow: 1 }} />
+                {/* Botón Editar */}
+                <Tooltip title="Editar novedad">
+                  <span>
+                    <IconButton
+                      color="primary"
+                      size="small"
+                      onClick={() => handleEditOpen(novedad)}
+                      sx={{ mr: 1 }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+                {/* Botón Eliminar */}
                 <Tooltip title="Eliminar novedad">
                   <span>
                     <IconButton
@@ -213,6 +270,60 @@ export default function Tablon() {
           ))
         )}
       </Box>
+
+      {/* Modal de edición */}
+      <Modal open={editOpen} onClose={() => setEditOpen(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            borderRadius: 3,
+            p: 4,
+            minWidth: 400,
+            maxWidth: "90vw",
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              mb: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 700,
+              color: "#1976d2",
+            }}
+          >
+            Editar Novedad
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            minRows={4}
+            value={editDescripcion}
+            onChange={(e) => setEditDescripcion(e.target.value)}
+            sx={{ mb: 3 }}
+          />
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={() => setEditOpen(false)}
+              disabled={editLoading}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleEditSave}
+              disabled={editLoading || !editDescripcion.trim()}
+            >
+              {editLoading ? "Guardando..." : "Guardar"}
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
 
       <Footer />
     </Box>
