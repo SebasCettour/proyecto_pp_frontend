@@ -1,4 +1,4 @@
-import React from "react";
+import React, { use, useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -6,46 +6,66 @@ import {
   Card,
   CardContent,
   Divider,
+  CircularProgress,
+  Avatar,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import DeleteIcon from "@mui/icons-material/Delete";
 import Footer from "../../components/Footer";
 
-// Mensajes simulados
-const mensajesRRHH = [
-  {
-    id: 1,
-    titulo: "Nuevo beneficio para empleados",
-    contenido:
-      "A partir del lunes se podrá acceder a descuentos en gimnasios adheridos.",
-    fecha: "03/08/2025",
-  },
-  {
-    id: 2,
-    titulo: "Entrega de kits escolares",
-    contenido:
-      "La inscripción para recibir el kit escolar finaliza el viernes a las 12 hs.",
-    fecha: "01/08/2025",
-  },
-];
+interface Novedad {
+  Id_Novedad: number;
+  Descripcion: string;
+  Fecha: string;
+  Id_Empleado: number;
+}
 
-export default function TablonEmpleados() {
-  const navigate = useNavigate();
+export default function Tablon() {
+  const [novedades, setNovedades] = useState<Novedad[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("http://localhost:4000/api/novedad/tablon")
+      .then((res) => res.json())
+      .then((data) => {
+        setNovedades(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  // Eliminar novedad
+  const handleDelete = async (id: number) => {
+    setDeleting(id);
+    try {
+      await fetch(`http://localhost:4000/api/novedad/tablon/${id}`, {
+        method: "DELETE",
+      });
+      setNovedades((prev) => prev.filter((n) => n.Id_Novedad !== id));
+    } catch {
+      // Manejo de error opcional
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "#F0F2F5",
         display: "flex",
         flexDirection: "column",
-        overflowX: "hidden",
       }}
     >
       {/* Encabezado */}
       <Box
         sx={{
           py: 4,
-          px: 2,
+          px: 3,
           backgroundColor: "#1c1c1c",
           boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
         }}
@@ -65,10 +85,11 @@ export default function TablonEmpleados() {
       </Box>
 
       {/* Botón Volver */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", px: 3, mt: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
         <Button
-          onClick={() => navigate("/empleados")}
-          variant="outlined"
+          component={RouterLink}
+          to="/rrhh-principal"
+          variant="contained"
           sx={{
             backgroundColor: "#1565C0",
             marginRight: 3,
@@ -95,74 +116,105 @@ export default function TablonEmpleados() {
           mt: 4,
           display: "flex",
           flexDirection: "column",
-          gap: 3,
-          maxWidth: "900px",
-          margin: "0 auto",
+          gap: 4,
+          maxWidth: "600px",
+          mx: "auto",
+          mb: 6,
         }}
       >
-        {mensajesRRHH.map((mensaje) => (
-          <Card
-            key={mensaje.id}
+        {loading ? (
+          <CircularProgress sx={{ mx: "auto", mt: 6 }} />
+        ) : novedades.length === 0 ? (
+          <Typography
+            variant="h6"
             sx={{
-              borderRadius: 3,
-              backgroundColor: "#ffffff",
-              boxShadow: "0 2px 12px rgba(0, 0, 0, 0.06)",
-              transition: "transform 0.2s ease",
-              "&:hover": {
-                transform: "scale(1.01)",
-              },
+              textAlign: "center",
+              color: "#888",
+              fontFamily: "Tektur, sans-serif",
+              mt: 6,
             }}
           >
-            <CardContent>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontFamily: "Tektur, sans-serif",
-                  color: "#333",
-                  fontWeight: 600,
-                  backgroundColor: "#478FED",
-                  borderRadius: 2,
-                  paddingLeft: 2,
-                  letterSpacing: 2,
-                }}
-              >
-                {mensaje.titulo}
-              </Typography>
-
-              <Divider sx={{ my: 1.5 }} />
-
+            No hay novedades publicadas.
+          </Typography>
+        ) : (
+          novedades.map((novedad) => (
+            <Card
+              key={novedad.Id_Novedad}
+              sx={{
+                borderRadius: 4,
+                backgroundColor: "#fff",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.10)",
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": {
+                  transform: "translateY(-3px) scale(1.01)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.16)",
+                },
+                px: 2,
+                pt: 2,
+                pb: 1,
+                position: "relative",
+                width: 700,
+                minHeight: 260,
+                maxWidth: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                <Avatar sx={{ bgcolor: "#1976d2", mr: 2 }}>
+                  {/* Iniciales RRHH */}R
+                </Avatar>
+                <Box>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 700,
+                      fontFamily: "Tektur, sans-serif",
+                      color: "#1976d2",
+                    }}
+                  >
+                    RRHH
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "#888", fontFamily: "Tektur, sans-serif" }}
+                  >
+                    {new Date(novedad.Fecha).toLocaleString()}
+                  </Typography>
+                </Box>
+                <Box sx={{ flexGrow: 1 }} />
+                <Tooltip title="Eliminar novedad">
+                  <span>
+                    <IconButton
+                      color="error"
+                      size="small"
+                      disabled={deleting === novedad.Id_Novedad}
+                      onClick={() => handleDelete(novedad.Id_Novedad)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </Box>
+              <Divider sx={{ mb: 2 }} />
               <Typography
                 variant="body1"
                 sx={{
                   fontFamily: "Tektur, sans-serif",
-                  color: "#555",
-                  lineHeight: 1.6,
+                  color: "#333",
+                  fontSize: 18,
+                  mb: 1,
                 }}
               >
-                {mensaje.contenido}
+                {novedad.Descripcion}
               </Typography>
-
-              <Typography
-                variant="caption"
-                sx={{
-                  display: "block",
-                  textAlign: "right",
-                  mt: 2,
-                  color: "#999",
-                  fontFamily: "Tektur, sans-serif",
-                }}
-              >
-                Publicado el {mensaje.fecha}
-              </Typography>
-            </CardContent>
-          </Card>
-        ))}
+            </Card>
+          ))
+        )}
       </Box>
 
-      {/* Footer */}
-      <Box sx={{ mt: "auto" }}>
-        <Footer />
-      </Box>
+      <Footer />
     </Box>
   );
 }
