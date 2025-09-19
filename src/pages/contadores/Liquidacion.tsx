@@ -78,7 +78,7 @@ const Liquidacion = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#ECEFF1",
+        backgroundColor: "#d9d6d6ff",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",

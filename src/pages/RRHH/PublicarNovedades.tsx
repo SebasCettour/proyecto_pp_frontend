@@ -68,10 +68,11 @@ const PublicarNovedad: React.FC = () => {
   return (
     <Box
       sx={{
+        minHeight: "100vh",
+        backgroundColor: "#d9d6d6ff",
         display: "flex",
         flexDirection: "column",
-        minHeight: "100vh",
-        backgroundColor: "#ECEFF1",
+        overflowX: "hidden",
       }}
     >
       {/* Encabezado */}
