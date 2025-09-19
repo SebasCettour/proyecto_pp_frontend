@@ -57,7 +57,7 @@ const AltaNuevo: React.FC = () => {
         setError(result.error || "Error al crear usuario");
       } else {
         reset();
-        navigate("/superadmin"); // O la ruta que corresponda
+        navigate("/superadmin");
       }
     } catch (err) {
       setError("Error de red o servidor");
@@ -103,7 +103,7 @@ const AltaNuevo: React.FC = () => {
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
         <Button
           component={Link}
-          to="/empleados"
+          to="/superadmin"
           variant="outlined"
           sx={{
             backgroundColor: "#1976d2",

@@ -85,9 +85,9 @@ const Login: React.FC = () => {
           permisos: [],
           activo: true,
           createdAt: "",
-          updatedAt: ""
+          updatedAt: "",
         },
-        token: result.token
+        token: result.token,
       });
 
       console.log("Store actualizado");
@@ -106,7 +106,9 @@ const Login: React.FC = () => {
         console.log("Redirigiendo a /contadores");
         navigate("/contadores");
       } else {
-        console.log("Rol no reconocido, redirigiendo por defecto a /rrhh-principal");
+        console.log(
+          "Rol no reconocido, redirigiendo por defecto a /rrhh-principal"
+        );
         navigate("/rrhh-principal"); // Ruta por defecto
       }
     } catch (err) {
@@ -268,7 +270,11 @@ const Login: React.FC = () => {
               textTransform: "none",
             }}
           >
-            {isLoading ? <CircularProgress size={24} color="inherit" /> : "Ingresar"}
+            {isLoading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Ingresar"
+            )}
           </Button>
         </Box>
       </Container>

@@ -1,7 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Typography } from "@mui/material";
-import { Logout, People, Work, Badge } from "@mui/icons-material";
+import {
+  Logout,
+  People,
+  Work,
+  Badge,
+  ManageAccounts,
+} from "@mui/icons-material";
 import { PersonAdd } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 
@@ -12,7 +18,7 @@ export const SuperAdminView: React.FC = () => {
   const handleIrAEmpleados = () => navigate("/empleados");
   const handleIrAContador = () => navigate("/contadores");
   const handleIrARRHH = () => navigate("/rrhh-principal");
-  const handleIrACrearNuevo = () => navigate("/crear-nuevo");
+  const handleIrAGestionUsuarios = () => navigate("/gestion-usuarios");
   const handleCerrarSesion = () => {
     localStorage.clear();
     navigate("/");
@@ -22,7 +28,7 @@ export const SuperAdminView: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#ECEFF1",
+        backgroundColor: "#d9d6d6ff",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
@@ -155,8 +161,8 @@ export const SuperAdminView: React.FC = () => {
         </Button>
 
         <Button
-          onClick={handleIrACrearNuevo}
-          startIcon={<PersonAdd />}
+          onClick={handleIrAGestionUsuarios}
+          startIcon={<ManageAccounts />}
           variant="contained"
           sx={{
             width: "100%",
@@ -170,7 +176,7 @@ export const SuperAdminView: React.FC = () => {
             boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
           }}
         >
-          Alta Nuevo Usuario
+          Gestionar Usuarios
         </Button>
       </Box>
 

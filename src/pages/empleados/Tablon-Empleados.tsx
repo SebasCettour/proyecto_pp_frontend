@@ -64,9 +64,10 @@ export default function Tablon() {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#F0F2F5",
+        backgroundColor: "#d9d6d6ff",
         display: "flex",
         flexDirection: "column",
+        overflowX: "hidden",
       }}
     >
       {/* Encabezado */}

@@ -43,7 +43,7 @@ export default function RecibosSueldo() {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#ECEFF1",
+        backgroundColor: "#d9d6d6ff",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
@@ -99,18 +99,18 @@ export default function RecibosSueldo() {
       </Box>
 
       <Typography
-            component="h1"
-            variant="h4"
-            sx={{
-              mb: 4,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              color: "#333",
-              textAlign: "center",
-            }}
-          >
-           Ver y descargar Recibos de Sueldo
-          </Typography>
+        component="h1"
+        variant="h4"
+        sx={{
+          mb: 4,
+          fontFamily: "Tektur, sans-serif",
+          fontWeight: 600,
+          color: "#333",
+          textAlign: "center",
+        }}
+      >
+        Ver y descargar Recibos de Sueldo
+      </Typography>
 
       {/* Tabla de recibos */}
       <Box

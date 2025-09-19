@@ -13,6 +13,7 @@ import Liquidacion from "../pages/contadores/Liquidacion";
 import { SuperAdminView } from "../pages/superadmin/superAdmin";
 import AltaNuevo from "../pages/superadmin/alta-nuevo";
 import PrivateRoute from "../components/PrivateRoute";
+import GestionUsuarios from "../pages/superadmin/gestion-usuarios";
 
 export function AppRoutes() {
   return (
@@ -29,6 +30,7 @@ export function AppRoutes() {
           </PrivateRoute>
         }
       />
+      {/* Rutas RRHH */}
       <Route
         path="/rrhh-principal"
         element={
@@ -112,6 +114,17 @@ export function AppRoutes() {
         element={
           <PrivateRoute role="superadmin">
             <SuperAdminView />
+          </PrivateRoute>
+        }
+      />
+
+      {/* Ruta Alta Gestion Usuario */}
+
+      <Route
+        path="/gestion-usuarios"
+        element={
+          <PrivateRoute role="superadmin">
+            <GestionUsuarios />
           </PrivateRoute>
         }
       />

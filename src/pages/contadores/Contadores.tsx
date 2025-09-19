@@ -19,9 +19,10 @@ export const Contadores = () => {
     <Box
       sx={{
         minHeight: "100vh",
+        backgroundColor: "#d9d6d6ff",
         display: "flex",
         flexDirection: "column",
-        backgroundColor: "#ECEFF1",
+        overflowX: "hidden",
       }}
     >
       {/* Encabezado */}
