@@ -1,17 +1,16 @@
 import React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import {
   Box,
-  TextField,
   Button,
   Typography,
   Alert,
   CircularProgress,
+  TextField,
 } from "@mui/material";
-
 import Footer from "../../components/Footer";
 
 const novedadSchema = z.object({
@@ -26,12 +25,13 @@ const PublicarNovedad: React.FC = () => {
   const [mensajeExito, setMensajeExito] = React.useState<string>("");
 
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
     reset,
   } = useForm<NovedadFormData>({
     resolver: zodResolver(novedadSchema),
+    defaultValues: { contenido: "" },
   });
 
   const onSubmit = async (data: NovedadFormData) => {
@@ -175,24 +175,29 @@ const PublicarNovedad: React.FC = () => {
           onSubmit={handleSubmit(onSubmit)}
           sx={{ width: "100%" }}
         >
-          <TextField
-            fullWidth
-            id="contenido"
-            label="Mensaje"
-            multiline
-            rows={6}
-            {...register("contenido")}
-            error={!!errors.contenido}
-            helperText={errors.contenido?.message}
-            disabled={isLoading}
-            sx={{
-              mb: 4,
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
-                backgroundColor: "#f9f9f9",
-              },
-              "& .MuiFormHelperText-root": { ml: 0 },
-            }}
+          <Controller
+            name="contenido"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Contenido"
+                multiline
+                minRows={6}
+                fullWidth
+                error={!!errors.contenido}
+                helperText={errors.contenido?.message}
+                sx={{
+                  mb: 4,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    backgroundColor: "#f9f9f9",
+                  },
+                  "& .MuiFormHelperText-root": { ml: 0 },
+                }}
+                disabled={isLoading}
+              />
+            )}
           />
 
           <Box sx={{ textAlign: "center" }}>

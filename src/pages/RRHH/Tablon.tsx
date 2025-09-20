@@ -161,7 +161,7 @@ export default function Tablon() {
           display: "flex",
           flexDirection: "column",
           gap: 4,
-          maxWidth: "600px",
+          maxWidth: 700,
           mx: "auto",
           mb: 6,
         }}
@@ -193,21 +193,20 @@ export default function Tablon() {
                   transform: "translateY(-3px) scale(1.01)",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.16)",
                 },
-                px: 2,
-                pt: 2,
-                pb: 1,
+                px: { xs: 1, sm: 3 },
+                pt: 3,
+                pb: 2,
                 position: "relative",
-                width: 700,
-                minHeight: 260,
-                maxWidth: "100%",
+                width: "100%",
+                minHeight: 180,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                <Avatar sx={{ bgcolor: "#1976d2", mr: 2 }}>
-                  {/* Iniciales RRHH */}R
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Avatar sx={{ bgcolor: "#1976d2", mr: 2, width: 48, height: 48, fontSize: 22 }}>
+                  R
                 </Avatar>
                 <Box>
                   <Typography
@@ -216,19 +215,31 @@ export default function Tablon() {
                       fontWeight: 700,
                       fontFamily: "Tektur, sans-serif",
                       color: "#1976d2",
+                      fontSize: 18,
                     }}
                   >
                     RRHH
                   </Typography>
                   <Typography
                     variant="caption"
-                    sx={{ color: "#888", fontFamily: "Tektur, sans-serif" }}
+                    sx={{
+                      color: "#888",
+                      fontFamily: "Tektur, sans-serif",
+                      fontSize: 15,
+                      display: "block",
+                      mt: 0.5,
+                    }}
                   >
-                    {new Date(novedad.Fecha).toLocaleString()}
+                    {new Date(novedad.Fecha).toLocaleDateString("es-AR", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </Typography>
                 </Box>
                 <Box sx={{ flexGrow: 1 }} />
-                {/* Botón Editar */}
                 <Tooltip title="Editar novedad">
                   <span>
                     <IconButton
@@ -241,7 +252,6 @@ export default function Tablon() {
                     </IconButton>
                   </span>
                 </Tooltip>
-                {/* Botón Eliminar */}
                 <Tooltip title="Eliminar novedad">
                   <span>
                     <IconButton
@@ -260,9 +270,11 @@ export default function Tablon() {
                 variant="body1"
                 sx={{
                   fontFamily: "Tektur, sans-serif",
-                  color: "#333",
-                  fontSize: 18,
+                  color: "#222",
+                  fontSize: 20,
                   mb: 1,
+                  lineHeight: 1.6,
+                  wordBreak: "break-word",
                 }}
               >
                 {novedad.Descripcion}
