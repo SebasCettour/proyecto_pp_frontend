@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, Box, Button } from "@mui/material";
+import { Typography, Box, Button, Container } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Logout } from "@mui/icons-material";
 import Footer from "../../components/Footer";
@@ -31,36 +31,36 @@ export const Empleados = () => {
       {/* Encabezado */}
       <Box
         sx={{
-          py: 3,
-          backgroundColor: "#000",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          px: 4,
-          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+          textAlign: "left",
+          py: 4,
+          backgroundColor: "#000000",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         }}
       >
         <Typography
-          variant="h4"
+          variant="h2"
           sx={{
             fontFamily: "Tektur, sans-serif",
             fontWeight: 700,
-            color: "#fff",
-            userSelect: "none",
+            color: "#333",
+            marginLeft: "10px",
           }}
         >
-          <span style={{ color: "#CC5500" }}>360</span> Sueldos
+          <span style={{ color: "#CC5500" }}>360</span>
+          <span style={{ color: "#ffffff" }}>Sueldos</span>
         </Typography>
-
-        {/* Botón Cerrar Sesión */}
         <Button
           onClick={handleCerrarSesion}
           startIcon={<Logout />}
           variant="outlined"
           sx={{
-            marginRight: 8,
+            position: "absolute",
+            top: 24,
+            right: 32,
             borderColor: "#fff",
             color: "#fff",
+            fontWeight: 600,
+            fontFamily: "Tektur, sans-serif",
             textTransform: "none",
             "&:hover": { backgroundColor: "#1565C0", borderColor: "#1565C0" },
           }}
@@ -69,125 +69,133 @@ export const Empleados = () => {
         </Button>
       </Box>
 
+      {/* Botón Volver solo para superadmin */}
       {userRole === "superadmin" && (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "flex-end",
-            px: 4,
-            mt: 4,
-          }}
-        >
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
           <Button
             onClick={handleIrAtras}
             variant="contained"
             sx={{
-              backgroundColor: "#1565C0",
-              marginRight: 3,
-              color: "#ffffff",
-              width: 180,
-              letterSpacing: 3,
-              fontSize: 20,
+              backgroundColor: "#1976d2",
+              color: "#fff",
               borderRadius: 3,
-              mr: 5,
+              px: 4,
+              py: 1.5,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 500,
+              fontWeight: 600,
+              fontSize: 18,
               textTransform: "none",
+              "&:hover": { backgroundColor: "#115293" },
             }}
           >
             Volver
           </Button>
         </Box>
       )}
-      {/* Título */}
-      <Typography
-        variant="h1"
-        sx={{
-          mt: 6,
-          mb: 4,
-          textAlign: "center",
-          fontFamily: "Tektur, sans-serif",
-          fontWeight: 600,
-          fontSize: 50,
-          color: "#333",
-          letterSpacing: 3,
-        }}
-      >
-        Portal Empleados
-      </Typography>
 
-      {/* Contenedor de los tres botones principales */}
-      <Box
+      {/* Contenido principal */}
+      <Container
+        maxWidth="sm"
         sx={{
-          maxWidth: "1000px",
-          mx: "auto",
-          mt: 4,
-          p: 4,
+          mt: 8,
+          mb: 8,
+          flexGrow: 1,
           display: "flex",
           flexDirection: "column",
+          justifyContent: "center",
           alignItems: "center",
-          gap: 5,
         }}
       >
-        <Button
-          onClick={handleIrALicencias}
-          variant="contained"
-          fullWidth
+        <Box
           sx={{
-            py: 1.5,
-            letterSpacing: 2,
-            fontFamily: "Tektur, sans-serif",
-            width: 350,
-            fontWeight: 600,
-            fontSize: "1.1rem",
-            borderRadius: 1,
-            textTransform: "none",
+            backgroundColor: "#fff",
+            borderRadius: 3,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
+            p: 5,
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 4,
           }}
         >
-          Solicitar Licencia
-        </Button>
+          <Typography
+            variant="h4"
+            sx={{
+              mb: 3,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              color: "#333",
+              textAlign: "center",
+              letterSpacing: 2,
+            }}
+          >
+            Portal Empleados
+          </Typography>
 
-        <Button
-          onClick={handleIrARecibos}
-          variant="contained"
-          fullWidth
-          sx={{
-            py: 1.5,
-            letterSpacing: 2,
-            fontFamily: "Tektur, sans-serif",
-            width: 350,
-            fontWeight: 600,
-            fontSize: "1.1rem",
-            borderRadius: 1,
-            textTransform: "none",
-          }}
-        >
-          Ir a Mis Recibos de Sueldo
-        </Button>
+          <Button
+            onClick={handleIrALicencias}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Solicitar Licencia
+          </Button>
 
-        <Button
-          onClick={handleIrAlTablon}
-          variant="contained"
-          fullWidth
-          sx={{
-            py: 1.5,
-            letterSpacing: 2,
-            fontFamily: "Tektur, sans-serif",
-            width: 350,
-            fontWeight: 600,
-            fontSize: "1.1rem",
-            borderRadius: 1,
-            textTransform: "none",
-          }}
-        >
-          Tablón
-        </Button>
-      </Box>
+          <Button
+            onClick={handleIrARecibos}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Mis Recibos de Sueldo
+          </Button>
 
-      {/* Footer */}
-      <Box sx={{ mt: "auto" }}>
-        <Footer />
-      </Box>
+          <Button
+            onClick={handleIrAlTablon}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Tablón de Novedades
+          </Button>
+        </Box>
+      </Container>
+
+      <Footer />
     </Box>
   );
 };

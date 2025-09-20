@@ -14,6 +14,7 @@ import { SuperAdminView } from "../pages/superadmin/superAdmin";
 import AltaNuevo from "../pages/superadmin/alta-nuevo";
 import PrivateRoute from "../components/PrivateRoute";
 import GestionUsuarios from "../pages/superadmin/gestion-usuarios";
+import EditarUsuario from "../pages/superadmin/editar-usuario";
 
 export function AppRoutes() {
   return (
@@ -135,6 +136,14 @@ export function AppRoutes() {
         element={
           <PrivateRoute role="superadmin">
             <AltaNuevo />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/editar-usuario"
+        element={
+          <PrivateRoute role="superadmin">
+            <EditarUsuario />
           </PrivateRoute>
         }
       />

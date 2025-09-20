@@ -2,11 +2,13 @@ import React from "react";
 import { Box, Button, Typography, Container } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
-import { PersonAdd } from "@mui/icons-material";
+import { Edit, PersonAdd, PersonRemove } from "@mui/icons-material";
 
 const GestionUsuarios: React.FC = () => {
   const navigate = useNavigate();
   const handleIrACrearNuevo = () => navigate("/crear-nuevo");
+  const handleIrAEliminarUsuario = () => navigate("/eliminar-usuario");
+  const handleIrAEditarUsuario = () => navigate("/editar-usuario");
 
   return (
     <Box
@@ -46,7 +48,7 @@ const GestionUsuarios: React.FC = () => {
         <Button
           component={Link}
           to="/superadmin"
-          variant="outlined"
+          variant="contained"
           sx={{
             backgroundColor: "#1976d2",
             color: "#fff",
@@ -78,24 +80,94 @@ const GestionUsuarios: React.FC = () => {
           alignItems: "center",
         }}
       >
-        <Button
-          onClick={handleIrACrearNuevo}
-          startIcon={<PersonAdd />}
-          variant="contained"
+        <Box
           sx={{
-            width: "100%",
-            maxWidth: 350,
-            py: 2,
-            fontSize: 18,
-            fontWeight: "bold",
+            backgroundColor: "#fff",
             borderRadius: 3,
-            backgroundColor: "#4c77afff",
-            "&:hover": { backgroundColor: "#0a386fff" },
-            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
+            p: 5,
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 4,
           }}
         >
-          Alta Nuevo Usuario
-        </Button>
+          <Typography
+            variant="h4"
+            sx={{
+              mb: 3,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              color: "#333",
+              textAlign: "center",
+              letterSpacing: 2,
+            }}
+          >
+            Gestión de Usuarios
+          </Typography>
+
+          <Button
+            onClick={handleIrACrearNuevo}
+            startIcon={<PersonAdd />}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Alta Nuevo Usuario
+          </Button>
+          <Button
+            onClick={handleIrAEditarUsuario}
+            startIcon={<Edit />}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Editar Usuario
+          </Button>
+          <Button
+            onClick={handleIrAEliminarUsuario}
+            startIcon={<PersonRemove />}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Eliminar Usuario
+          </Button>
+        </Box>
       </Container>
 
       <Footer />

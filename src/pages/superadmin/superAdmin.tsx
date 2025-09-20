@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button, Typography, Container } from "@mui/material";
 import {
   Logout,
   People,
@@ -8,7 +8,6 @@ import {
   Badge,
   ManageAccounts,
 } from "@mui/icons-material";
-import { PersonAdd } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 
 export const SuperAdminView: React.FC = () => {
@@ -37,35 +36,36 @@ export const SuperAdminView: React.FC = () => {
       {/* Encabezado */}
       <Box
         sx={{
-          py: 3,
-          backgroundColor: "#000",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          px: 4,
-          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+          textAlign: "left",
+          py: 4,
+          backgroundColor: "#000000",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         }}
       >
         <Typography
-          variant="h4"
+          variant="h2"
           sx={{
             fontFamily: "Tektur, sans-serif",
             fontWeight: 700,
-            color: "#fff",
-            userSelect: "none",
+            color: "#333",
+            marginLeft: "10px",
           }}
         >
-          <span style={{ color: "#CC5500" }}>360</span> Sueldos
+          <span style={{ color: "#CC5500" }}>360</span>
+          <span style={{ color: "#ffffff" }}>Sueldos</span>
         </Typography>
-
-        {/* Botón Cerrar Sesión */}
         <Button
           onClick={handleCerrarSesion}
           startIcon={<Logout />}
           variant="outlined"
           sx={{
+            position: "absolute",
+            top: 24,
+            right: 32,
             borderColor: "#fff",
             color: "#fff",
+            fontWeight: 600,
+            fontFamily: "Tektur, sans-serif",
             textTransform: "none",
             "&:hover": { backgroundColor: "#1565C0", borderColor: "#1565C0" },
           }}
@@ -74,113 +74,132 @@ export const SuperAdminView: React.FC = () => {
         </Button>
       </Box>
 
-      {/* Título */}
-      <Typography
-        variant="h3"
+      {/* Contenido principal */}
+      <Container
+        maxWidth="sm"
         sx={{
-          textAlign: "center",
-          fontFamily: "Tektur, sans-serif",
-          fontWeight: 600,
-          fontSize: { xs: 32, md: 48 },
-          color: "#333",
-          letterSpacing: 2,
-          mt: 6,
-          mb: 6,
-        }}
-      >
-        Portal Administrador
-      </Typography>
-
-      {/* Botones de navegación */}
-      <Box
-        sx={{
+          mt: 8,
+          mb: 8,
           flexGrow: 1,
           display: "flex",
           flexDirection: "column",
+          justifyContent: "center",
           alignItems: "center",
-          gap: 4,
-          px: { xs: 2, md: 8 },
-          mb: 6,
         }}
       >
-        <Button
-          onClick={handleIrAContador}
-          startIcon={<Work />}
-          variant="contained"
+        <Box
           sx={{
-            width: "100%",
-            maxWidth: 350,
-            py: 2,
-            fontSize: 18,
-            fontWeight: "bold",
+            backgroundColor: "#fff",
             borderRadius: 3,
-            backgroundColor: "#4c77afff",
-            "&:hover": { backgroundColor: "#0a386fff" },
-            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
+            p: 5,
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 4,
           }}
         >
-          Contadores
-        </Button>
+          <Typography
+            variant="h4"
+            sx={{
+              mb: 3,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              color: "#333",
+              textAlign: "center",
+              letterSpacing: 2,
+            }}
+          >
+            Portal Administrador
+          </Typography>
 
-        <Button
-          onClick={handleIrAEmpleados}
-          startIcon={<People />}
-          variant="contained"
-          sx={{
-            width: "100%",
-            maxWidth: 350,
-            py: 2,
-            fontSize: 18,
-            fontWeight: "bold",
-            borderRadius: 3,
-            backgroundColor: "#4c77afff",
-            "&:hover": { backgroundColor: "#0a386fff" },
-            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-          }}
-        >
-          Empleados
-        </Button>
+          <Button
+            onClick={handleIrAContador}
+            startIcon={<Work />}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Contadores
+          </Button>
 
-        <Button
-          onClick={handleIrARRHH}
-          startIcon={<Badge />}
-          variant="contained"
-          sx={{
-            width: "100%",
-            maxWidth: 350,
-            py: 2,
-            fontSize: 18,
-            fontWeight: "bold",
-            borderRadius: 3,
-            backgroundColor: "#4c77afff",
-            "&:hover": { backgroundColor: "#0a386fff" },
-            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-          }}
-        >
-          Recursos Humanos
-        </Button>
+          <Button
+            onClick={handleIrAEmpleados}
+            startIcon={<People />}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Empleados
+          </Button>
 
-        <Button
-          onClick={handleIrAGestionUsuarios}
-          startIcon={<ManageAccounts />}
-          variant="contained"
-          sx={{
-            width: "100%",
-            maxWidth: 350,
-            py: 2,
-            fontSize: 18,
-            fontWeight: "bold",
-            borderRadius: 3,
-            backgroundColor: "#4c77afff",
-            "&:hover": { backgroundColor: "#0a386fff" },
-            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-          }}
-        >
-          Gestionar Usuarios
-        </Button>
-      </Box>
+          <Button
+            onClick={handleIrARRHH}
+            startIcon={<Badge />}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Recursos Humanos
+          </Button>
 
-      {/* Footer */}
+          <Button
+            onClick={handleIrAGestionUsuarios}
+            startIcon={<ManageAccounts />}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Gestionar Usuarios
+          </Button>
+        </Box>
+      </Container>
+
       <Footer />
     </Box>
   );
