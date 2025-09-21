@@ -15,6 +15,7 @@ import AltaNuevo from "../pages/superadmin/alta-nuevo";
 import PrivateRoute from "../components/PrivateRoute";
 import GestionUsuarios from "../pages/superadmin/gestion-usuarios";
 import EditarUsuario from "../pages/superadmin/editar-usuario";
+import EliminarUsuario from "../pages/superadmin/eliminar-usuario";
 
 export function AppRoutes() {
   return (
@@ -144,6 +145,14 @@ export function AppRoutes() {
         element={
           <PrivateRoute role="superadmin">
             <EditarUsuario />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/eliminar-usuario"
+        element={
+          <PrivateRoute role="superadmin">
+            <EliminarUsuario />
           </PrivateRoute>
         }
       />

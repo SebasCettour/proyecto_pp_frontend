@@ -10,59 +10,87 @@ import {
   Container,
   Alert,
   CircularProgress,
-  MenuItem,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 
-const schema = z.object({
-  username: z.string().min(3, "El usuario es requerido"),
-  email: z.string().email("Email inválido"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-  roleId: z.string().min(1, "El rol es requerido"),
+const buscarSchema = z.object({
+  dni: z.string().min(7, "Ingrese un DNI válido"),
 });
 
-type FormData = z.infer<typeof schema>;
+type BuscarFormData = z.infer<typeof buscarSchema>;
 
-const AltaNuevo: React.FC = () => {
+interface Usuario {
+  id: number;
+  username: string;
+  email: string;
+  dni: string;
+  role: string;
+}
+
+const EliminarUsuario: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
+  const [mensaje, setMensaje] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
+  } = useForm<BuscarFormData>({
+    resolver: zodResolver(buscarSchema),
   });
 
-  const onSubmit = async (data: FormData) => {
+  const handleBuscar = async (data: BuscarFormData) => {
     setError(null);
+    setUsuario(null);
+    setMensaje(null);
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:4000/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: data.username,
-          password: data.password,
-          email: data.email,
-          roleId: Number(data.roleId),
-        }),
+      const response = await fetch(
+        `http://localhost:4000/api/usuario/usuario-dni/${data.dni}`
+      );
+      if (!response.ok) throw new Error("Usuario no encontrado");
+      const user = await response.json();
+      setUsuario({
+        id: user.Id_Empleado,
+        username: user.Apellido_Nombre,
+        email: user.Correo_Electronico,
+        dni: user.Numero_Documento,
+        role: user.Cargo,
       });
-      const result = await response.json();
-      if (!response.ok) {
-        setError(result.error || "Error al crear usuario");
-      } else {
-        reset();
-        navigate("/superadmin");
-      }
-    } catch (err) {
-      setError("Error de red o servidor");
+    } catch (err: any) {
+      setError(err.message || "Error al buscar usuario");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleEliminar = async () => {
+    if (!usuario || !usuario.dni) return;
+    console.log("Usuario a eliminar:", usuario); // <-- Agrega este log
+    setEliminando(true);
+    setError(null);
+    setMensaje(null);
+    try {
+      const response = await fetch(
+        `http://localhost:4000/api/usuario/eliminar-usuario-dni/${usuario.dni}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!response.ok) throw new Error("No se pudo eliminar el usuario");
+      setMensaje("Usuario eliminado correctamente");
+      setUsuario(null);
+      reset();
+    } catch (err: any) {
+      setError(err.message || "Error al eliminar usuario");
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -103,7 +131,7 @@ const AltaNuevo: React.FC = () => {
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
         <Button
           component={Link}
-          to="/superadmin"
+          to="/gestion-usuarios"
           variant="outlined"
           sx={{
             backgroundColor: "#1976d2",
@@ -137,7 +165,7 @@ const AltaNuevo: React.FC = () => {
       >
         <Box
           component="form"
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(handleBuscar)}
           sx={{
             backgroundColor: "white",
             borderRadius: 2,
@@ -146,6 +174,7 @@ const AltaNuevo: React.FC = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            mb: 4,
           }}
         >
           <Typography
@@ -158,7 +187,7 @@ const AltaNuevo: React.FC = () => {
               color: "#333",
             }}
           >
-            Alta Nuevo Usuario
+            Buscar Usuario por DNI
           </Typography>
 
           {error && (
@@ -166,136 +195,31 @@ const AltaNuevo: React.FC = () => {
               {error}
             </Alert>
           )}
+          {mensaje && (
+            <Alert severity="success" sx={{ width: "100%", mb: 3 }}>
+              {mensaje}
+            </Alert>
+          )}
 
-          <Box sx={{ width: "100%", mb: 3 }}>
-            <Typography
-              component="label"
-              htmlFor="username"
-              sx={{
-                display: "block",
-                mb: 1,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 500,
-                color: "#333",
-              }}
-            >
-              Nombre de Usuario:
-            </Typography>
-            <TextField
-              fullWidth
-              id="username"
-              type="text"
-              {...register("username")}
-              error={!!errors.username}
-              helperText={errors.username?.message}
-              disabled={isLoading}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
-              }}
-            />
-          </Box>
-
-          <Box sx={{ width: "100%", mb: 3 }}>
-            <Typography
-              component="label"
-              htmlFor="email"
-              sx={{
-                display: "block",
-                mb: 1,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 500,
-                color: "#333",
-              }}
-            >
-              Email:
-            </Typography>
-            <TextField
-              fullWidth
-              id="email"
-              type="email"
-              {...register("email")}
-              error={!!errors.email}
-              helperText={errors.email?.message}
-              disabled={isLoading}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
-              }}
-            />
-          </Box>
-
-          <Box sx={{ width: "100%", mb: 3 }}>
-            <Typography
-              component="label"
-              htmlFor="password"
-              sx={{
-                display: "block",
-                mb: 1,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 500,
-                color: "#333",
-              }}
-            >
-              Contraseña:
-            </Typography>
-            <TextField
-              fullWidth
-              id="password"
-              type="password"
-              {...register("password")}
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              disabled={isLoading}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
-              }}
-            />
-          </Box>
-
-          <Box sx={{ width: "100%", mb: 4 }}>
-            <Typography
-              component="label"
-              htmlFor="roleId"
-              sx={{
-                display: "block",
-                mb: 1,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 500,
-                color: "#333",
-              }}
-            >
-              Rol:
-            </Typography>
-            <TextField
-              select
-              fullWidth
-              id="roleId"
-              {...register("roleId")}
-              error={!!errors.roleId}
-              helperText={errors.roleId?.message}
-              disabled={isLoading}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
-              }}
-            >
-              <MenuItem value="1">Superadmin</MenuItem>
-              <MenuItem value="2">RRHH</MenuItem>
-              <MenuItem value="3">Contador</MenuItem>
-              <MenuItem value="4">Empleado</MenuItem>
-            </TextField>
-          </Box>
+          <TextField
+            fullWidth
+            id="dni"
+            label="DNI"
+            {...register("dni")}
+            error={!!errors.dni}
+            helperText={errors.dni?.message}
+            disabled={isLoading}
+            sx={{
+              mb: 3,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 1,
+              },
+            }}
+          />
 
           <Button
             type="submit"
             variant="contained"
-            fullWidth
             disabled={isLoading}
             sx={{
               py: 1.5,
@@ -304,15 +228,76 @@ const AltaNuevo: React.FC = () => {
               fontSize: "1.1rem",
               borderRadius: 1,
               textTransform: "none",
+              width: "100%",
             }}
           >
             {isLoading ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              "Crear Usuario"
+              "Buscar"
             )}
           </Button>
         </Box>
+
+        {/* Mostrar usuario encontrado */}
+        {usuario && (
+          <Box
+            sx={{
+              backgroundColor: "#f5f5f5",
+              borderRadius: 2,
+              p: 4,
+              boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              mb: 4,
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 600,
+                color: "#1976d2",
+                mb: 2,
+              }}
+            >
+              Usuario encontrado:
+            </Typography>
+            <Typography sx={{ mb: 1 }}>
+              <b>Nombre de usuario:</b> {usuario.username}
+            </Typography>
+            <Typography sx={{ mb: 1 }}>
+              <b>Email:</b> {usuario.email}
+            </Typography>
+            <Typography sx={{ mb: 1 }}>
+              <b>DNI:</b> {usuario.dni}
+            </Typography>
+            <Typography sx={{ mb: 2 }}>
+              <b>Rol:</b> {usuario.role}
+            </Typography>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleEliminar}
+              disabled={eliminando || !usuario || !usuario.dni}
+              sx={{
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 600,
+                fontSize: "1.1rem",
+                borderRadius: 1,
+                textTransform: "none",
+                width: 220,
+              }}
+            >
+              {eliminando ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Eliminar Usuario"
+              )}
+            </Button>
+          </Box>
+        )}
       </Container>
 
       {/* Footer */}
@@ -321,4 +306,4 @@ const AltaNuevo: React.FC = () => {
   );
 };
 
-export default AltaNuevo;
+export default EliminarUsuario;
