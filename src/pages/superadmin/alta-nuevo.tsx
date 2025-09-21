@@ -118,7 +118,7 @@ const AltaNuevo: React.FC = () => {
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
         <Button
           component={Link}
-          to="/superadmin"
+          to="/gestion-usuarios"
           variant="outlined"
           sx={{
             backgroundColor: "#1976d2",
