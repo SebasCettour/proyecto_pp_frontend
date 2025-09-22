@@ -45,17 +45,27 @@ const EditarUsuario: React.FC = () => {
     setUsuario({ ...usuario, [e.target.name]: e.target.value });
   };
 
+  const formatDate = (isoString: string) => (isoString ? isoString.split("T")[0] : "");
+
   const handleEditar = async () => {
     setEditando(true);
     setError(null);
     setMensaje(null);
+
+    // Mapea el campo antes de enviar
+    const usuarioParaEditar = {
+      ...usuario,
+      Fecha_Desde: formatDate(usuario.Fecha_Desde),
+      Fecha_Nacimiento: formatDate(usuario.Fecha_Nacimiento),
+    };
+
     try {
       const response = await fetch(
         `http://localhost:4000/api/usuario/editar-usuario-dni/${usuario.Numero_Documento}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(usuario),
+          body: JSON.stringify(usuarioParaEditar),
         }
       );
       if (!response.ok) throw new Error("No se pudo editar el usuario");
@@ -233,19 +243,84 @@ const EditarUsuario: React.FC = () => {
             value={usuario?.Apellido_Nombre || ""}
             onChange={handleChange}
           />
+
           <TextField
-            label="Email"
-            name="Correo_Electronico"
-            value={usuario?.Correo_Electronico || ""}
+            label="Tipo de Documento"
+            name="Tipo_Documento"
+            value={usuario?.Tipo_Documento || ""}
             onChange={handleChange}
           />
+
+          <TextField
+            label="Numero de Documento"
+            name="Numero_Documento"
+            value={usuario?.Numero_Documento || ""}
+            onChange={handleChange}
+          />
+
+          <TextField
+            label="Fecha de Nacimiento"
+            name="Fecha_Nacimiento"
+            value={usuario?.Fecha_Nacimiento || ""}
+            onChange={handleChange}
+          />
+
+          <TextField
+            label="Teléfono"
+            name="Telefono"
+            value={usuario?.Telefono || ""}
+            onChange={handleChange}
+          />
+
+          <TextField
+            label="Área"
+            name="Area"
+            value={usuario?.Area || ""}
+            onChange={handleChange}
+          />
+
           <TextField
             label="Cargo"
             name="Cargo"
             value={usuario?.Cargo || ""}
             onChange={handleChange}
           />
-          {/* Agrega más campos según lo que quieras editar */}
+
+          <TextField
+            label="Legajo"
+            name="Legajo"
+            value={usuario?.Legajo || ""}
+            onChange={handleChange}
+          />
+
+          <TextField
+            label="Email"
+            name="Correo_Electronico"
+            value={usuario?.Correo_Electronico || ""}
+            onChange={handleChange}
+          />
+
+          <TextField
+            label="Domicilio"
+            name="Domicilio"
+            value={usuario?.Domicilio || ""}
+            onChange={handleChange}
+          />
+
+          <TextField
+            label="Estado Civil"
+            name="Estado_Civil"
+            value={usuario?.Estado_Civil || ""}
+            onChange={handleChange}
+          />
+
+          <TextField
+            label="Fecha de Contrato"
+            name="Fecha_Desde"
+            value={usuario?.Fecha_Desde || ""}
+            onChange={handleChange}
+          />
+
           <Button
             variant="contained"
             onClick={handleEditar}
