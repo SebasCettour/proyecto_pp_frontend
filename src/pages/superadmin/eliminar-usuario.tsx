@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Link as RouterLink } from "react-router-dom";
+import Header from "../../components/Header";
 import {
   Box,
   TextField,
@@ -11,7 +13,7 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 
 const buscarSchema = z.object({
@@ -72,7 +74,6 @@ const EliminarUsuario: React.FC = () => {
 
   const handleEliminar = async () => {
     if (!usuario || !usuario.dni) return;
-    console.log("Usuario a eliminar:", usuario); // <-- Agrega este log
     setEliminando(true);
     setError(null);
     setMensaje(null);
@@ -98,53 +99,33 @@ const EliminarUsuario: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#d9d6d6ff",
+        backgroundImage: "url('/fondo.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
-      {/* Encabezado */}
-      <Box
-        sx={{
-          textAlign: "left",
-          py: 4,
-          backgroundColor: "#000000",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-        }}
-      >
-        <Typography
-          variant="h2"
-          sx={{
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 700,
-            color: "#333",
-            marginLeft: "10px",
-          }}
-        >
-          <span style={{ color: "#CC5500" }}>360</span>
-          <span style={{ color: "#ffffff" }}>Sueldos</span>
-        </Typography>
-      </Box>
+      <Header />
 
       {/* Botón Volver */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
         <Button
-          component={Link}
-          to="/gestion-usuarios"
+          component={RouterLink}
+          to="/superadmin"
           variant="outlined"
           sx={{
-            backgroundColor: "#1976d2",
-            color: "#fff",
+            backgroundColor: "#1565C0",
+            color: "#ffffff",
+            width: 180,
+            letterSpacing: 3,
+            fontSize: 20,
             borderRadius: 3,
-            px: 4,
-            py: 1.5,
+            mr: 5,
             fontFamily: "Tektur, sans-serif",
-            fontWeight: 600,
-            letterSpacing: 2,
-            fontSize: 18,
+            fontWeight: 500,
             textTransform: "none",
-            "&:hover": { backgroundColor: "#115293" },
           }}
         >
           Volver
@@ -163,6 +144,24 @@ const EliminarUsuario: React.FC = () => {
           justifyContent: "center",
         }}
       >
+        <Typography
+          component="h1"
+          variant="h4"
+          sx={{
+            mb: 12,
+            fontFamily: "Tektur, sans-serif",
+            fontWeight: 700,
+            color: "#333",
+            textAlign: "center",
+            letterSpacing: 1,
+            whiteSpace: "nowrap",
+            maxWidth: "100%",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          Baja de Usuario
+        </Typography>
         <Box
           component="form"
           onSubmit={handleSubmit(handleBuscar)}
@@ -178,18 +177,19 @@ const EliminarUsuario: React.FC = () => {
           }}
         >
           <Typography
-            component="h1"
-            variant="h4"
+            component="h2"
+            variant="h5"
             sx={{
               mb: 4,
               fontFamily: "Tektur, sans-serif",
               fontWeight: 600,
               color: "#333",
+              textAlign: "center",
+              letterSpacing: 0.5,
             }}
           >
-            Buscar Usuario por DNI
+            Buscar por DNI
           </Typography>
-
           {error && (
             <Alert severity="error" sx={{ width: "100%", mb: 3 }}>
               {error}
