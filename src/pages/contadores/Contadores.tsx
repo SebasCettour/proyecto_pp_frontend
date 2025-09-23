@@ -2,6 +2,7 @@ import { Typography, Box, Button, Container } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { Logout } from "@mui/icons-material";
 import Footer from "../../components/Footer";
+import Header from "../../components/Header";
 
 export const Contadores = () => {
   const navigate = useNavigate();
@@ -26,45 +27,27 @@ export const Contadores = () => {
       }}
     >
       {/* Encabezado */}
-      <Box
+      <Header />
+
+      {/* Botón Cerrar Sesión */}
+      <Button
+        onClick={handleCerrarSesion}
+        startIcon={<Logout />}
+        variant="outlined"
         sx={{
-          textAlign: "left",
-          py: 4,
-          backgroundColor: "#000000",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+          position: "absolute",
+          top: 32,
+          right: 32,
+          borderColor: "#fff",
+          color: "#fff",
+          fontWeight: 600,
+          fontFamily: "Tektur, sans-serif",
+          textTransform: "none",
+          "&:hover": { backgroundColor: "#1565C0", borderColor: "#1565C0" },
         }}
       >
-        <Typography
-          variant="h2"
-          sx={{
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 700,
-            color: "#333",
-            marginLeft: "10px",
-          }}
-        >
-          <span style={{ color: "#CC5500" }}>360</span>
-          <span style={{ color: "#ffffff" }}>Sueldos</span>
-        </Typography>
-        <Button
-          onClick={handleCerrarSesion}
-          startIcon={<Logout />}
-          variant="outlined"
-          sx={{
-            position: "absolute",
-            top: 24,
-            right: 32,
-            borderColor: "#fff",
-            color: "#fff",
-            fontWeight: 600,
-            fontFamily: "Tektur, sans-serif",
-            textTransform: "none",
-            "&:hover": { backgroundColor: "#1565C0", borderColor: "#1565C0" },
-          }}
-        >
-          Cerrar Sesión
-        </Button>
-      </Box>
+        Cerrar Sesión
+      </Button>
 
       {/* Botón Volver solo para superadmin */}
       {userRole === "superadmin" && (
