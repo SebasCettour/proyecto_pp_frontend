@@ -9,8 +9,9 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import Footer from "../../components/Footer";
+import Header from "../../components/Header";
 
 const EditarUsuario: React.FC = () => {
   const [dni, setDni] = useState("");
@@ -45,7 +46,8 @@ const EditarUsuario: React.FC = () => {
     setUsuario({ ...usuario, [e.target.name]: e.target.value });
   };
 
-  const formatDate = (isoString: string) => (isoString ? isoString.split("T")[0] : "");
+  const formatDate = (isoString: string) =>
+    isoString ? isoString.split("T")[0] : "";
 
   const handleEditar = async () => {
     setEditando(true);
@@ -82,53 +84,33 @@ const EditarUsuario: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#d9d6d6ff",
+        backgroundImage: "url('/fondo.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
-      {/* Encabezado */}
-      <Box
-        sx={{
-          textAlign: "left",
-          py: 4,
-          backgroundColor: "#000000",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-        }}
-      >
-        <Typography
-          variant="h2"
-          sx={{
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 700,
-            color: "#333",
-            marginLeft: "10px",
-          }}
-        >
-          <span style={{ color: "#CC5500" }}>360</span>
-          <span style={{ color: "#ffffff" }}>Sueldos</span>
-        </Typography>
-      </Box>
+      <Header />
 
       {/* Botón Volver */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
         <Button
-          component={Link}
-          to="/gestion-usuarios"
+          component={RouterLink}
+          to="/superadmin"
           variant="outlined"
           sx={{
-            backgroundColor: "#1976d2",
-            color: "#fff",
+            backgroundColor: "#1565C0",
+            color: "#ffffff",
+            width: 180,
+            letterSpacing: 3,
+            fontSize: 20,
             borderRadius: 3,
-            px: 4,
-            py: 1.5,
+            mr: 5,
             fontFamily: "Tektur, sans-serif",
-            fontWeight: 600,
-            letterSpacing: 2,
-            fontSize: 18,
+            fontWeight: 500,
             textTransform: "none",
-            "&:hover": { backgroundColor: "#115293" },
           }}
         >
           Volver
@@ -148,6 +130,24 @@ const EditarUsuario: React.FC = () => {
           alignItems: "center",
         }}
       >
+        <Typography
+          component="h1"
+          variant="h4"
+          sx={{
+            mb: 12,
+            fontFamily: "Tektur, sans-serif",
+            fontWeight: 700,
+            color: "#333",
+            textAlign: "center",
+            letterSpacing: 1,
+            whiteSpace: "nowrap",
+            maxWidth: "100%",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          Editar datos del Usuario
+        </Typography>
         <Box
           component="form"
           onSubmit={handleBuscar}
@@ -164,16 +164,18 @@ const EditarUsuario: React.FC = () => {
           }}
         >
           <Typography
-            component="h1"
-            variant="h4"
+            component="h2"
+            variant="h5"
             sx={{
               mb: 4,
               fontFamily: "Tektur, sans-serif",
               fontWeight: 600,
               color: "#333",
+              textAlign: "center",
+              letterSpacing: 0.5,
             }}
           >
-            Buscar Usuario por DNI
+            Buscar por DNI
           </Typography>
           {error && (
             <Alert severity="error" sx={{ width: "100%", mb: 3 }}>
