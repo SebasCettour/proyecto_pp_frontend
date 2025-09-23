@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 
 import Footer from "../../components/Footer";
 import { useAuthStore } from "../../stores/authStore";
+import Header from "../../components/Header";
 
 const loginSchema = z.object({
   username: z.string().min(1, "El nombre de usuario es requerido"),
@@ -109,7 +110,7 @@ const Login: React.FC = () => {
         console.log(
           "Rol no reconocido, redirigiendo por defecto a /rrhh-principal"
         );
-        navigate("/rrhh-principal"); // Ruta por defecto
+        navigate("/rrhh-principal");
       }
     } catch (err) {
       setError("Error al iniciar sesión. Verifica tus credenciales.");
@@ -123,34 +124,16 @@ const Login: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#d9d6d6ff",
+        backgroundImage: "url('/fondo.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
-      {/* Encabezado */}
-      <Box
-        sx={{
-          textAlign: "left",
-          py: 4,
-          backgroundColor: "#000000",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-        }}
-      >
-        <Typography
-          variant="h2"
-          sx={{
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 700,
-            color: "#333",
-            marginLeft: "10px",
-          }}
-        >
-          <span style={{ color: "#CC5500" }}>360</span>
-          <span style={{ color: "#ffffff" }}>Sueldos</span>
-        </Typography>
-      </Box>
+      <Header />
 
       {/* Contenido principal */}
       <Container
