@@ -4,22 +4,25 @@ import {
   Button,
   Typography,
   Card,
-  CardContent,
   Divider,
   CircularProgress,
   Avatar,
   IconButton,
   Tooltip,
+  Fade,
+  Chip,
 } from "@mui/material";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Footer from "../../components/Footer";
+import Header from "../../components/Header";
 
 interface Novedad {
   Id_Novedad: number;
   Descripcion: string;
   Fecha: string;
   Id_Empleado: number;
+  Imagen?: string;
 }
 
 export default function Tablon() {
@@ -54,7 +57,6 @@ export default function Tablon() {
       });
       setNovedades((prev) => prev.filter((n) => n.Id_Novedad !== id));
     } catch {
-      // Manejo de error opcional
     } finally {
       setDeleting(null);
     }
@@ -64,34 +66,13 @@ export default function Tablon() {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#d9d6d6ff",
+        background: "linear-gradient(135deg, #e3e9f7 0%, #f8fafc 100%)",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
-      {/* Encabezado */}
-      <Box
-        sx={{
-          py: 4,
-          px: 3,
-          backgroundColor: "#1c1c1c",
-          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
-        }}
-      >
-        <Typography
-          variant="h3"
-          sx={{
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 700,
-            color: "#ffffff",
-            userSelect: "none",
-          }}
-        >
-          <span style={{ color: "#FF6B00" }}>360</span>{" "}
-          <span style={{ color: "#ffffff" }}>Sueldos</span>
-        </Typography>
-      </Box>
+      <Header />
 
       {/* Botón Volver */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
@@ -100,17 +81,21 @@ export default function Tablon() {
           to="/rrhh-principal"
           variant="contained"
           sx={{
-            backgroundColor: "#1565C0",
-            marginRight: 3,
-            color: "#ffffff",
+            background: "linear-gradient(90deg, #1976d2 60%, #1565C0 100%)",
+            color: "#fff",
             width: 180,
             letterSpacing: 3,
             fontSize: 20,
             borderRadius: 3,
             mr: 5,
             fontFamily: "Tektur, sans-serif",
-            fontWeight: 500,
+            fontWeight: 600,
             textTransform: "none",
+            boxShadow: "0 2px 8px rgba(21,101,192,0.15)",
+            transition: "background 0.2s",
+            "&:hover": {
+              background: "linear-gradient(90deg, #115293 60%, #1976d2 100%)",
+            },
           }}
         >
           Volver
@@ -126,7 +111,7 @@ export default function Tablon() {
           display: "flex",
           flexDirection: "column",
           gap: 4,
-          maxWidth: "600px",
+          maxWidth: "700px",
           mx: "auto",
           mb: 6,
         }}
@@ -134,91 +119,142 @@ export default function Tablon() {
         {loading ? (
           <CircularProgress sx={{ mx: "auto", mt: 6 }} />
         ) : novedades.length === 0 ? (
-          <Typography
-            variant="h6"
-            sx={{
-              textAlign: "center",
-              color: "#888",
-              fontFamily: "Tektur, sans-serif",
-              mt: 6,
-            }}
-          >
-            No hay novedades publicadas.
-          </Typography>
-        ) : (
-          novedades.map((novedad) => (
-            <Card
-              key={novedad.Id_Novedad}
+          <Fade in>
+            <Typography
+              variant="h6"
               sx={{
-                borderRadius: 4,
-                backgroundColor: "#fff",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.10)",
-                transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-3px) scale(1.01)",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.16)",
-                },
-                px: 2,
-                pt: 2,
-                pb: 1,
-                position: "relative",
-                width: 700,
-                minHeight: 260,
-                maxWidth: "100%",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
+                textAlign: "center",
+                color: "#888",
+                fontFamily: "Tektur, sans-serif",
+                mt: 6,
+                letterSpacing: 1,
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                <Avatar sx={{ bgcolor: "#1976d2", mr: 2 }}>
-                  {/* Iniciales RRHH */}R
-                </Avatar>
-                <Box>
-                  <Typography
-                    variant="subtitle1"
-                    sx={{
-                      fontWeight: 700,
-                      fontFamily: "Tektur, sans-serif",
-                      color: "#1976d2",
-                    }}
-                  >
-                    RRHH
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "#888", fontFamily: "Tektur, sans-serif" }}
-                  >
-                    {new Date(novedad.Fecha).toLocaleString()}
-                  </Typography>
-                </Box>
-                <Box sx={{ flexGrow: 1 }} />
-                <Tooltip title="Eliminar novedad">
-                  <span>
-                    <IconButton
-                      color="error"
-                      size="small"
-                      disabled={deleting === novedad.Id_Novedad}
-                      onClick={() => handleDelete(novedad.Id_Novedad)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              </Box>
-              <Divider sx={{ mb: 2 }} />
-              <Typography
-                variant="body1"
+              No hay novedades publicadas.
+            </Typography>
+          </Fade>
+        ) : (
+          novedades.map((novedad) => (
+            <Fade in key={novedad.Id_Novedad}>
+              <Card
                 sx={{
-                  fontFamily: "Tektur, sans-serif",
-                  color: "#333",
-                  fontSize: 18,
-                  mb: 1,
+                  borderRadius: 5,
+                  background:
+                    "linear-gradient(120deg, #f5faff 60%, #e3e9f7 100%)",
+                  boxShadow: "0 4px 24px rgba(25, 118, 210, 0.10)",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-4px) scale(1.015)",
+                    boxShadow: "0 8px 32px rgba(25, 118, 210, 0.18)",
+                  },
+                  px: 3,
+                  pt: 2,
+                  pb: 2,
+                  position: "relative",
+                  minHeight: 220,
+                  maxWidth: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  border: "1.5px solid #e3e9f7",
                 }}
               >
-                {novedad.Descripcion}
-              </Typography>
-            </Card>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                  <Avatar
+                    sx={{
+                      bgcolor: "#1976d2",
+                      mr: 2,
+                      width: 48,
+                      height: 48,
+                      fontWeight: 700,
+                      fontSize: 28,
+                      border: "2px solid #fff",
+                      boxShadow: "0 2px 8px #1976d244",
+                    }}
+                  >
+                    R
+                  </Avatar>
+                  <Box>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontWeight: 700,
+                        fontFamily: "Tektur, sans-serif",
+                        color: "#1976d2",
+                        fontSize: 20,
+                        letterSpacing: 1,
+                      }}
+                    >
+                      RRHH
+                    </Typography>
+                    <Chip
+                      label={new Date(novedad.Fecha).toLocaleString()}
+                      size="small"
+                      sx={{
+                        mt: 0.5,
+                        background: "#e3e9f7",
+                        color: "#1976d2",
+                        fontFamily: "Tektur, sans-serif",
+                        fontWeight: 500,
+                        fontSize: 13,
+                        letterSpacing: 1,
+                        border: "1px solid #1976d2",
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ flexGrow: 1 }} />
+                  <Tooltip title="Eliminar novedad" arrow>
+                    <span>
+                      <IconButton
+                        color="error"
+                        size="medium"
+                        disabled={deleting === novedad.Id_Novedad}
+                        onClick={() => handleDelete(novedad.Id_Novedad)}
+                        sx={{
+                          background: "#fff",
+                          border: "1.5px solid #f44336",
+                          ml: 1,
+                          "&:hover": {
+                            background: "#fbe9e7",
+                          },
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </Box>
+                <Divider sx={{ mb: 2, background: "#1976d2", opacity: 0.15 }} />
+                <Typography
+                  variant="body1"
+                  sx={{
+                    fontFamily: "Tektur, sans-serif",
+                    color: "#222",
+                    fontSize: 20,
+                    mb: 1,
+                    letterSpacing: 0.5,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {novedad.Descripcion}
+                </Typography>
+                {novedad.Imagen && (
+                  <Box sx={{ mb: 2, textAlign: "center" }}>
+                    <img
+                      src={`http://localhost:4000/uploads/${novedad.Imagen}`}
+                      alt="Imagen de la novedad"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: 250,
+                        borderRadius: 10,
+                        boxShadow: "0 2px 12px #1976d233",
+                        marginBottom: 8,
+                      }}
+                    />
+                  </Box>
+                )}
+              </Card>
+            </Fade>
           ))
         )}
       </Box>

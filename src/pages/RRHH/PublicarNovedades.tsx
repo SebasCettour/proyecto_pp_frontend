@@ -12,9 +12,12 @@ import {
   TextField,
 } from "@mui/material";
 import Footer from "../../components/Footer";
+import Header from "../../components/Header";
 
 const novedadSchema = z.object({
   contenido: z.string().min(1, "El contenido es obligatorio"),
+  imagen: z.any().optional(),
+  archivo: z.any().optional(),
 });
 
 type NovedadFormData = z.infer<typeof novedadSchema>;
@@ -23,15 +26,19 @@ const PublicarNovedad: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string>("");
   const [mensajeExito, setMensajeExito] = React.useState<string>("");
+  const [imagenNombre, setImagenNombre] = React.useState<string>("");
+  const [archivoNombre, setArchivoNombre] = React.useState<string>("");
 
   const {
     control,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<NovedadFormData>({
     resolver: zodResolver(novedadSchema),
-    defaultValues: { contenido: "" },
+    defaultValues: { contenido: "", imagen: undefined, archivo: undefined },
   });
 
   const onSubmit = async (data: NovedadFormData) => {
@@ -41,20 +48,28 @@ const PublicarNovedad: React.FC = () => {
       setMensajeExito("");
 
       const idEmpleado = 1;
+      const formData = new FormData();
+      formData.append("idEmpleado", idEmpleado.toString());
+      formData.append("descripcion", data.contenido);
+
+      if (data.imagen && data.imagen[0]) {
+        formData.append("imagen", data.imagen[0]);
+      }
+      if (data.archivo && data.archivo[0]) {
+        formData.append("archivo", data.archivo[0]);
+      }
 
       const response = await fetch("http://localhost:4000/api/novedad/tablon", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          idEmpleado,
-          descripcion: data.contenido,
-        }),
+        body: formData,
       });
 
       if (!response.ok) throw new Error("Error al publicar la novedad");
 
       setMensajeExito("Novedad publicada exitosamente");
       reset();
+      setImagenNombre("");
+      setArchivoNombre("");
     } catch (err) {
       setError("Ocurrió un error al publicar la novedad.");
     } finally {
@@ -69,58 +84,38 @@ const PublicarNovedad: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#d9d6d6ff",
+        backgroundImage: "url('/fondo.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
-      {/* Encabezado */}
-      <Box
-        sx={{
-          textAlign: "left",
-          py: 4,
-          backgroundColor: "#000",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-        }}
-      >
-        <Typography
-          variant="h2"
-          sx={{
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 700,
-            color: "#fff",
-            marginLeft: "10px",
-          }}
-        >
-          <span style={{ color: "#CC5500" }}>360</span>
-          <span style={{ color: "#ffffff" }}>Sueldos</span>
-        </Typography>
-      </Box>
+      <Header />
 
       {/* Botón Volver */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
         <Button
           component={Link}
           to="/rrhh-principal"
-          variant="contained"
+          variant="outlined"
           sx={{
             backgroundColor: "#1565C0",
-            color: "#fff",
+            color: "#ffffff",
             width: 180,
-            letterSpacing: 2,
-            fontSize: 18,
+            letterSpacing: 3,
+            fontSize: 20,
             borderRadius: 3,
+            mr: 5,
             fontFamily: "Tektur, sans-serif",
             fontWeight: 500,
             textTransform: "none",
-            "&:hover": { backgroundColor: "#0D47A1" },
           }}
         >
           Volver
         </Button>
       </Box>
-
       {/* Contenedor principal */}
       <Box
         component="main"
@@ -174,6 +169,7 @@ const PublicarNovedad: React.FC = () => {
           component="form"
           onSubmit={handleSubmit(onSubmit)}
           sx={{ width: "100%" }}
+          encType="multipart/form-data"
         >
           <Controller
             name="contenido"
@@ -197,6 +193,78 @@ const PublicarNovedad: React.FC = () => {
                 }}
                 disabled={isLoading}
               />
+            )}
+          />
+
+          {/* Botón para adjuntar imagen */}
+          <Controller
+            name="imagen"
+            control={control}
+            render={({ field }) => (
+              <Box sx={{ mb: 2 }}>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  sx={{
+                    mr: 2,
+                    borderRadius: 2,
+                    fontFamily: "Tektur, sans-serif",
+                    fontWeight: 600,
+                    letterSpacing: 1,
+                    textTransform: "none",
+                    backgroundColor: "#e3f2fd",
+                    color: "#1976d2",
+                    "&:hover": { backgroundColor: "#bbdefb" },
+                  }}
+                  disabled={isLoading}
+                >
+                  {imagenNombre ? `Imagen: ${imagenNombre}` : "Adjuntar Imagen"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={(e) => {
+                      field.onChange(e.target.files);
+                      setImagenNombre(e.target.files?.[0]?.name || "");
+                    }}
+                  />
+                </Button>
+              </Box>
+            )}
+          />
+
+          {/* Botón para adjuntar archivo */}
+          <Controller
+            name="archivo"
+            control={control}
+            render={({ field }) => (
+              <Box sx={{ mb: 4 }}>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  sx={{
+                    borderRadius: 2,
+                    fontFamily: "Tektur, sans-serif",
+                    fontWeight: 600,
+                    letterSpacing: 1,
+                    textTransform: "none",
+                    backgroundColor: "#e3f2fd",
+                    color: "#1976d2",
+                    "&:hover": { backgroundColor: "#bbdefb" },
+                  }}
+                  disabled={isLoading}
+                >
+                  {archivoNombre ? `Archivo: ${archivoNombre}` : "Adjuntar Archivo"}
+                  <input
+                    type="file"
+                    hidden
+                    onChange={(e) => {
+                      field.onChange(e.target.files);
+                      setArchivoNombre(e.target.files?.[0]?.name || "");
+                    }}
+                  />
+                </Button>
+              </Box>
             )}
           />
 

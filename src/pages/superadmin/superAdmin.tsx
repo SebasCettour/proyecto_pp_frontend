@@ -2,13 +2,14 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Typography, Container } from "@mui/material";
 import {
-  Logout,
   People,
   Work,
   Badge,
   ManageAccounts,
 } from "@mui/icons-material";
 import Footer from "../../components/Footer";
+import BtnCerrarSesion from "../../components/BtnCerrarSesion";
+import Header from "../../components/Header";
 
 export const SuperAdminView: React.FC = () => {
   const navigate = useNavigate();
@@ -18,61 +19,21 @@ export const SuperAdminView: React.FC = () => {
   const handleIrAContador = () => navigate("/contadores");
   const handleIrARRHH = () => navigate("/rrhh-principal");
   const handleIrAGestionUsuarios = () => navigate("/gestion-usuarios");
-  const handleCerrarSesion = () => {
-    localStorage.clear();
-    navigate("/");
-  };
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#d9d6d6ff",
+        backgroundImage: "url('/fondo.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
-      {/* Encabezado */}
-      <Box
-        sx={{
-          textAlign: "left",
-          py: 4,
-          backgroundColor: "#000000",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-        }}
-      >
-        <Typography
-          variant="h2"
-          sx={{
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 700,
-            color: "#333",
-            marginLeft: "10px",
-          }}
-        >
-          <span style={{ color: "#CC5500" }}>360</span>
-          <span style={{ color: "#ffffff" }}>Sueldos</span>
-        </Typography>
-        <Button
-          onClick={handleCerrarSesion}
-          startIcon={<Logout />}
-          variant="outlined"
-          sx={{
-            position: "absolute",
-            top: 24,
-            right: 32,
-            borderColor: "#fff",
-            color: "#fff",
-            fontWeight: 600,
-            fontFamily: "Tektur, sans-serif",
-            textTransform: "none",
-            "&:hover": { backgroundColor: "#1565C0", borderColor: "#1565C0" },
-          }}
-        >
-          Cerrar Sesión
-        </Button>
-      </Box>
+      <Header />
+      <BtnCerrarSesion />
 
       {/* Contenido principal */}
       <Container

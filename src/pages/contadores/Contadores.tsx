@@ -1,17 +1,13 @@
 import { Typography, Box, Button, Container } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
-import { Logout } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
+import BtnCerrarSesion from "../../components/BtnCerrarSesion";
 
 export const Contadores = () => {
   const navigate = useNavigate();
 
   const handleIrALiquidacion = () => navigate("/liquidacion");
-  const handleCerrarSesion = () => {
-    localStorage.clear();
-    navigate("/");
-  };
   const handleIrAtras = () => navigate("/superadmin");
 
   const userRole = localStorage.getItem("role") || "";
@@ -20,34 +16,17 @@ export const Contadores = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#d9d6d6ff",
+        backgroundImage: "url('/fondo.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
-      {/* Encabezado */}
       <Header />
-
-      {/* Botón Cerrar Sesión */}
-      <Button
-        onClick={handleCerrarSesion}
-        startIcon={<Logout />}
-        variant="outlined"
-        sx={{
-          position: "absolute",
-          top: 32,
-          right: 32,
-          borderColor: "#fff",
-          color: "#fff",
-          fontWeight: 600,
-          fontFamily: "Tektur, sans-serif",
-          textTransform: "none",
-          "&:hover": { backgroundColor: "#1565C0", borderColor: "#1565C0" },
-        }}
-      >
-        Cerrar Sesión
-      </Button>
+      <BtnCerrarSesion />
 
       {/* Botón Volver solo para superadmin */}
       {userRole === "superadmin" && (
@@ -58,16 +37,17 @@ export const Contadores = () => {
             to="/superadmin"
             variant="contained"
             sx={{
-              backgroundColor: "#1976d2",
-              color: "#fff",
+              backgroundColor: "#1565C0",
+              color: "#ffffff",
+              width: 180,
+              letterSpacing: 3,
+              fontSize: 20,
               borderRadius: 3,
-              px: 4,
-              py: 1.5,
+              mr: 5,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
+              fontWeight: 500,
               textTransform: "none",
-              "&:hover": { backgroundColor: "#115293" },
+              "&:hover": { backgroundColor: "#4f7db2ff" },
             }}
           >
             Volver

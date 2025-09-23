@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Logout } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
+import BtnCerrarSesion from "../../components/BtnCerrarSesion";
 
 export const Empleados = () => {
   const navigate = useNavigate();
@@ -23,34 +24,17 @@ export const Empleados = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#d9d6d6ff",
+        backgroundImage: "url('/fondo.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
-      {/* Encabezado */}
       <Header />
 
-      {/* Botón Cerrar Sesión */}
-      <Button
-        onClick={handleCerrarSesion}
-        startIcon={<Logout />}
-        variant="outlined"
-        sx={{
-          position: "absolute",
-          top: 24,
-          right: 32,
-          borderColor: "#fff",
-          color: "#fff",
-          fontWeight: 600,
-          fontFamily: "Tektur, sans-serif",
-          textTransform: "none",
-          "&:hover": { backgroundColor: "#1565C0", borderColor: "#1565C0" },
-        }}
-      >
-        Cerrar Sesión
-      </Button>
+      <BtnCerrarSesion />
 
       {/* Botón Volver solo para superadmin */}
       {userRole === "superadmin" && (
@@ -59,16 +43,17 @@ export const Empleados = () => {
             onClick={handleIrAtras}
             variant="contained"
             sx={{
-              backgroundColor: "#1976d2",
-              color: "#fff",
+              backgroundColor: "#1565C0",
+              color: "#ffffff",
+              width: 180,
+              letterSpacing: 3,
+              fontSize: 20,
               borderRadius: 3,
-              px: 4,
-              py: 1.5,
+              mr: 5,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
+              fontWeight: 500,
               textTransform: "none",
-              "&:hover": { backgroundColor: "#115293" },
+              "&:hover": { backgroundColor: "#4f7db2ff" },
             }}
           >
             Volver

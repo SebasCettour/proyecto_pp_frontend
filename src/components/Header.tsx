@@ -20,7 +20,7 @@ export default function Header() {
           marginLeft: "30px",
         }}
       >
-        <span style={{ color: "#CC5500" }}>360</span>
+        <span style={{ color: "#FF2F2B" }}>360</span>
         <span style={{ color: "#ffffff" }}>Sueldos</span>
       </Typography>
     </Box>
