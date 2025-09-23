@@ -16,14 +16,15 @@ import { Link as RouterLink } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import Footer from "../../components/Footer";
+import Header from "../../components/Header";
 
 interface Novedad {
   Id_Novedad: number;
   Descripcion: string;
   Fecha: string;
   Id_Empleado: number;
+  Imagen?: string;
 }
-
 export default function Tablon() {
   const [novedades, setNovedades] = useState<Novedad[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,34 +100,13 @@ export default function Tablon() {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#d9d6d6ff",
+        background: "linear-gradient(135deg, #e3e9f7 0%, #f8fafc 100%)",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
-      {/* Encabezado */}
-      <Box
-        sx={{
-          py: 4,
-          px: 3,
-          backgroundColor: "#1c1c1c",
-          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
-        }}
-      >
-        <Typography
-          variant="h3"
-          sx={{
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 700,
-            color: "#ffffff",
-            userSelect: "none",
-          }}
-        >
-          <span style={{ color: "#FF6B00" }}>360</span>{" "}
-          <span style={{ color: "#ffffff" }}>Sueldos</span>
-        </Typography>
-      </Box>
+      <Header />
 
       {/* Botón Volver */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
@@ -135,17 +115,21 @@ export default function Tablon() {
           to="/rrhh-principal"
           variant="contained"
           sx={{
-            backgroundColor: "#1565C0",
-            marginRight: 3,
-            color: "#ffffff",
+            background: "linear-gradient(90deg, #1976d2 60%, #1565C0 100%)",
+            color: "#fff",
             width: 180,
             letterSpacing: 3,
             fontSize: 20,
             borderRadius: 3,
             mr: 5,
             fontFamily: "Tektur, sans-serif",
-            fontWeight: 500,
+            fontWeight: 600,
             textTransform: "none",
+            boxShadow: "0 2px 8px rgba(21,101,192,0.15)",
+            transition: "background 0.2s",
+            "&:hover": {
+              background: "linear-gradient(90deg, #115293 60%, #1976d2 100%)",
+            },
           }}
         >
           Volver
@@ -161,7 +145,7 @@ export default function Tablon() {
           display: "flex",
           flexDirection: "column",
           gap: 4,
-          maxWidth: 700,
+          maxWidth: "700px",
           mx: "auto",
           mb: 6,
         }}
@@ -205,7 +189,15 @@ export default function Tablon() {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <Avatar sx={{ bgcolor: "#1976d2", mr: 2, width: 48, height: 48, fontSize: 22 }}>
+                <Avatar
+                  sx={{
+                    bgcolor: "#1976d2",
+                    mr: 2,
+                    width: 48,
+                    height: 48,
+                    fontSize: 22,
+                  }}
+                >
                   R
                 </Avatar>
                 <Box>
@@ -266,6 +258,22 @@ export default function Tablon() {
                 </Tooltip>
               </Box>
               <Divider sx={{ mb: 2 }} />
+              {/* Render de la imagen si existe */}
+              {novedad.Imagen && (
+                <Box sx={{ mb: 2, textAlign: "center" }}>
+                  <img
+                    src={`http://localhost:4000/uploads/${novedad.Imagen}`}
+                    alt="Imagen de la novedad"
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: 250,
+                      borderRadius: 10,
+                      boxShadow: "0 2px 12px #1976d233",
+                      marginBottom: 8,
+                    }}
+                  />
+                </Box>
+              )}
               <Typography
                 variant="body1"
                 sx={{

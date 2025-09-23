@@ -12,6 +12,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 import { SelectChangeEvent } from "@mui/material/Select";
+import Header from "../../components/Header";
 
 const Liquidacion = () => {
   const navigate = useNavigate();
@@ -78,36 +79,16 @@ const Liquidacion = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#d9d6d6ff",
+        backgroundImage: "url('/fondo.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
-      {/* Encabezado */}
-      <Box
-        sx={{
-          textAlign: "left",
-          py: 4,
-          backgroundColor: "#000000",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-          width: "100%",
-        }}
-      >
-        <Typography
-          variant="h2"
-          sx={{
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 700,
-            color: "#333",
-            marginLeft: "10px",
-            userSelect: "none",
-          }}
-        >
-          <span style={{ color: "#CC5500" }}>360</span>
-          <span style={{ color: "#ffffff" }}>Sueldos</span>
-        </Typography>
-      </Box>
+      <Header />
 
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4, px: 4 }}>
         <Button

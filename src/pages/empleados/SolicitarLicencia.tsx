@@ -18,6 +18,7 @@ import { SelectChangeEvent } from "@mui/material/Select";
 import { Link } from "react-router-dom";
 import Footer from "../../components/Footer";
 import { API_ENDPOINTS } from "../../config/api";
+import Header from "../../components/Header";
 
 interface DiagnosticoCIE10 {
   codigo: string;
@@ -69,11 +70,9 @@ export default function SolicitarLicencia() {
         const data = await response.json();
         setCie10Results(data);
       } else {
-        console.error("Error al buscar diagnósticos CIE-10");
         setCie10Results([]);
       }
     } catch (error) {
-      console.error("Error al conectar con el servidor:", error);
       setCie10Results([]);
     } finally {
       setCie10Loading(false);
@@ -81,7 +80,6 @@ export default function SolicitarLicencia() {
   };
 
   // Retarda la ejecución de la búsqueda mientras el usuario escribe
-
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (cie10Search) {
@@ -125,14 +123,14 @@ export default function SolicitarLicencia() {
       motivo: form.motivo === "",
       fechaDesde: form.fechaDesde === "",
       fechaHasta: form.fechaHasta === "",
-      archivo: form.motivo === "Enfermedad" && !form.archivo, // obligatorio si es enfermedad
-      diagnosticoCIE10: form.motivo === "Enfermedad" && !form.diagnosticoCIE10, // obligatorio si es enfermedad
+      archivo: form.motivo === "Enfermedad" && !form.archivo,
+      diagnosticoCIE10: form.motivo === "Enfermedad" && !form.diagnosticoCIE10,
     };
     setErrors(newErrors);
 
     const hasErrors = Object.values(newErrors).some((error) => error);
     if (!hasErrors) {
-      console.log("Formulario enviado:", form);
+      // Aquí deberías enviar el formulario al backend
       alert("Solicitud enviada correctamente");
     }
   };
@@ -141,32 +139,15 @@ export default function SolicitarLicencia() {
     <Box
       sx={{
         minHeight: "100vh",
-        backgroundColor: "#d9d6d6ff",
+        backgroundImage: "url('/fondo.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
-      {/* Encabezado */}
-      <Box
-        sx={{
-          py: 4,
-          px: 4,
-          backgroundColor: "#000",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-        }}
-      >
-        <Typography
-          variant="h2"
-          sx={{
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 700,
-            color: "#fff",
-          }}
-        >
-          <span style={{ color: "#CC5500" }}>360</span> Sueldos
-        </Typography>
-      </Box>
+      <Header />
 
       {/* Botón Volver */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
@@ -175,17 +156,16 @@ export default function SolicitarLicencia() {
           to="/empleados"
           variant="outlined"
           sx={{
-            backgroundColor: "#1976d2",
-            color: "#fff",
+            backgroundColor: "#1565C0",
+            color: "#ffffff",
+            width: 180,
+            letterSpacing: 3,
+            fontSize: 20,
             borderRadius: 3,
-            px: 4,
-            py: 1.5,
+            mr: 5,
             fontFamily: "Tektur, sans-serif",
-            fontWeight: 600,
-            letterSpacing: 2,
-            fontSize: 18,
+            fontWeight: 500,
             textTransform: "none",
-            "&:hover": { backgroundColor: "#115293" },
           }}
         >
           Volver
@@ -339,36 +319,31 @@ export default function SolicitarLicencia() {
                           ? "Debe seleccionar un diagnóstico CIE-10"
                           : "Escriba al menos 3 caracteres para buscar"
                       }
-                      slotProps={{
-                        input: {
-                          ...(params.InputProps as any),
-                          endAdornment: (
-                            <>
-                              {cie10Loading ? (
-                                <CircularProgress color="inherit" size={20} />
-                              ) : null}
-                              {params.InputProps?.endAdornment}
-                            </>
-                          ),
-                        },
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {cie10Loading ? (
+                              <CircularProgress color="inherit" size={20} />
+                            ) : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
                       }}
                     />
                   )}
-                  renderOption={(props, option) => {
-                    const { key, ...optionProps } = props as any;
-                    return (
-                      <Box component="li" key={key} {...optionProps}>
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {option.codigo}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {option.descripcion}
-                          </Typography>
-                        </Box>
+                  renderOption={(props, option) => (
+                    <Box component="li" {...props}>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {option.codigo}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {option.descripcion}
+                        </Typography>
                       </Box>
-                    );
-                  }}
+                    </Box>
+                  )}
                 />
 
                 {/* Mostrar diagnóstico seleccionado */}
@@ -403,7 +378,7 @@ export default function SolicitarLicencia() {
               error={errors.fechaDesde}
               helperText={errors.fechaDesde && "Campo obligatorio"}
               sx={{ flex: "1 1 45%" }}
-              slotProps={{ inputLabel: { shrink: true } }}
+              InputLabelProps={{ shrink: true }}
             />
             <TextField
               label="Fecha Hasta"
@@ -414,7 +389,7 @@ export default function SolicitarLicencia() {
               error={errors.fechaHasta}
               helperText={errors.fechaHasta && "Campo obligatorio"}
               sx={{ flex: "1 1 45%" }}
-              slotProps={{ inputLabel: { shrink: true } }}
+              InputLabelProps={{ shrink: true }}
             />
 
             {/* Botón para subir PDF */}

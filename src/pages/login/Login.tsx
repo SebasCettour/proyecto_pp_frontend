@@ -57,10 +57,7 @@ const Login: React.FC = () => {
       console.log("Response ok:", response.ok);
 
       const result = await response.json();
-      console.log("Resultado del login:", result);
-      console.log("Result.role:", result.role);
-      console.log("Result.token:", result.token);
-
+    
       if (!response.ok) {
         setError(result.error || "Error al iniciar sesión");
         return;
