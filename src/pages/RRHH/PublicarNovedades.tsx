@@ -13,6 +13,8 @@ import {
 } from "@mui/material";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
 
 const novedadSchema = z.object({
   contenido: z.string().min(1, "El contenido es obligatorio"),
@@ -196,17 +198,18 @@ const PublicarNovedad: React.FC = () => {
             )}
           />
 
-          {/* Botón para adjuntar imagen */}
-          <Controller
-            name="imagen"
-            control={control}
-            render={({ field }) => (
-              <Box sx={{ mb: 2 }}>
+          {/* Botones de adjuntar imagen y archivo, alineados horizontalmente */}
+          <Box sx={{ display: "flex", gap: 2, mb: 4, justifyContent: "center" }}>
+            {/* Botón para adjuntar imagen */}
+            <Controller
+              name="imagen"
+              control={control}
+              render={({ field }) => (
                 <Button
                   variant="outlined"
                   component="label"
+                  startIcon={<PhotoCameraIcon />}
                   sx={{
-                    mr: 2,
                     borderRadius: 2,
                     fontFamily: "Tektur, sans-serif",
                     fontWeight: 600,
@@ -214,11 +217,12 @@ const PublicarNovedad: React.FC = () => {
                     textTransform: "none",
                     backgroundColor: "#e3f2fd",
                     color: "#1976d2",
+                    minWidth: 180,
                     "&:hover": { backgroundColor: "#bbdefb" },
                   }}
                   disabled={isLoading}
                 >
-                  {imagenNombre ? `Imagen: ${imagenNombre}` : "Adjuntar Imagen"}
+                  {imagenNombre ? imagenNombre : "Imagen"}
                   <input
                     type="file"
                     accept="image/*"
@@ -229,19 +233,18 @@ const PublicarNovedad: React.FC = () => {
                     }}
                   />
                 </Button>
-              </Box>
-            )}
-          />
+              )}
+            />
 
-          {/* Botón para adjuntar archivo */}
-          <Controller
-            name="archivo"
-            control={control}
-            render={({ field }) => (
-              <Box sx={{ mb: 4 }}>
+            {/* Botón para adjuntar archivo */}
+            <Controller
+              name="archivo"
+              control={control}
+              render={({ field }) => (
                 <Button
                   variant="outlined"
                   component="label"
+                  startIcon={<AttachFileIcon />}
                   sx={{
                     borderRadius: 2,
                     fontFamily: "Tektur, sans-serif",
@@ -250,11 +253,12 @@ const PublicarNovedad: React.FC = () => {
                     textTransform: "none",
                     backgroundColor: "#e3f2fd",
                     color: "#1976d2",
+                    minWidth: 180,
                     "&:hover": { backgroundColor: "#bbdefb" },
                   }}
                   disabled={isLoading}
                 >
-                  {archivoNombre ? `Archivo: ${archivoNombre}` : "Adjuntar Archivo"}
+                  {archivoNombre ? archivoNombre : "Archivo"}
                   <input
                     type="file"
                     hidden
@@ -264,9 +268,9 @@ const PublicarNovedad: React.FC = () => {
                     }}
                   />
                 </Button>
-              </Box>
-            )}
-          />
+              )}
+            />
+          </Box>
 
           <Box sx={{ textAlign: "center" }}>
             <Button
