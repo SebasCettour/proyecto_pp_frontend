@@ -10,7 +10,6 @@ import {
   IconButton,
   Tooltip,
   Fade,
-  Chip,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -66,7 +65,7 @@ export default function Tablon() {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #e3e9f7 0%, #f8fafc 100%)",
+        background: "#f0f2f5", // Facebook-like background
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
@@ -81,20 +80,20 @@ export default function Tablon() {
           to="/rrhh-principal"
           variant="contained"
           sx={{
-            background: "linear-gradient(90deg, #1976d2 60%, #1565C0 100%)",
+            background: "#1877f2",
             color: "#fff",
             width: 180,
-            letterSpacing: 3,
-            fontSize: 20,
-            borderRadius: 3,
+            letterSpacing: 2,
+            fontSize: 18,
+            borderRadius: 8,
             mr: 5,
-            fontFamily: "Tektur, sans-serif",
+            fontFamily: "Segoe UI, Arial, sans-serif",
             fontWeight: 600,
             textTransform: "none",
-            boxShadow: "0 2px 8px rgba(21,101,192,0.15)",
+            boxShadow: "0 2px 8px rgba(24,119,242,0.10)",
             transition: "background 0.2s",
             "&:hover": {
-              background: "linear-gradient(90deg, #115293 60%, #1976d2 100%)",
+              background: "#165cbb",
             },
           }}
         >
@@ -102,16 +101,16 @@ export default function Tablon() {
         </Button>
       </Box>
 
-      {/* Tarjetas de mensajes */}
+      {/* Feed estilo red social */}
       <Box
         sx={{
           flexGrow: 1,
-          px: 3,
+          px: 2,
           mt: 4,
           display: "flex",
           flexDirection: "column",
-          gap: 4,
-          maxWidth: "700px",
+          gap: 3,
+          maxWidth: "600px",
           mx: "auto",
           mb: 6,
         }}
@@ -124,8 +123,8 @@ export default function Tablon() {
               variant="h6"
               sx={{
                 textAlign: "center",
-                color: "#888",
-                fontFamily: "Tektur, sans-serif",
+                color: "#65676b",
+                fontFamily: "Segoe UI, Arial, sans-serif",
                 mt: 6,
                 letterSpacing: 1,
               }}
@@ -138,38 +137,37 @@ export default function Tablon() {
             <Fade in key={novedad.Id_Novedad}>
               <Card
                 sx={{
-                  borderRadius: 5,
-                  background:
-                    "linear-gradient(120deg, #f5faff 60%, #e3e9f7 100%)",
-                  boxShadow: "0 4px 24px rgba(25, 118, 210, 0.10)",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "translateY(-4px) scale(1.015)",
-                    boxShadow: "0 8px 32px rgba(25, 118, 210, 0.18)",
-                  },
+                  borderRadius: 10,
+                  background: "#fff",
+                  boxShadow: "0 2px 12px 0 rgba(0,0,0,0.08)",
                   px: 3,
                   pt: 2,
                   pb: 2,
                   position: "relative",
-                  minHeight: 220,
+                  minHeight: 180,
                   maxWidth: "100%",
                   display: "flex",
                   flexDirection: "column",
-                  justifyContent: "space-between",
-                  border: "1.5px solid #e3e9f7",
+                  border: "1px solid #e4e6eb",
+                  transition: "box-shadow 0.2s, transform 0.2s",
+                  "&:hover": {
+                    boxShadow: "0 4px 24px 0 rgba(24,119,242,0.13)",
+                    transform: "translateY(-2px) scale(1.01)",
+                  },
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                   <Avatar
                     sx={{
-                      bgcolor: "#1976d2",
+                      bgcolor: "#1877f2",
                       mr: 2,
-                      width: 48,
-                      height: 48,
+                      width: 44,
+                      height: 44,
                       fontWeight: 700,
-                      fontSize: 28,
+                      fontSize: 22,
                       border: "2px solid #fff",
-                      boxShadow: "0 2px 8px #1976d244",
+                      boxShadow: "0 2px 8px #1877f244",
+                      fontFamily: "Segoe UI, Arial, sans-serif",
                     }}
                   >
                     R
@@ -179,28 +177,26 @@ export default function Tablon() {
                       variant="subtitle1"
                       sx={{
                         fontWeight: 700,
-                        fontFamily: "Tektur, sans-serif",
-                        color: "#1976d2",
-                        fontSize: 20,
-                        letterSpacing: 1,
+                        fontFamily: "Segoe UI, Arial, sans-serif",
+                        color: "#1877f2",
+                        fontSize: 17,
+                        letterSpacing: 0.5,
                       }}
                     >
                       RRHH
                     </Typography>
-                    <Chip
-                      label={new Date(novedad.Fecha).toLocaleString()}
-                      size="small"
+                    <Typography
+                      variant="caption"
                       sx={{
+                        color: "#65676b",
+                        fontFamily: "Segoe UI, Arial, sans-serif",
+                        fontSize: 14,
+                        display: "block",
                         mt: 0.5,
-                        background: "#e3e9f7",
-                        color: "#1976d2",
-                        fontFamily: "Tektur, sans-serif",
-                        fontWeight: 500,
-                        fontSize: 13,
-                        letterSpacing: 1,
-                        border: "1px solid #1976d2",
                       }}
-                    />
+                    >
+                      {new Date(novedad.Fecha).toLocaleString()}
+                    </Typography>
                   </Box>
                   <Box sx={{ flexGrow: 1 }} />
                   <Tooltip title="Eliminar novedad" arrow>
@@ -211,7 +207,7 @@ export default function Tablon() {
                         disabled={deleting === novedad.Id_Novedad}
                         onClick={() => handleDelete(novedad.Id_Novedad)}
                         sx={{
-                          background: "#fff",
+                          background: "#f0f2f5",
                           border: "1.5px solid #f44336",
                           ml: 1,
                           "&:hover": {
@@ -224,20 +220,7 @@ export default function Tablon() {
                     </span>
                   </Tooltip>
                 </Box>
-                <Divider sx={{ mb: 2, background: "#1976d2", opacity: 0.15 }} />
-                <Typography
-                  variant="body1"
-                  sx={{
-                    fontFamily: "Tektur, sans-serif",
-                    color: "#222",
-                    fontSize: 20,
-                    mb: 1,
-                    letterSpacing: 0.5,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {novedad.Descripcion}
-                </Typography>
+                <Divider sx={{ mb: 2, background: "#1877f2", opacity: 0.10 }} />
                 {novedad.Imagen && (
                   <Box sx={{ mb: 2, textAlign: "center" }}>
                     <img
@@ -245,14 +228,28 @@ export default function Tablon() {
                       alt="Imagen de la novedad"
                       style={{
                         maxWidth: "100%",
-                        maxHeight: 250,
-                        borderRadius: 10,
-                        boxShadow: "0 2px 12px #1976d233",
+                        maxHeight: 320,
+                        borderRadius: 12,
+                        boxShadow: "0 2px 12px #1877f233",
                         marginBottom: 8,
+                        objectFit: "cover",
                       }}
                     />
                   </Box>
                 )}
+                <Typography
+                  variant="body1"
+                  sx={{
+                    fontFamily: "Segoe UI, Arial, sans-serif",
+                    color: "#050505",
+                    fontSize: 18,
+                    mb: 1,
+                    letterSpacing: 0.2,
+                    lineHeight: 1.7,
+                  }}
+                >
+                  {novedad.Descripcion}
+                </Typography>
               </Card>
             </Fade>
           ))
