@@ -1,10 +1,81 @@
-import React from "react";
-import { Typography, Box, Button, Container } from "@mui/material";
+import React, { useState, useEffect, useRef } from "react";
+import { Typography, Box, Button, Container, Fade } from "@mui/material";
+import LocalDrinkIcon from "@mui/icons-material/LocalDrink";
 import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 import { Logout } from "@mui/icons-material";
 import BtnCerrarSesion from "../../components/BtnCerrarSesion";
 import Header from "../../components/Header";
+
+// WaterReminder component
+function WaterReminder() {
+  const [visible, setVisible] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => setVisible(true), 45 * 60 * 1000);
+
+    // Escuchar evento personalizado para mostrar el recordatorio manualmente
+    const handler = () => setVisible(true);
+    window.addEventListener("showWaterReminder", handler);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      window.removeEventListener("showWaterReminder", handler);
+    };
+  }, []);
+
+  const handleClose = () => setVisible(false);
+
+  return visible ? (
+    <Fade in={visible}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#e3f2fd",
+          border: "2px solid #1976d2",
+          borderRadius: 3,
+          p: 2,
+          mb: 3,
+          boxShadow: "0 2px 8px #1976d233",
+          maxWidth: 420,
+          mx: "auto",
+        }}
+      >
+        <LocalDrinkIcon sx={{ color: "#1976d2", fontSize: 36, mr: 2 }} />
+        <Typography
+          sx={{
+            fontFamily: "Segoe UI, Arial, sans-serif",
+            color: "#1976d2",
+            fontWeight: 600,
+            fontSize: 18,
+            flex: 1,
+          }}
+        >
+          ¡Hora de tomar agua! Mantente hidratado para sentirte mejor.
+        </Typography>
+        <Button
+          onClick={handleClose}
+          variant="contained"
+          size="small"
+          sx={{
+            ml: 2,
+            background: "#1976d2",
+            color: "#fff",
+            fontWeight: 600,
+            textTransform: "none",
+            borderRadius: 2,
+            "&:hover": { background: "#115293" },
+          }}
+        >
+          Listo
+        </Button>
+      </Box>
+    </Fade>
+  ) : null;
+}
 
 export const RRHHPrincipal = () => {
   const navigate = useNavigate();
@@ -27,7 +98,6 @@ export const RRHHPrincipal = () => {
         backgroundImage: "url('/fondo.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
-
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
@@ -62,6 +132,9 @@ export const RRHHPrincipal = () => {
           </Button>
         </Box>
       )}
+
+      {/* WaterReminder */}
+      <WaterReminder />
 
       {/* Contenido principal */}
       <Container
@@ -161,6 +234,18 @@ export const RRHHPrincipal = () => {
             }}
           >
             Tablón de Novedades
+          </Button>
+
+          <Button
+            variant="outlined"
+            sx={{ mx: "auto", mb: 2, display: "block" }}
+            onClick={() => {
+              // Forzamos el recordatorio a mostrarse
+              const evt = new Event("showWaterReminder");
+              window.dispatchEvent(evt);
+            }}
+          >
+            Probar recordatorio de agua
           </Button>
         </Box>
       </Container>
