@@ -198,7 +198,7 @@ const PublicarNovedad: React.FC = () => {
             )}
           />
 
-          {/* Botones de adjuntar imagen y archivo, alineados horizontalmente */}
+        
           <Box sx={{ display: "flex", gap: 2, mb: 4, justifyContent: "center" }}>
             {/* Botón para adjuntar imagen */}
             <Controller

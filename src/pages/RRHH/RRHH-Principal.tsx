@@ -7,7 +7,7 @@ import { Logout } from "@mui/icons-material";
 import BtnCerrarSesion from "../../components/BtnCerrarSesion";
 import Header from "../../components/Header";
 
-// WaterReminder component
+// Recordatorio de agua cada 45 minutos
 function WaterReminder() {
   const [visible, setVisible] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -15,7 +15,7 @@ function WaterReminder() {
   useEffect(() => {
     timerRef.current = setInterval(() => setVisible(true), 45 * 60 * 1000);
 
-    // Escuchar evento personalizado para mostrar el recordatorio manualmente
+    // Mostrar el recordatorio manualmente
     const handler = () => setVisible(true);
     window.addEventListener("showWaterReminder", handler);
 
