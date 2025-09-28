@@ -137,7 +137,6 @@ export default function Tablon() {
         </Button>
       </Box>
 
-      {/* Feed estilo red social */}
       <Box
         sx={{
           flexGrow: 1,

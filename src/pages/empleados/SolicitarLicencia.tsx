@@ -29,6 +29,7 @@ export default function SolicitarLicencia() {
   const [form, setForm] = useState({
     nombre: "",
     apellido: "",
+    documento: "", // <-- Nuevo campo
     area: "",
     motivo: "",
     fechaDesde: "",
@@ -41,6 +42,7 @@ export default function SolicitarLicencia() {
   const [errors, setErrors] = useState({
     nombre: false,
     apellido: false,
+    documento: false, // <-- Nuevo campo
     area: false,
     motivo: false,
     fechaDesde: false,
@@ -119,6 +121,7 @@ export default function SolicitarLicencia() {
     const newErrors = {
       nombre: form.nombre.trim() === "",
       apellido: form.apellido.trim() === "",
+      documento: form.documento.trim() === "", // <-- Validación
       area: form.area === "",
       motivo: form.motivo === "",
       fechaDesde: form.fechaDesde === "",
@@ -220,7 +223,7 @@ export default function SolicitarLicencia() {
               onChange={handleInputChange}
               error={errors.nombre}
               helperText={errors.nombre && "Campo obligatorio"}
-              sx={{ flex: "1 1 45%" }}
+              sx={{ flex: "1 1 30%" }}
             />
             <TextField
               label="Apellido"
@@ -229,7 +232,17 @@ export default function SolicitarLicencia() {
               onChange={handleInputChange}
               error={errors.apellido}
               helperText={errors.apellido && "Campo obligatorio"}
-              sx={{ flex: "1 1 45%" }}
+              sx={{ flex: "1 1 30%" }}
+            />
+            <TextField
+              label="Documento"
+              name="documento"
+              value={form.documento}
+              onChange={handleInputChange}
+              error={errors.documento}
+              helperText={errors.documento && "Campo obligatorio"}
+              sx={{ flex: "1 1 30%" }}
+              inputProps={{ maxLength: 15 }}
             />
             <FormControl fullWidth error={errors.area} sx={{ flex: "1 1 45%" }}>
               <InputLabel>Área</InputLabel>
