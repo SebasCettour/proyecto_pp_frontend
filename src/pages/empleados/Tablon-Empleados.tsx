@@ -13,6 +13,8 @@ import {
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
+import DownloadIcon from "@mui/icons-material/Download";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 
@@ -22,6 +24,7 @@ interface Novedad {
   Fecha: string;
   Id_Empleado: number;
   Imagen?: string;
+  ArchivoAdjunto?: string; // <-- Nuevo campo
 }
 
 export default function Tablon() {
@@ -65,7 +68,7 @@ export default function Tablon() {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "#f0f2f5", // Facebook-like background
+        background: "#f0f2f5",
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
@@ -77,7 +80,7 @@ export default function Tablon() {
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
         <Button
           component={RouterLink}
-          to="/rrhh-principal"
+          to="/empleados"
           variant="contained"
           sx={{
             background: "#1877f2",
@@ -221,6 +224,7 @@ export default function Tablon() {
                   </Tooltip>
                 </Box>
                 <Divider sx={{ mb: 2, background: "#1877f2", opacity: 0.10 }} />
+                
                 {novedad.Imagen && (
                   <Box sx={{ mb: 2, textAlign: "center" }}>
                     <img
@@ -237,6 +241,7 @@ export default function Tablon() {
                     />
                   </Box>
                 )}
+
                 <Typography
                   variant="body1"
                   sx={{
@@ -250,6 +255,37 @@ export default function Tablon() {
                 >
                   {novedad.Descripcion}
                 </Typography>
+
+                {/* Mostrar archivo adjunto si existe */}
+                {novedad.ArchivoAdjunto && (
+                  <Box sx={{ mt: 2, mb: 1 }}>
+                    <Button
+                      component="a"
+                      href={`http://localhost:4000/uploads/${novedad.ArchivoAdjunto}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      startIcon={<AttachFileIcon />}
+                      endIcon={<DownloadIcon />}
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        borderRadius: 2,
+                        fontFamily: "Segoe UI, Arial, sans-serif",
+                        fontWeight: 600,
+                        textTransform: "none",
+                        backgroundColor: "#f0f2f5",
+                        color: "#1976d2",
+                        border: "1px solid #1976d2",
+                        "&:hover": {
+                          backgroundColor: "#e3e9f7",
+                          borderColor: "#115293",
+                        },
+                      }}
+                    >
+                      Ver archivo adjunto
+                    </Button>
+                  </Box>
+                )}
               </Card>
             </Fade>
           ))
