@@ -149,7 +149,7 @@ export default function Tablon() {
           display: "flex",
           flexDirection: "column",
           gap: 3,
-          maxWidth: "600px",
+          maxWidth: "800px", // <-- Cambiado de "600px" a "800px"
           mx: "auto",
           mb: 6,
         }}
@@ -179,7 +179,7 @@ export default function Tablon() {
                   borderRadius: 10,
                   background: "#fff",
                   boxShadow: "0 2px 12px 0 rgba(0,0,0,0.08)",
-                  px: 3,
+                  px: 4, // <-- Cambiado de 3 a 4
                   pt: 2,
                   pb: 2,
                   position: "relative",
@@ -274,14 +274,15 @@ export default function Tablon() {
                   </Tooltip>
                 </Box>
                 <Divider sx={{ mb: 2, background: "#1877f2", opacity: 0.10 }} />
+                
                 {novedad.Imagen && (
                   <Box sx={{ mb: 2, textAlign: "center" }}>
                     <img
                       src={`http://localhost:4000/uploads/${novedad.Imagen}`}
                       alt="Imagen de la novedad"
                       style={{
-                        maxWidth: "100%",
-                        maxHeight: 320,
+                        width: "100%", // <-- Cambiado de maxWidth a width
+                        maxHeight: 400, // <-- Cambiado de 320 a 400
                         borderRadius: 12,
                         boxShadow: "0 2px 12px #1877f233",
                         marginBottom: 8,
@@ -290,6 +291,7 @@ export default function Tablon() {
                     />
                   </Box>
                 )}
+
                 <Typography
                   variant="body1"
                   sx={{
