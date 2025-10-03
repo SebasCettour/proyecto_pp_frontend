@@ -278,11 +278,11 @@ export default function Tablon() {
                 {novedad.Imagen && (
                   <Box sx={{ mb: 2, textAlign: "center" }}>
                     <img
-                      src={`http://localhost:4000/uploads/${novedad.Imagen}`}
+                      src={`http://localhost:4000/uploads/tablon_imgs/${novedad.Imagen}`} // <-- Agregar tablon_imgs/
                       alt="Imagen de la novedad"
                       style={{
-                        width: "100%", // <-- Cambiado de maxWidth a width
-                        maxHeight: 400, // <-- Cambiado de 320 a 400
+                        width: "100%",
+                        maxHeight: 400,
                         borderRadius: 12,
                         boxShadow: "0 2px 12px #1877f233",
                         marginBottom: 8,
