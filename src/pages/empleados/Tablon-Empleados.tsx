@@ -12,7 +12,6 @@ import {
   Fade,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
-import DeleteIcon from "@mui/icons-material/Delete";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import DownloadIcon from "@mui/icons-material/Download";
 import Footer from "../../components/Footer";
@@ -202,33 +201,13 @@ export default function Tablon() {
                     </Typography>
                   </Box>
                   <Box sx={{ flexGrow: 1 }} />
-                  <Tooltip title="Eliminar novedad" arrow>
-                    <span>
-                      <IconButton
-                        color="error"
-                        size="medium"
-                        disabled={deleting === novedad.Id_Novedad}
-                        onClick={() => handleDelete(novedad.Id_Novedad)}
-                        sx={{
-                          background: "#f0f2f5",
-                          border: "1.5px solid #f44336",
-                          ml: 1,
-                          "&:hover": {
-                            background: "#fbe9e7",
-                          },
-                        }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
                 </Box>
                 <Divider sx={{ mb: 2, background: "#1877f2", opacity: 0.1 }} />
 
                 {novedad.Imagen && (
                   <Box sx={{ mb: 2, textAlign: "center" }}>
                     <img
-                      src={`http://localhost:4000/uploads/${novedad.Imagen}`}
+                      src={`http://localhost:4000/uploads/tablon_imgs/${novedad.Imagen}`} // <-- Agregar tablon_imgs/
                       alt="Imagen de la novedad"
                       style={{
                         width: "100%",
