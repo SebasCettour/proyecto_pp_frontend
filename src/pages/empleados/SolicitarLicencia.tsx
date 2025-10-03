@@ -29,11 +29,9 @@ export default function SolicitarLicencia() {
   const [form, setForm] = useState({
     nombre: "",
     apellido: "",
-    documento: "", // <-- Nuevo campo
+    documento: "",
     area: "",
     motivo: "",
-    fechaDesde: "",
-    fechaHasta: "",
     observaciones: "",
     archivo: null as File | null,
     diagnosticoCIE10: null as DiagnosticoCIE10 | null,
@@ -42,11 +40,9 @@ export default function SolicitarLicencia() {
   const [errors, setErrors] = useState({
     nombre: false,
     apellido: false,
-    documento: false, // <-- Nuevo campo
+    documento: false,
     area: false,
     motivo: false,
-    fechaDesde: false,
-    fechaHasta: false,
     archivo: false,
     diagnosticoCIE10: false,
   });
@@ -117,15 +113,13 @@ export default function SolicitarLicencia() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const newErrors = {
       nombre: form.nombre.trim() === "",
       apellido: form.apellido.trim() === "",
-      documento: form.documento.trim() === "", // <-- Validación
+      documento: form.documento.trim() === "",
       area: form.area === "",
       motivo: form.motivo === "",
-      fechaDesde: form.fechaDesde === "",
-      fechaHasta: form.fechaHasta === "",
       archivo: form.motivo === "Enfermedad" && !form.archivo,
       diagnosticoCIE10: form.motivo === "Enfermedad" && !form.diagnosticoCIE10,
     };
@@ -133,8 +127,63 @@ export default function SolicitarLicencia() {
 
     const hasErrors = Object.values(newErrors).some((error) => error);
     if (!hasErrors) {
-      // Aquí deberías enviar el formulario al backend
-      alert("Solicitud enviada correctamente");
+      try {
+        const token = localStorage.getItem("token");
+        console.log("Token:", token); // <-- AGREGAR ESTE LOG
+        
+        const formData = new FormData();
+
+        // Agregar campos del formulario
+        formData.append("nombre", form.nombre);
+        formData.append("apellido", form.apellido);
+        formData.append("documento", form.documento);
+        formData.append("area", form.area);
+        formData.append("motivo", form.motivo);
+        formData.append("observaciones", form.observaciones);
+
+        // Agregar archivo si existe
+        if (form.archivo) {
+          formData.append("certificadoMedico", form.archivo);
+        }
+
+        // Agregar diagnóstico CIE-10 si existe
+        if (form.diagnosticoCIE10) {
+          formData.append("diagnosticoCIE10_codigo", form.diagnosticoCIE10.codigo);
+          formData.append("diagnosticoCIE10_descripcion", form.diagnosticoCIE10.descripcion);
+        }
+
+        const response = await fetch("http://localhost:4000/api/licencias/solicitar", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        console.log("Response status:", response.status); // <-- AGREGAR ESTE LOG
+        console.log("Response:", await response.text()); // <-- AGREGAR ESTE LOG
+
+        if (response.ok) {
+          alert("Solicitud enviada correctamente");
+          // Limpiar formulario
+          setForm({
+            nombre: "",
+            apellido: "",
+            documento: "",
+            area: "",
+            motivo: "",
+            observaciones: "",
+            archivo: null,
+            diagnosticoCIE10: null,
+          });
+        } else {
+          const errorData = await response.json();
+          alert(`Error: ${errorData.message}`);
+        }
+      } catch (error) {
+        console.error("Error enviando solicitud:", error);
+        alert("Error enviando la solicitud");
+      }
     }
   };
 
@@ -381,29 +430,6 @@ export default function SolicitarLicencia() {
                 )}
               </Box>
             )}
-
-            <TextField
-              label="Fecha Desde"
-              name="fechaDesde"
-              type="date"
-              value={form.fechaDesde}
-              onChange={handleInputChange}
-              error={errors.fechaDesde}
-              helperText={errors.fechaDesde && "Campo obligatorio"}
-              sx={{ flex: "1 1 45%" }}
-              InputLabelProps={{ shrink: true }}
-            />
-            <TextField
-              label="Fecha Hasta"
-              name="fechaHasta"
-              type="date"
-              value={form.fechaHasta}
-              onChange={handleInputChange}
-              error={errors.fechaHasta}
-              helperText={errors.fechaHasta && "Campo obligatorio"}
-              sx={{ flex: "1 1 45%" }}
-              InputLabelProps={{ shrink: true }}
-            />
 
             {/* Botón para subir PDF */}
             <Button
