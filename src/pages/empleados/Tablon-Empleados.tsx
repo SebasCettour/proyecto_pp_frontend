@@ -31,6 +31,26 @@ export default function Tablon() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
 
+  // Función para formatear fecha
+  const formatearFecha = (fechaString: string) => {
+    const fecha = new Date(fechaString);
+    const ahora = new Date();
+
+    const diffMs = ahora.getTime() - fecha.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Hace un momento";
+    if (diffMins < 60)
+      return `Hace ${diffMins} minuto${diffMins > 1 ? "s" : ""}`;
+    if (diffHours < 24)
+      return `Hace ${diffHours} hora${diffHours > 1 ? "s" : ""}`;
+    if (diffDays < 7) return `Hace ${diffDays} día${diffDays > 1 ? "s" : ""}`;
+
+    return fecha.toLocaleString("es-ES");
+  };
+
   // Función para cargar novedades
   const fetchNovedades = () => {
     setLoading(true);
@@ -112,7 +132,7 @@ export default function Tablon() {
           display: "flex",
           flexDirection: "column",
           gap: 3,
-          maxWidth: "800px", // <-- Cambiado de "600px" a "800px"
+          maxWidth: "800px",
           mx: "auto",
           mb: 6,
         }}
@@ -197,7 +217,7 @@ export default function Tablon() {
                         mt: 0.5,
                       }}
                     >
-                      {new Date(novedad.Fecha).toLocaleString()}
+                      {formatearFecha(novedad.Fecha)}
                     </Typography>
                   </Box>
                   <Box sx={{ flexGrow: 1 }} />
@@ -207,7 +227,7 @@ export default function Tablon() {
                 {novedad.Imagen && (
                   <Box sx={{ mb: 2, textAlign: "center" }}>
                     <img
-                      src={`http://localhost:4000/uploads/tablon_imgs/${novedad.Imagen}`} // <-- Agregar tablon_imgs/
+                      src={`http://localhost:4000/uploads/tablon_imgs/${novedad.Imagen}`}
                       alt="Imagen de la novedad"
                       style={{
                         width: "100%",
@@ -239,9 +259,10 @@ export default function Tablon() {
                   <Box sx={{ mt: 2, mb: 1 }}>
                     <Button
                       component="a"
-                      href={`http://localhost:4000/uploads/${novedad.ArchivoAdjunto}`}
+                      href={`http://localhost:4000/uploads/tablon_files/${novedad.ArchivoAdjunto}`}
                       target="_blank"
                       rel="noopener noreferrer"
+                      download
                       startIcon={<AttachFileIcon />}
                       endIcon={<DownloadIcon />}
                       variant="outlined"
@@ -260,7 +281,7 @@ export default function Tablon() {
                         },
                       }}
                     >
-                      Ver archivo adjunto
+                      Descargar archivo adjunto
                     </Button>
                   </Box>
                 )}

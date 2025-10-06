@@ -33,6 +33,8 @@ export default function SolicitarLicencia() {
     area: "",
     motivo: "",
     observaciones: "",
+    fechaInicio: "",
+    fechaFin: "",
     archivo: null as File | null,
     diagnosticoCIE10: null as DiagnosticoCIE10 | null,
   });
@@ -43,6 +45,8 @@ export default function SolicitarLicencia() {
     documento: false,
     area: false,
     motivo: false,
+    fechaInicio: false,
+    fechaFin: false,
     archivo: false,
     diagnosticoCIE10: false,
   });
@@ -120,18 +124,40 @@ export default function SolicitarLicencia() {
       documento: form.documento.trim() === "",
       area: form.area === "",
       motivo: form.motivo === "",
+      fechaInicio: form.fechaInicio === "",
+      fechaFin: form.fechaFin === "",
       archivo: form.motivo === "Enfermedad" && !form.archivo,
       diagnosticoCIE10: form.motivo === "Enfermedad" && !form.diagnosticoCIE10,
     };
     setErrors(newErrors);
 
+    // Validar que fechaFin sea posterior a fechaInicio
+    if (form.fechaInicio && form.fechaFin && form.fechaFin <= form.fechaInicio) {
+      alert("La fecha de fin debe ser posterior a la fecha de inicio");
+      return;
+    }
+
     const hasErrors = Object.values(newErrors).some((error) => error);
     if (!hasErrors) {
       try {
         const token = localStorage.getItem("token");
-        console.log("Token:", token); // <-- AGREGAR ESTE LOG
+        console.log("Token:", token);
         
         const formData = new FormData();
+
+        // AGREGAR LOGS PARA DEBUG
+        console.log("=== DATOS A ENVIAR ===");
+        console.log("nombre:", form.nombre);
+        console.log("apellido:", form.apellido);
+        console.log("documento:", form.documento);
+        console.log("area:", form.area);
+        console.log("motivo:", form.motivo);
+        console.log("fechaInicio:", form.fechaInicio);
+        console.log("fechaFin:", form.fechaFin);
+        console.log("observaciones:", form.observaciones);
+        console.log("diagnosticoCIE10:", form.diagnosticoCIE10);
+        console.log("archivo:", form.archivo);
+        console.log("======================");
 
         // Agregar campos del formulario
         formData.append("nombre", form.nombre);
@@ -139,6 +165,8 @@ export default function SolicitarLicencia() {
         formData.append("documento", form.documento);
         formData.append("area", form.area);
         formData.append("motivo", form.motivo);
+        formData.append("fechaInicio", form.fechaInicio);
+        formData.append("fechaFin", form.fechaFin);
         formData.append("observaciones", form.observaciones);
 
         // Agregar archivo si existe
@@ -160,8 +188,9 @@ export default function SolicitarLicencia() {
           body: formData,
         });
 
-        console.log("Response status:", response.status); // <-- AGREGAR ESTE LOG
-        console.log("Response:", await response.text()); // <-- AGREGAR ESTE LOG
+        console.log("Response status:", response.status);
+        const responseText = await response.text();
+        console.log("Response:", responseText);
 
         if (response.ok) {
           alert("Solicitud enviada correctamente");
@@ -173,11 +202,13 @@ export default function SolicitarLicencia() {
             area: "",
             motivo: "",
             observaciones: "",
+            fechaInicio: "",
+            fechaFin: "",
             archivo: null,
             diagnosticoCIE10: null,
           });
         } else {
-          const errorData = await response.json();
+          const errorData = JSON.parse(responseText);
           alert(`Error: ${errorData.message}`);
         }
       } catch (error) {
@@ -331,6 +362,34 @@ export default function SolicitarLicencia() {
               )}
             </FormControl>
 
+            {/* AGREGAR CAMPOS DE FECHA */}
+            <TextField
+              label="Fecha de Inicio"
+              name="fechaInicio"
+              type="date"
+              value={form.fechaInicio}
+              onChange={handleInputChange}
+              error={errors.fechaInicio}
+              helperText={errors.fechaInicio && "Campo obligatorio"}
+              sx={{ flex: "1 1 45%" }}
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+            <TextField
+              label="Fecha de Fin"
+              name="fechaFin"
+              type="date"
+              value={form.fechaFin}
+              onChange={handleInputChange}
+              error={errors.fechaFin}
+              helperText={errors.fechaFin && "Campo obligatorio"}
+              sx={{ flex: "1 1 45%" }}
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+
             {/* Buscador CIE-10 - Solo visible cuando el motivo es Enfermedad */}
             {form.motivo === "Enfermedad" && (
               <Box sx={{ flex: "1 1 100%", mt: 2 }}>
@@ -394,18 +453,25 @@ export default function SolicitarLicencia() {
                       }}
                     />
                   )}
-                  renderOption={(props, option) => (
-                    <Box component="li" {...props}>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {option.codigo}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {option.descripcion}
-                        </Typography>
+                  renderOption={(props, option) => {
+                    const { key, ...otherProps } = props;
+                    return (
+                      <Box
+                        key={key}
+                        component="li"
+                        {...otherProps}
+                      >
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {option.codigo}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {option.descripcion}
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
-                  )}
+                    );
+                  }}
                 />
 
                 {/* Mostrar diagnóstico seleccionado */}

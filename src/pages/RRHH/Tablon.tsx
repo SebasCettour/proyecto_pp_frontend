@@ -27,7 +27,7 @@ interface Novedad {
   Fecha: string;
   Id_Empleado: number;
   Imagen?: string;
-  ArchivoAdjunto?: string; // <-- Nuevo campo
+  ArchivoAdjunto?: string;
 }
 
 export default function Tablon() {
@@ -101,6 +101,25 @@ export default function Tablon() {
     }
   };
 
+  const formatearFecha = (fechaString: string) => {
+    const fecha = new Date(fechaString);
+    const ahora = new Date();
+
+    const diffMs = ahora.getTime() - fecha.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Hace un momento";
+    if (diffMins < 60)
+      return `Hace ${diffMins} minuto${diffMins > 1 ? "s" : ""}`;
+    if (diffHours < 24)
+      return `Hace ${diffHours} hora${diffHours > 1 ? "s" : ""}`;
+    if (diffDays < 7) return `Hace ${diffDays} día${diffDays > 1 ? "s" : ""}`;
+
+    return fecha.toLocaleString("es-ES");
+  };
+
   return (
     <Box
       sx={{
@@ -149,7 +168,7 @@ export default function Tablon() {
           display: "flex",
           flexDirection: "column",
           gap: 3,
-          maxWidth: "800px", // <-- Cambiado de "600px" a "800px"
+          maxWidth: "800px",
           mx: "auto",
           mb: 6,
         }}
@@ -179,7 +198,7 @@ export default function Tablon() {
                   borderRadius: 10,
                   background: "#fff",
                   boxShadow: "0 2px 12px 0 rgba(0,0,0,0.08)",
-                  px: 4, // <-- Cambiado de 3 a 4
+                  px: 4,
                   pt: 2,
                   pb: 2,
                   position: "relative",
@@ -191,7 +210,6 @@ export default function Tablon() {
                   transition: "box-shadow 0.2s, transform 0.2s",
                   "&:hover": {
                     boxShadow: "0 4px 24px 0 rgba(24,119,242,0.13)",
-                    transform: "translateY(-2px) scale(1.01)",
                   },
                 }}
               >
@@ -234,7 +252,7 @@ export default function Tablon() {
                         mt: 0.5,
                       }}
                     >
-                      {new Date(novedad.Fecha).toLocaleString()}
+                      {formatearFecha(novedad.Fecha)}
                     </Typography>
                   </Box>
                   <Box sx={{ flexGrow: 1 }} />
@@ -273,12 +291,12 @@ export default function Tablon() {
                     </span>
                   </Tooltip>
                 </Box>
-                <Divider sx={{ mb: 2, background: "#1877f2", opacity: 0.10 }} />
-                
+                <Divider sx={{ mb: 2, background: "#1877f2", opacity: 0.1 }} />
+
                 {novedad.Imagen && (
                   <Box sx={{ mb: 2, textAlign: "center" }}>
                     <img
-                      src={`http://localhost:4000/uploads/tablon_imgs/${novedad.Imagen}`} // <-- Agregar tablon_imgs/
+                      src={`http://localhost:4000/uploads/tablon_imgs/${novedad.Imagen}`}
                       alt="Imagen de la novedad"
                       style={{
                         width: "100%",
@@ -311,9 +329,10 @@ export default function Tablon() {
                   <Box sx={{ mt: 2, mb: 1 }}>
                     <Button
                       component="a"
-                      href={`http://localhost:4000/uploads/${novedad.ArchivoAdjunto}`}
+                      href={`http://localhost:4000/uploads/tablon_files/${novedad.ArchivoAdjunto}`}
                       target="_blank"
                       rel="noopener noreferrer"
+                      download
                       startIcon={<AttachFileIcon />}
                       endIcon={<DownloadIcon />}
                       variant="outlined"
@@ -332,7 +351,7 @@ export default function Tablon() {
                         },
                       }}
                     >
-                      Ver archivo adjunto
+                      Descargar archivo adjunto
                     </Button>
                   </Box>
                 )}
