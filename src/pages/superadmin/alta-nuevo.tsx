@@ -13,9 +13,15 @@ import {
   CircularProgress,
   MenuItem,
 } from "@mui/material";
+
 import { useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
+import { DateField } from "@mui/x-date-pickers/DateField";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import bcrypt from "bcryptjs";
 
 // ✅ VALIDACIONES
 const schema = z.object({
@@ -65,13 +71,31 @@ const schema = z.object({
 
   fechaNacimiento: z
     .string()
-    .min(1, "La fecha de nacimiento es requerida")
+    .min(10, "La fecha debe tener formato yyyy-mm-dd")
+    .max(10, "La fecha debe tener formato yyyy-mm-dd")
     .refine((date) => {
+      // Solo acepta exactamente 4 dígitos para el año al inicio
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+      if (!match) return false;
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      if (year < 1900 || year > 2099) return false;
+      // Validar fecha real
+      const birthDate = new Date(
+        `${year}-${month.toString().padStart(2, "0")}-${day
+          .toString()
+          .padStart(2, "0")}`
+      );
       const today = new Date();
-      const birthDate = new Date(date);
-      const age = today.getFullYear() - birthDate.getFullYear();
+      if (birthDate > today) return false;
+      let age = today.getFullYear() - year;
+      const m = today.getMonth() + 1 - month;
+      if (m < 0 || (m === 0 && today.getDate() < day)) {
+        age--;
+      }
       return age >= 18 && age <= 70;
-    }, "La edad debe estar entre 18 y 70 años"),
+    }, "La fecha debe tener formato yyyy-mm-dd, año de 4 dígitos, no ser futura y la edad entre 18 y 70 años"),
 
   legajo: z
     .string()
@@ -134,9 +158,11 @@ const AltaNuevo: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // ✅ RUTA CORRECTA SEGÚN TU SERVER.TS:
+      // Encriptar la contraseña antes de enviarla
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+
       const response = await fetch(
-        "http://localhost:4000/api/usuario/auth/register", // /usuario (singular)
+        "http://localhost:4000/api/usuario/auth/register",
         {
           method: "POST",
           headers: {
@@ -144,6 +170,7 @@ const AltaNuevo: React.FC = () => {
           },
           body: JSON.stringify({
             ...data,
+            password: hashedPassword,
             rolId: Number(data.roleId),
           }),
         }
@@ -194,330 +221,379 @@ const AltaNuevo: React.FC = () => {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        backgroundImage: "url('/fondo.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        display: "flex",
-        flexDirection: "column",
-        overflowX: "hidden",
-      }}
-    >
-      <Header />
-
-      {/* BOTÓN VOLVER */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-        <Button
-          component={RouterLink}
-          to="/superadmin"
-          variant="outlined"
-          sx={{
-            backgroundColor: "#1565C0",
-            color: "#ffffff",
-            width: 180,
-            letterSpacing: 3,
-            fontSize: 20,
-            borderRadius: 3,
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 500,
-            textTransform: "none",
-            "&:hover": {
-              backgroundColor: "#0d47a1",
-            },
-          }}
-        >
-          Volver
-        </Button>
-      </Box>
-
-      {/* Contenido principal */}
-      <Container
-        maxWidth="md"
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Box
         sx={{
-          mt: 4,
-          mb: 8,
-          flexGrow: 1,
+          minHeight: "100vh",
+          backgroundImage: "url('/fondo.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
+          overflowX: "hidden",
         }}
       >
-        <Box
-          component="form"
-          onSubmit={handleSubmit(onSubmit)}
-          sx={{
-            backgroundColor: "white",
-            borderRadius: 2,
-            p: 4,
-            boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-            width: "100%",
-          }}
-        >
-          <Typography
-            component="h1"
-            variant="h4"
+        <Header />
+
+        {/* BOTÓN VOLVER */}
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
+          <Button
+            component={RouterLink}
+            to="/superadmin"
+            variant="outlined"
             sx={{
-              mb: 4,
+              backgroundColor: "#1565C0",
+              color: "#ffffff",
+              width: 180,
+              letterSpacing: 3,
+              fontSize: 20,
+              borderRadius: 3,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              color: "#333",
-              textAlign: "center",
+              fontWeight: 500,
+              textTransform: "none",
+              "&:hover": {
+                backgroundColor: "#0d47a1",
+              },
             }}
           >
-            Alta Nuevo Usuario
-          </Typography>
+            Volver
+          </Button>
+        </Box>
 
-          {/* ✅ ALERTAS */}
-          {error && (
-            <Alert severity="error" sx={{ width: "100%", mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-
-          {success && (
-            <Alert severity="success" sx={{ width: "100%", mb: 3 }}>
-              {success}
-            </Alert>
-          )}
-
+        {/* Contenido principal */}
+        <Container
+          maxWidth="md"
+          sx={{
+            mt: 4,
+            mb: 8,
+            flexGrow: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+          }}
+        >
           <Box
+            component="form"
+            onSubmit={handleSubmit(onSubmit)}
             sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 3,
+              backgroundColor: "white",
+              borderRadius: 2,
+              p: 4,
+              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
               width: "100%",
             }}
           >
-            {/* Columna 1 */}
-            <Box
-              sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}
+            <Typography
+              component="h1"
+              variant="h4"
+              sx={{
+                mb: 4,
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 600,
+                color: "#333",
+                textAlign: "center",
+              }}
             >
-              <TextField
-                fullWidth
-                label="Nombre y Apellido"
-                placeholder="Ej: Juan Carlos Pérez"
-                {...register("username")}
-                error={!!errors.username}
-                helperText={errors.username?.message}
-                disabled={isLoading}
-              />
+              Alta Nuevo Usuario
+            </Typography>
 
-              <TextField
-                fullWidth
-                label="Fecha de Nacimiento"
-                type="date"
-                {...register("fechaNacimiento")}
-                error={!!errors.fechaNacimiento}
-                helperText={errors.fechaNacimiento?.message}
-                disabled={isLoading}
-                InputLabelProps={{ shrink: true }}
-              />
-
-              <Controller
-                name="tipoDocumento"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    select
-                    fullWidth
-                    label="Tipo de Documento"
-                    {...field}
-                    value={field.value || ""}
-                    error={!!errors.tipoDocumento}
-                    helperText={errors.tipoDocumento?.message}
-                    disabled={isLoading}
-                  >
-                    <MenuItem value="" disabled>
-                      Seleccione tipo de documento...
-                    </MenuItem>
-                    <MenuItem value="DNI">DNI</MenuItem>
-                    <MenuItem value="Pasaporte">Pasaporte</MenuItem>
-                    <MenuItem value="LC">LC</MenuItem>
-                    <MenuItem value="LE">LE</MenuItem>
-                    <MenuItem value="Otro">Otro</MenuItem>
-                  </TextField>
-                )}
-              />
-
-              <TextField
-                fullWidth
-                label="Número de Documento"
-                placeholder="Ej: 12345678"
-                {...register("numeroDocumento")}
-                error={!!errors.numeroDocumento}
-                helperText={errors.numeroDocumento?.message}
-                disabled={isLoading}
-              />
-
-              <TextField
-                fullWidth
-                label="Email"
-                type="email"
-                placeholder="ejemplo@correo.com"
-                {...register("email")}
-                error={!!errors.email}
-                helperText={errors.email?.message}
-                disabled={isLoading}
-              />
-
-              <TextField
-                fullWidth
-                label="Teléfono"
-                placeholder="Ej: +54 9 11 1234-5678"
-                {...register("telefono")}
-                error={!!errors.telefono}
-                helperText={errors.telefono?.message}
-                disabled={isLoading}
-              />
-
-              <TextField
-                fullWidth
-                label="Domicilio"
-                placeholder="Calle, número, ciudad, provincia"
-                {...register("domicilio")}
-                error={!!errors.domicilio}
-                helperText={errors.domicilio?.message}
-                disabled={isLoading}
-              />
-
-              <Controller
-                name="estadoCivil"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    select
-                    fullWidth
-                    label="Estado Civil"
-                    {...field}
-                    value={field.value || ""}
-                    error={!!errors.estadoCivil}
-                    helperText={errors.estadoCivil?.message}
-                    disabled={isLoading}
-                  >
-                    <MenuItem value="" disabled>
-                      Seleccione estado civil...
-                    </MenuItem>
-                    <MenuItem value="Soltero/a">Soltero/a</MenuItem>
-                    <MenuItem value="Casado/a">Casado/a</MenuItem>
-                    <MenuItem value="Divorciado/a">Divorciado/a</MenuItem>
-                    <MenuItem value="Viudo/a">Viudo/a</MenuItem>
-                    <MenuItem value="Otro">Otro</MenuItem>
-                  </TextField>
-                )}
-              />
-            </Box>
-
-            {/* Columna 2 */}
-            <Box
-              sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}
-            >
-              <TextField
-                fullWidth
-                label="Contraseña"
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                {...register("password")}
-                error={!!errors.password}
-                helperText={errors.password?.message}
-                disabled={isLoading}
-              />
-
-              <Controller
-                name="roleId"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    select
-                    fullWidth
-                    label="Rol"
-                    {...field}
-                    value={field.value || ""}
-                    error={!!errors.roleId}
-                    helperText={errors.roleId?.message}
-                    disabled={isLoading}
-                  >
-                    <MenuItem value="" disabled>
-                      Seleccione un rol...
-                    </MenuItem>
-                    <MenuItem value="1">Superadmin</MenuItem>
-                    <MenuItem value="2">RRHH</MenuItem>
-                    <MenuItem value="3">Contador</MenuItem>
-                    <MenuItem value="4">Empleado</MenuItem>
-                  </TextField>
-                )}
-              />
-
-              <TextField
-                fullWidth
-                label="Área"
-                placeholder="Ej: Administración, Ventas, IT"
-                {...register("area")}
-                error={!!errors.area}
-                helperText={errors.area?.message}
-                disabled={isLoading}
-              />
-
-              <TextField
-                fullWidth
-                label="Cargo"
-                placeholder="Ej: Gerente, Analista, Asistente"
-                {...register("cargo")}
-                error={!!errors.cargo}
-                helperText={errors.cargo?.message}
-                disabled={isLoading}
-              />
-
-              <TextField
-                fullWidth
-                label="Fecha de Contrato"
-                type="date"
-                {...register("fechaContrato")}
-                error={!!errors.fechaContrato}
-                helperText={errors.fechaContrato?.message}
-                disabled={isLoading}
-                InputLabelProps={{ shrink: true }}
-              />
-
-              <TextField
-                fullWidth
-                label="Legajo"
-                placeholder="Número de legajo"
-                {...register("legajo")}
-                error={!!errors.legajo}
-                helperText={errors.legajo?.message}
-                disabled={isLoading}
-              />
-            </Box>
-          </Box>
-
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            disabled={isLoading}
-            sx={{
-              mt: 4,
-              py: 1.5,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: "1.1rem",
-              borderRadius: 1,
-              textTransform: "none",
-            }}
-          >
-            {isLoading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Crear Usuario"
+            {/* ✅ ALERTAS */}
+            {error && (
+              <Alert severity="error" sx={{ width: "100%", mb: 3 }}>
+                {error}
+              </Alert>
             )}
-          </Button>
-        </Box>
-      </Container>
 
-      <Footer />
-    </Box>
+            {success && (
+              <Alert severity="success" sx={{ width: "100%", mb: 3 }}>
+                {success}
+              </Alert>
+            )}
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", md: "row" },
+                gap: 3,
+                width: "100%",
+              }}
+            >
+              {/* Columna 1 */}
+              <Box
+                sx={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                }}
+              >
+                <TextField
+                  fullWidth
+                  label="Nombre y Apellido"
+                  placeholder="Ej: Juan Carlos Pérez"
+                  {...register("username")}
+                  error={!!errors.username}
+                  helperText={errors.username?.message}
+                  disabled={isLoading}
+                />
+
+                <Controller
+                  name="fechaNacimiento"
+                  control={control}
+                  render={({ field }) => (
+                    <DateField
+                      label="Fecha de Nacimiento"
+                      format="DD-MM-YYYY"
+                      fullWidth
+                      value={
+                        field.value
+                          ? dayjs(field.value, ["YYYY-MM-DD", "DD-MM-YYYY"])
+                          : null
+                      }
+                      onChange={(date) => {
+                        // Convierte a string ISO yyyy-mm-dd para el backend y validación
+                        field.onChange(
+                          date && date.isValid()
+                            ? date.format("YYYY-MM-DD")
+                            : ""
+                        );
+                      }}
+                      error={!!errors.fechaNacimiento}
+                      helperText={errors.fechaNacimiento?.message}
+                      disabled={isLoading}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="tipoDocumento"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      select
+                      fullWidth
+                      label="Tipo de Documento"
+                      {...field}
+                      value={field.value || ""}
+                      error={!!errors.tipoDocumento}
+                      helperText={errors.tipoDocumento?.message}
+                      disabled={isLoading}
+                    >
+                      <MenuItem value="" disabled>
+                        Seleccione tipo de documento...
+                      </MenuItem>
+                      <MenuItem value="DNI">DNI</MenuItem>
+                      <MenuItem value="Pasaporte">Pasaporte</MenuItem>
+                      <MenuItem value="LC">LC</MenuItem>
+                      <MenuItem value="LE">LE</MenuItem>
+                      <MenuItem value="Otro">Otro</MenuItem>
+                    </TextField>
+                  )}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Número de Documento"
+                  placeholder="Ej: 12345678"
+                  {...register("numeroDocumento")}
+                  error={!!errors.numeroDocumento}
+                  helperText={errors.numeroDocumento?.message}
+                  disabled={isLoading}
+                  inputProps={{ maxLength: 9 }}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Email"
+                  type="email"
+                  placeholder="ejemplo@correo.com"
+                  {...register("email")}
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
+                  disabled={isLoading}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Teléfono"
+                  placeholder="Ej: +54 9 11 1234-5678"
+                  {...register("telefono")}
+                  error={!!errors.telefono}
+                  helperText={errors.telefono?.message}
+                  disabled={isLoading}
+                  inputProps={{ maxLength: 10 }}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Domicilio"
+                  placeholder="Calle, número, ciudad, provincia"
+                  {...register("domicilio")}
+                  error={!!errors.domicilio}
+                  helperText={errors.domicilio?.message}
+                  disabled={isLoading}
+                />
+
+                <Controller
+                  name="estadoCivil"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      select
+                      fullWidth
+                      label="Estado Civil"
+                      {...field}
+                      value={field.value || ""}
+                      error={!!errors.estadoCivil}
+                      helperText={errors.estadoCivil?.message}
+                      disabled={isLoading}
+                    >
+                      <MenuItem value="" disabled>
+                        Seleccione estado civil...
+                      </MenuItem>
+                      <MenuItem value="Soltero/a">Soltero/a</MenuItem>
+                      <MenuItem value="Casado/a">Casado/a</MenuItem>
+                      <MenuItem value="Divorciado/a">Divorciado/a</MenuItem>
+                      <MenuItem value="Viudo/a">Viudo/a</MenuItem>
+                      <MenuItem value="En unión convivencial">
+                        En unión convivencial
+                      </MenuItem>
+                    </TextField>
+                  )}
+                />
+              </Box>
+
+              {/* Columna 2 */}
+              <Box
+                sx={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                }}
+              >
+                <TextField
+                  fullWidth
+                  label="Contraseña"
+                  type="password"
+                  placeholder="Mínimo 6 caracteres"
+                  {...register("password")}
+                  error={!!errors.password}
+                  helperText={errors.password?.message}
+                  disabled={isLoading}
+                />
+
+                <Controller
+                  name="roleId"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      select
+                      fullWidth
+                      label="Rol"
+                      {...field}
+                      value={field.value || ""}
+                      error={!!errors.roleId}
+                      helperText={errors.roleId?.message}
+                      disabled={isLoading}
+                    >
+                      <MenuItem value="" disabled>
+                        Seleccione un rol...
+                      </MenuItem>
+                      <MenuItem value="1">Superadmin</MenuItem>
+                      <MenuItem value="2">RRHH</MenuItem>
+                      <MenuItem value="3">Contador</MenuItem>
+                      <MenuItem value="4">Empleado</MenuItem>
+                    </TextField>
+                  )}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Área"
+                  placeholder="Ej: Administración, Ventas, IT"
+                  {...register("area")}
+                  error={!!errors.area}
+                  helperText={errors.area?.message}
+                  disabled={isLoading}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Cargo"
+                  placeholder="Ej: Gerente, Analista, Asistente"
+                  {...register("cargo")}
+                  error={!!errors.cargo}
+                  helperText={errors.cargo?.message}
+                  disabled={isLoading}
+                />
+
+                <Controller
+                  name="fechaContrato"
+                  control={control}
+                  render={({ field }) => (
+                    <DateField
+                      label="Fecha de Contrato"
+                      format="DD-MM-YYYY"
+                      fullWidth
+                      value={
+                        field.value
+                          ? dayjs(field.value, ["YYYY-MM-DD", "DD-MM-YYYY"])
+                          : null
+                      }
+                      onChange={(date) => {
+                        field.onChange(
+                          date && date.isValid()
+                            ? date.format("YYYY-MM-DD")
+                            : ""
+                        );
+                      }}
+                      error={!!errors.fechaContrato}
+                      helperText={errors.fechaContrato?.message}
+                      disabled={isLoading}
+                    />
+                  )}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Legajo"
+                  placeholder="Número de legajo"
+                  {...register("legajo")}
+                  error={!!errors.legajo}
+                  helperText={errors.legajo?.message}
+                  disabled={isLoading}
+                />
+              </Box>
+            </Box>
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={isLoading}
+              sx={{
+                mt: 4,
+                py: 1.5,
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 600,
+                fontSize: "1.1rem",
+                borderRadius: 1,
+                textTransform: "none",
+              }}
+            >
+              {isLoading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Crear Usuario"
+              )}
+            </Button>
+          </Box>
+        </Container>
+
+        <Footer />
+      </Box>
+    </LocalizationProvider>
   );
 };
 
