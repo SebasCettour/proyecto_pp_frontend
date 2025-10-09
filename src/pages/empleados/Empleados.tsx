@@ -11,6 +11,7 @@ export const Empleados = () => {
 
   const handleIrARecibos = () => navigate("/mis-recibos");
   const handleIrALicencias = () => navigate("/solicitar-licencia");
+    const handleIrAMisLicencias = () => navigate("/mis-licencias");
   const handleCerrarSesion = () => {
     localStorage.clear();
     navigate("/");
@@ -119,6 +120,25 @@ export const Empleados = () => {
             }}
           >
             Solicitar Licencia
+          </Button>
+          <Button
+            onClick={handleIrAMisLicencias}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Mis Licencias
           </Button>
 
           <Button

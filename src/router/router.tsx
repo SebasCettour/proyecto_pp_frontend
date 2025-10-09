@@ -16,6 +16,7 @@ import PrivateRoute from "../components/PrivateRoute";
 import GestionUsuarios from "../pages/superadmin/gestion-usuarios";
 import EditarUsuario from "../pages/superadmin/editar-usuario";
 import EliminarUsuario from "../pages/superadmin/eliminar-usuario";
+import MisLicencias from "../pages/empleados/MisLicencias";
 
 export function AppRoutes() {
   return (
@@ -72,6 +73,14 @@ export function AppRoutes() {
         element={
           <PrivateRoute role="empleado">
             <SolicitarLicencia />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/mis-licencias"
+        element={
+          <PrivateRoute role="empleado">
+            <MisLicencias />
           </PrivateRoute>
         }
       />
