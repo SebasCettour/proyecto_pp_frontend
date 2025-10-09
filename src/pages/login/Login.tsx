@@ -57,7 +57,7 @@ const Login: React.FC = () => {
       console.log("Response ok:", response.ok);
 
       const result = await response.json();
-    
+
       if (!response.ok) {
         setError(result.error || "Error al iniciar sesión");
         return;
@@ -66,6 +66,10 @@ const Login: React.FC = () => {
       // Guardar token y rol en localStorage
       localStorage.setItem("token", result.token);
       localStorage.setItem("role", result.role);
+
+      if (result.user && result.user.documento) {
+        localStorage.setItem("documento", result.user.documento);
+      }
 
       console.log("Token guardado:", result.token);
       console.log("Rol guardado:", result.role);

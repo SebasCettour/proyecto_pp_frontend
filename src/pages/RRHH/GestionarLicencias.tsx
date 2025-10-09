@@ -43,7 +43,9 @@ interface Licencia {
 export default function GestionarLicencias() {
   const [licencias, setLicencias] = useState<Licencia[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedLicencia, setSelectedLicencia] = useState<Licencia | null>(null);
+  const [selectedLicencia, setSelectedLicencia] = useState<Licencia | null>(
+    null
+  );
   const [modalOpen, setModalOpen] = useState(false);
   const [respuesta, setRespuesta] = useState("");
   const [accion, setAccion] = useState<"Aprobada" | "Rechazada">("Aprobada");
@@ -55,24 +57,31 @@ export default function GestionarLicencias() {
 
   const fetchLicencias = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       console.log("Token en fetchLicencias:", token);
-      
-      const response = await fetch("http://localhost:4000/api/licencias/pendientes", {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+
+      const response = await fetch(
+        "http://localhost:4000/api/licencias/pendientes",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
-      
+      );
+
       console.log("Response status:", response.status);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log("Licencias recibidas:", data);
         setLicencias(data);
       } else {
-        console.error('Error en la respuesta:', response.status, response.statusText);
+        console.error(
+          "Error en la respuesta:",
+          response.status,
+          response.statusText
+        );
       }
     } catch (error) {
       console.error("Error cargando licencias:", error);
@@ -92,11 +101,15 @@ export default function GestionarLicencias() {
     if (!selectedLicencia) return;
 
     try {
+      const token = localStorage.getItem("token"); // <-- agrega esto
       const response = await fetch(
         `http://localhost:4000/api/licencias/responder/${selectedLicencia.Id_Licencia}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({
             estado: accion,
             motivoRechazo: accion === "Rechazada" ? respuesta : null,
@@ -120,10 +133,14 @@ export default function GestionarLicencias() {
 
   const getEstadoColor = (estado: string) => {
     switch (estado) {
-      case "Pendiente": return "warning";
-      case "Aprobada": return "success";
-      case "Rechazada": return "error";
-      default: return "default";
+      case "Pendiente":
+        return "warning";
+      case "Aprobada":
+        return "success";
+      case "Rechazada":
+        return "error";
+      default:
+        return "default";
     }
   };
 
@@ -141,7 +158,7 @@ export default function GestionarLicencias() {
     >
       <Header />
 
-      {/* Contenido principal - se expande para empujar el footer hacia abajo */}
+      {/* Contenido principal */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
         {/* Botón Volver */}
         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
@@ -183,7 +200,15 @@ export default function GestionarLicencias() {
           <Table>
             <TableHead sx={{ backgroundColor: "#858789ff" }}>
               <TableRow>
-                {["Fecha", "Documento", "Nombre y Apellido", "Área", "Motivo", "Estado", "Acciones"].map((header) => (
+                {[
+                  "Fecha",
+                  "Documento",
+                  "Nombre y Apellido",
+                  "Área",
+                  "Motivo",
+                  "Estado",
+                  "Acciones",
+                ].map((header) => (
                   <TableCell
                     key={header}
                     sx={{
@@ -281,26 +306,33 @@ export default function GestionarLicencias() {
             maxWidth: "90vw",
           }}
         >
-          <Typography variant="h6" sx={{ mb: 3, fontFamily: "Tektur, sans-serif" }}>
+          <Typography
+            variant="h6"
+            sx={{ mb: 3, fontFamily: "Tektur, sans-serif" }}
+          >
             Responder Solicitud de Licencia
           </Typography>
-          
+
           {selectedLicencia && (
             <Box sx={{ mb: 3 }}>
               <Typography variant="body1" sx={{ mb: 1 }}>
-                <strong>Solicitante:</strong> {selectedLicencia.Nombre} {selectedLicencia.Apellido}
+                <strong>Solicitante:</strong> {selectedLicencia.Nombre}{" "}
+                {selectedLicencia.Apellido}
               </Typography>
               <Typography variant="body1" sx={{ mb: 1 }}>
                 <strong>Motivo:</strong> {selectedLicencia.Motivo}
               </Typography>
               {selectedLicencia.Observaciones && (
                 <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Observaciones:</strong> {selectedLicencia.Observaciones}
+                  <strong>Observaciones:</strong>{" "}
+                  {selectedLicencia.Observaciones}
                 </Typography>
               )}
               {selectedLicencia.DiagnosticoCIE10_Codigo && (
                 <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Diagnóstico CIE-10:</strong> {selectedLicencia.DiagnosticoCIE10_Codigo} - {selectedLicencia.DiagnosticoCIE10_Descripcion}
+                  <strong>Diagnóstico CIE-10:</strong>{" "}
+                  {selectedLicencia.DiagnosticoCIE10_Codigo} -{" "}
+                  {selectedLicencia.DiagnosticoCIE10_Descripcion}
                 </Typography>
               )}
             </Box>
@@ -310,7 +342,9 @@ export default function GestionarLicencias() {
             <InputLabel>Decisión</InputLabel>
             <Select
               value={accion}
-              onChange={(e) => setAccion(e.target.value as "Aprobada" | "Rechazada")}
+              onChange={(e) =>
+                setAccion(e.target.value as "Aprobada" | "Rechazada")
+              }
             >
               <MenuItem value="Aprobada">Aprobar</MenuItem>
               <MenuItem value="Rechazada">Rechazar</MenuItem>
@@ -331,10 +365,7 @@ export default function GestionarLicencias() {
           )}
 
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-            <Button
-              variant="outlined"
-              onClick={() => setModalOpen(false)}
-            >
+            <Button variant="outlined" onClick={() => setModalOpen(false)}>
               Cancelar
             </Button>
             <Button
@@ -348,7 +379,7 @@ export default function GestionarLicencias() {
         </Box>
       </Modal>
 
-      {/* Footer fijo en la parte inferior */}
+      {/* Footer */}
       <Footer />
     </Box>
   );
