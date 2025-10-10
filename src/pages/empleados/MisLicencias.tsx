@@ -192,7 +192,11 @@ const MisLicencias: React.FC = () => {
                         />
                       </TableCell>
                       <TableCell align="center">
-                        {formatDate(lic.FechaRespuesta)}
+                        {lic.FechaRespuesta
+                          ? formatDate(lic.FechaRespuesta)
+                          : lic.Estado === "Pendiente"
+                          ? "Pendiente"
+                          : "-"}
                       </TableCell>
                       <TableCell align="center">
                         {lic.MotivoRechazo || "-"}
