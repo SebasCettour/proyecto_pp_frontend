@@ -362,7 +362,6 @@ export default function SolicitarLicencia() {
               )}
             </FormControl>
 
-            {/* AGREGAR CAMPOS DE FECHA */}
             <TextField
               label="Fecha de Inicio"
               name="fechaInicio"
