@@ -37,7 +37,6 @@ const MisLicencias: React.FC = () => {
     Motivo: "",
     FechaInicio: "",
     FechaFin: "",
-
     motivo: "",
     nombre: "",
     apellido: "",
@@ -120,38 +119,66 @@ const MisLicencias: React.FC = () => {
     if (!licenciaAEditar) return;
     try {
       const token = localStorage.getItem("token");
+      const formData = new FormData();
+
+      formData.append("nombre", editFields.nombre || "");
+      formData.append("apellido", editFields.apellido || "");
+      formData.append("documento", editFields.documento || "");
+      formData.append("motivo", editFields.motivo || "");
+      formData.append("fechaInicio", (editFields.FechaInicio || "").slice(0, 10));
+      formData.append("fechaFin", (editFields.FechaFin || "").slice(0, 10));
+      formData.append("observaciones", editFields.observaciones || "");
+
+      // Diagnóstico CIE-10 si corresponde
+      if (editFields.diagnosticoCIE10) {
+        formData.append(
+          "diagnosticoCIE10_codigo",
+          editFields.diagnosticoCIE10.codigo || ""
+        );
+        formData.append(
+          "diagnosticoCIE10_descripcion",
+          editFields.diagnosticoCIE10.descripcion || ""
+        );
+      } else {
+        formData.append("diagnosticoCIE10_codigo", "");
+        formData.append("diagnosticoCIE10_descripcion", "");
+      }
+
+      // Archivo si fue cambiado
+      if (editFields.archivo) {
+        formData.append("certificadoMedico", editFields.archivo);
+      }
+
       const response = await fetch(
         `http://localhost:4000/api/licencias/editar/${licenciaAEditar.Id_Licencia}`,
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(editFields),
+          body: formData,
         }
       );
+
       if (response.ok) {
         // Refresca la lista
-        const fetchLicencias = async () => {
-          const token = localStorage.getItem("token");
-          const res = await fetch(
-            `http://localhost:4000/api/licencias/mis-licencias/${documento}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          if (res.ok) {
-            const data = await res.json();
-            setLicencias(data);
+        const res = await fetch(
+          `http://localhost:4000/api/licencias/mis-licencias/${documento}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           }
-        };
-        fetchLicencias();
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setLicencias(data);
+        }
         setEditModalOpen(false);
         setLicenciaAEditar(null);
+      } else {
+        alert("Error al guardar los cambios");
       }
     } catch (error) {
       alert("Error al guardar los cambios");
@@ -183,7 +210,7 @@ const MisLicencias: React.FC = () => {
       setCie10Loading(true);
       try {
         const res = await fetch(
-          `http://localhost:4000/api/cie10/buscar?query=${cie10Search}`
+          `http://localhost:4000/api/cie10/search?query=${encodeURIComponent(cie10Search)}`
         );
         if (res.ok) {
           const data = await res.json();
