@@ -60,12 +60,35 @@ const Login: React.FC = () => {
 
       if (!response.ok) {
         setError(result.error || "Error al iniciar sesión");
+        // Si el backend responde 403, redirige a /forbidden
+        if (response.status === 403) {
+          navigate("/forbidden");
+          return;
+        }
         return;
       }
 
       // Guardar token y rol en localStorage
       localStorage.setItem("token", result.token);
       localStorage.setItem("role", result.role);
+
+      // EXTRAER username del token y guardarlo
+      try {
+        const payload = JSON.parse(atob(result.token.split(".")[1]));
+        if (payload.username) {
+          localStorage.setItem("username", payload.username);
+        }
+      } catch (e) {
+
+      }
+
+      // Guardar nombre y/o username en localStorage
+      if (result.user && result.user.nombre) {
+        localStorage.setItem("nombre", result.user.nombre);
+      }
+      if (result.user && result.user.username) {
+        localStorage.setItem("username", result.user.username);
+      }
 
       if (result.user && result.user.documento) {
         localStorage.setItem("documento", result.user.documento);
@@ -108,10 +131,8 @@ const Login: React.FC = () => {
         console.log("Redirigiendo a /contadores");
         navigate("/contadores");
       } else {
-        console.log(
-          "Rol no reconocido, redirigiendo por defecto a /rrhh-principal"
-        );
-        navigate("/rrhh-principal");
+        console.log("Rol no reconocido, redirigiendo a /forbidden");
+        navigate("/forbidden");
       }
     } catch (err) {
       setError("Error al iniciar sesión. Verifica tus credenciales.");
