@@ -1,25 +1,96 @@
-import React from "react";
-import { Typography, Box, Button, Container } from "@mui/material";
+import React, { useState } from "react";
+import {
+  Typography,
+  Box,
+  Button,
+  Container,
+  IconButton,
+  Menu,
+  MenuItem,
+  Modal,
+  TextField,
+  InputAdornment,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { Logout } from "@mui/icons-material";
+import { Logout, Settings } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
-import BtnCerrarSesion from "../../components/BtnCerrarSesion";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 export const Empleados = () => {
   const navigate = useNavigate();
 
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const userRole = localStorage.getItem("role") || "";
+  const userName =
+    localStorage.getItem("nombre") ||
+    localStorage.getItem("username") ||
+    "Usuario";
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) =>
+    setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleOpenModal = () => {
+    setModalOpen(true);
+    setAnchorEl(null);
+    setMsg(null);
+    setOldPassword("");
+    setNewPassword("");
+  };
+  const handleCloseModal = () => setModalOpen(false);
+
+  const handleChangePassword = async () => {
+    setLoading(true);
+    setMsg(null);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        "http://localhost:4000/api/usuario/auth/cambiar-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: localStorage.getItem("username"), // <-- AGREGA ESTO
+            oldPassword,
+            newPassword,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setMsg("Contraseña cambiada correctamente");
+        setTimeout(() => setModalOpen(false), 1200);
+      } else {
+        setMsg(data.message || "Error al cambiar la contraseña");
+      }
+    } catch {
+      setMsg("Error de conexión");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleIrARecibos = () => navigate("/mis-recibos");
   const handleIrALicencias = () => navigate("/solicitar-licencia");
-    const handleIrAMisLicencias = () => navigate("/mis-licencias");
+  const handleIrAMisLicencias = () => navigate("/mis-licencias");
   const handleCerrarSesion = () => {
     localStorage.clear();
     navigate("/");
   };
   const handleIrAlTablon = () => navigate("/ver-novedades");
   const handleIrAtras = () => navigate("/superadmin");
-
-  const userRole = localStorage.getItem("role") || "";
 
   return (
     <Box
@@ -35,7 +106,34 @@ export const Empleados = () => {
     >
       <Header />
 
-      <BtnCerrarSesion />
+      {/* Menú Editar y Cerrar Sesión */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 35,
+          right: 32,
+          display: "flex",
+          alignItems: "center",
+          zIndex: 10,
+        }}
+      >
+        <Typography
+          sx={{ fontWeight: 600, fontFamily: "Tektur, sans-serif", mr: 1 }}
+        >
+          {userName}
+        </Typography>
+        <IconButton onClick={handleMenuOpen}>
+          <Settings />
+        </IconButton>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem onClick={handleOpenModal}>Cambiar Contraseña</MenuItem>
+          <MenuItem onClick={handleCerrarSesion}>Cerrar Sesión</MenuItem>
+        </Menu>
+      </Box>
 
       {/* Botón Volver solo para superadmin */}
       {userRole === "superadmin" && (
@@ -182,6 +280,87 @@ export const Empleados = () => {
           </Button>
         </Box>
       </Container>
+
+      {/* Modal para cambiar contraseña */}
+      <Modal open={modalOpen} onClose={handleCloseModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            borderRadius: 3,
+            p: 4,
+            minWidth: 350,
+            maxWidth: "90vw",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Cambiar Contraseña
+          </Typography>
+          <TextField
+            label="Contraseña Actual"
+            type={showOld ? "text" : "password"}
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            fullWidth
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowOld((v) => !v)} edge="end">
+                    {showOld ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <TextField
+            label="Nueva Contraseña"
+            type={showNew ? "text" : "password"}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            fullWidth
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowNew((v) => !v)} edge="end">
+                    {showNew ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          {msg && (
+            <Typography
+              color={
+                msg.includes("correctamente") ? "success.main" : "error.main"
+              }
+              sx={{ mt: 1 }}
+            >
+              {msg}
+            </Typography>
+          )}
+          <Box
+            sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
+          >
+            <Button onClick={handleCloseModal} disabled={loading}>
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleChangePassword}
+              disabled={loading || !oldPassword || !newPassword}
+            >
+              Cambiar
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
 
       <Footer />
     </Box>
