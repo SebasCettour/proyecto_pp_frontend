@@ -18,7 +18,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  InputAdornment,
+  IconButton,
+  Menu,
 } from "@mui/material";
+import { Visibility, VisibilityOff, Settings } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
@@ -27,7 +31,7 @@ import { SelectChangeEvent } from "@mui/material/Select";
 
 const MisLicencias: React.FC = () => {
   const [licencias, setLicencias] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // loading general
   const [error, setError] = useState<string | null>(null);
 
   // Para edición
@@ -230,6 +234,83 @@ const MisLicencias: React.FC = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [cie10Search]);
 
+  // Estados para menú y cambio de contraseña
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [userName, setUserName] = useState<string>("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [loadingPassword, setLoadingPassword] = useState(false); // <--- CAMBIO AQUÍ
+
+  useEffect(() => {
+    const name =
+      localStorage.getItem("username") ||
+      localStorage.getItem("nombre") ||
+      "Usuario";
+    setUserName(name);
+  }, []);
+
+  // Handlers para el menú
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+  const handleOpenModal = () => {
+    setModalOpen(true);
+    setAnchorEl(null);
+  };
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setOldPassword("");
+    setNewPassword("");
+    setMsg(null);
+  };
+  const handleCerrarSesion = () => {
+    localStorage.clear();
+    window.location.href = "/";
+  };
+
+  // Cambiar contraseña desde el modal
+  const handleChangePassword = async () => {
+    setLoadingPassword(true);
+    setMsg(null);
+    try {
+      const res = await fetch(
+        "http://localhost:4000/api/usuario/auth/cambiar-password",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username:
+              localStorage.getItem("username") ||
+              localStorage.getItem("nombre") ||
+              "",
+            oldPassword,
+            newPassword,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setMsg("Contraseña cambiada correctamente");
+        setTimeout(() => setModalOpen(false), 1200);
+      } else {
+        setMsg(data.error || data.message || "Error al cambiar la contraseña");
+      }
+    } catch {
+      setMsg("Error de conexión");
+    } finally {
+      setLoadingPassword(false); // <--- CAMBIO AQUÍ
+      setOldPassword("");
+      setNewPassword("");
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -242,6 +323,55 @@ const MisLicencias: React.FC = () => {
       }}
     >
       <Header />
+        {/* Menú Editar y Cerrar Sesión */}
+            <Box
+              sx={{
+                position: "absolute",
+                top: 35,
+                right: 32,
+                display: "flex",
+                alignItems: "center",
+                zIndex: 10,
+              }}
+            >
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", mr: 1 }}>
+                <Typography
+                  sx={{
+                    fontWeight: 400,
+                    letterSpacing: 2,
+                    fontFamily: "Tektur, sans-serif",
+                    fontSize: 16,
+                    color: "#333",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  Bienvenido/a
+                </Typography>
+                <Typography
+                  sx={{
+                    fontWeight: 600,
+                    letterSpacing: 2,
+                    fontFamily: "Tektur, sans-serif",
+                    fontSize: 18,
+                    color: "#1976d2",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {userName}
+                </Typography>
+              </Box>
+              <IconButton onClick={handleMenuOpen}>
+                <Settings sx={{ fontSize: 40 }} />
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+              >
+                <MenuItem onClick={handleOpenModal}>Cambiar Contraseña</MenuItem>
+                <MenuItem onClick={handleCerrarSesion}>Cerrar Sesión</MenuItem>
+              </Menu>
+            </Box>
 
       {/* Contenido principal */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -599,9 +729,90 @@ const MisLicencias: React.FC = () => {
       </Modal>
       {/* Footer */}
       <Box sx={{ mt: "auto" }}>
+        {/* Modal para cambiar contraseña */}
+        <Modal open={modalOpen} onClose={handleCloseModal}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              bgcolor: "background.paper",
+              boxShadow: 24,
+              borderRadius: 3,
+              p: 4,
+              minWidth: 350,
+              maxWidth: "90vw",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Cambiar Contraseña
+            </Typography>
+            <TextField
+              label="Contraseña Actual"
+              type={showOld ? "text" : "password"}
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              fullWidth
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowOld((v) => !v)} edge="end">
+                      {showOld ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <TextField
+              label="Nueva Contraseña"
+              type={showNew ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              fullWidth
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowNew((v) => !v)} edge="end">
+                      {showNew ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {msg && (
+              <Typography
+                color={
+                  msg.includes("correctamente") ? "success.main" : "error.main"
+                }
+                sx={{ mt: 1 }}
+              >
+                {msg}
+              </Typography>
+            )}
+            <Box
+              sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
+            >
+              <Button onClick={handleCloseModal} disabled={loadingPassword}>
+                Cancelar
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleChangePassword}
+                disabled={loadingPassword || !oldPassword || !newPassword}
+              >
+                Cambiar
+              </Button>
+            </Box>
+          </Box>
+        </Modal>
         <Footer />
       </Box>
     </Box>
   );
 };
+
 export default MisLicencias;
