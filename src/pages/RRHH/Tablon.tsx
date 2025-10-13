@@ -12,12 +12,16 @@ import {
   Modal,
   TextField,
   Fade,
+  Menu,
+  MenuItem,
+  InputAdornment,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import DownloadIcon from "@mui/icons-material/Download";
+import { Settings, Visibility, VisibilityOff } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 
@@ -28,6 +32,8 @@ interface Novedad {
   Id_Empleado: number;
   Imagen?: string;
   ArchivoAdjunto?: string;
+  Nombre_Empleado?: string;
+  Apellido_Empleado?: string;
 }
 
 export default function Tablon() {
@@ -40,6 +46,21 @@ export default function Tablon() {
   const [editNovedad, setEditNovedad] = useState<Novedad | null>(null);
   const [editDescripcion, setEditDescripcion] = useState("");
   const [editLoading, setEditLoading] = useState(false);
+
+  // Menú y cambio de contraseña
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [modalPasswordOpen, setModalPasswordOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [loadingPassword, setLoadingPassword] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const userName =
+    localStorage.getItem("nombre") ||
+    localStorage.getItem("username") ||
+    "Usuario";
 
   useEffect(() => {
     fetch("http://localhost:4000/api/novedad/tablon")
@@ -101,6 +122,60 @@ export default function Tablon() {
     }
   };
 
+  // Menú usuario
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) =>
+    setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleOpenPasswordModal = () => {
+    setModalPasswordOpen(true);
+    setAnchorEl(null);
+    setMsg(null);
+    setOldPassword("");
+    setNewPassword("");
+  };
+  const handleClosePasswordModal = () => setModalPasswordOpen(false);
+
+  const handleCerrarSesion = () => {
+    localStorage.clear();
+    window.location.href = "/";
+  };
+
+  const handleChangePassword = async () => {
+    setLoadingPassword(true);
+    setMsg(null);
+    try {
+      const username =
+        localStorage.getItem("username") ||
+        localStorage.getItem("nombre") ||
+        "";
+      const res = await fetch(
+        "http://localhost:4000/api/usuario/auth/cambiar-password",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username,
+            oldPassword,
+            newPassword,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setMsg("Contraseña cambiada correctamente");
+        setOldPassword("");
+        setNewPassword("");
+      } else {
+        setMsg(data.error || "Error al cambiar la contraseña");
+      }
+    } catch (err) {
+      setMsg("Error de conexión con el servidor");
+    } finally {
+      setLoadingPassword(false);
+    }
+  };
+
   const formatearFecha = (fechaString: string) => {
     const fecha = new Date(fechaString);
     const ahora = new Date();
@@ -131,6 +206,62 @@ export default function Tablon() {
       }}
     >
       <Header />
+      {/* Menú Editar y Cerrar Sesión */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 35,
+          right: 32,
+          display: "flex",
+          alignItems: "center",
+          zIndex: 10,
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            mr: 1,
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 400,
+              letterSpacing: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontSize: 16,
+              color: "#333",
+              lineHeight: 1.1,
+            }}
+          >
+            Bienvenido/a
+          </Typography>
+          <Typography
+            sx={{
+              fontWeight: 600,
+              letterSpacing: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontSize: 18,
+              color: "#1976d2",
+              lineHeight: 1.1,
+            }}
+          >
+            {userName}
+          </Typography>
+        </Box>
+        <IconButton onClick={handleMenuOpen}>
+          <Settings sx={{ fontSize: 40 }} />
+        </IconButton>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem onClick={handleOpenPasswordModal}>Cambiar Contraseña</MenuItem>
+          <MenuItem onClick={handleCerrarSesion}>Cerrar Sesión</MenuItem>
+        </Menu>
+      </Box>
 
       {/* Botón Volver */}
       <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
@@ -227,7 +358,9 @@ export default function Tablon() {
                       fontFamily: "Segoe UI, Arial, sans-serif",
                     }}
                   >
-                    R
+                    {/* Iniciales */}
+                    {(novedad.Nombre_Empleado?.[0] || "") +
+                      (novedad.Apellido_Empleado?.[0] || "")}
                   </Avatar>
                   <Box>
                     <Typography
@@ -240,7 +373,10 @@ export default function Tablon() {
                         letterSpacing: 0.5,
                       }}
                     >
-                      RRHH
+                      {/* Nombre completo */}
+                      {(novedad.Nombre_Empleado || "") +
+                        " " +
+                        (novedad.Apellido_Empleado || "")}
                     </Typography>
                     <Typography
                       variant="caption"
@@ -410,6 +546,86 @@ export default function Tablon() {
               disabled={editLoading || !editDescripcion.trim()}
             >
               {editLoading ? "Guardando..." : "Guardar"}
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+      {/* Modal para cambiar contraseña */}
+      <Modal open={modalPasswordOpen} onClose={handleClosePasswordModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            borderRadius: 3,
+            p: 4,
+            minWidth: 350,
+            maxWidth: "90vw",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Cambiar Contraseña
+          </Typography>
+          <TextField
+            label="Contraseña Actual"
+            type={showOld ? "text" : "password"}
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            fullWidth
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowOld((v) => !v)} edge="end">
+                    {showOld ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <TextField
+            label="Nueva Contraseña"
+            type={showNew ? "text" : "password"}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            fullWidth
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowNew((v) => !v)} edge="end">
+                    {showNew ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          {msg && (
+            <Typography
+              color={
+                msg.includes("correctamente") ? "success.main" : "error.main"
+              }
+              sx={{ mt: 1 }}
+            >
+              {msg}
+            </Typography>
+          )}
+          <Box
+            sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
+          >
+            <Button onClick={handleClosePasswordModal} disabled={loadingPassword}>
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleChangePassword}
+              disabled={loadingPassword || !oldPassword || !newPassword}
+            >
+              Cambiar
             </Button>
           </Box>
         </Box>

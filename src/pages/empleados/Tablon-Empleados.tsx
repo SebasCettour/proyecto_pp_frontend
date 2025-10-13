@@ -30,6 +30,8 @@ interface Novedad {
   Id_Empleado: number;
   Imagen?: string;
   ArchivoAdjunto?: string;
+  Nombre_Empleado?: string;      // <-- nuevo
+  Apellido_Empleado?: string;    // <-- nuevo
 }
 
 export default function Tablon() {
@@ -331,7 +333,8 @@ export default function Tablon() {
                       fontFamily: "Segoe UI, Arial, sans-serif",
                     }}
                   >
-                    R
+                    {/* Iniciales */}
+                    {(novedad.Nombre_Empleado?.[0] || "") + (novedad.Apellido_Empleado?.[0] || "")}
                   </Avatar>
                   <Box>
                     <Typography
@@ -344,7 +347,8 @@ export default function Tablon() {
                         letterSpacing: 0.5,
                       }}
                     >
-                      RRHH
+                      {/* Nombre completo */}
+                      {(novedad.Nombre_Empleado || "") + " " + (novedad.Apellido_Empleado || "")}
                     </Typography>
                     <Typography
                       variant="caption"

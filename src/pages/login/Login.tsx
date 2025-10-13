@@ -94,6 +94,11 @@ const Login: React.FC = () => {
         localStorage.setItem("documento", result.user.documento);
       }
 
+      // Nuevo: Guardar idEmpleado en localStorage si existe
+      if (result.user && result.user.idEmpleado) {
+        localStorage.setItem("idEmpleado", result.user.idEmpleado.toString());
+      }
+
       console.log("Token guardado:", result.token);
       console.log("Rol guardado:", result.role);
 
