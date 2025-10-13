@@ -22,6 +22,17 @@ const EditarUsuario: React.FC = () => {
   const [editando, setEditando] = useState(false);
   const [mensaje, setMensaje] = useState<string | null>(null);
 
+  // Convierte ISO a DDMMAAAA
+  const isoToDDMMAAAA = (iso: string) => {
+    if (!iso) return "";
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return "";
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}${month}${year}`;
+  };
+
   const handleBuscar = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -33,6 +44,9 @@ const EditarUsuario: React.FC = () => {
       );
       if (!response.ok) throw new Error("Usuario no encontrado");
       const user = await response.json();
+      // Convertir fechas ISO a DDMMAAAA
+      user.Fecha_Nacimiento = isoToDDMMAAAA(user.Fecha_Nacimiento);
+      user.Fecha_Desde = isoToDDMMAAAA(user.Fecha_Desde);
       setUsuario(user);
       setOpen(true);
     } catch (err: any) {
@@ -46,19 +60,110 @@ const EditarUsuario: React.FC = () => {
     setUsuario({ ...usuario, [e.target.name]: e.target.value });
   };
 
-  const formatDate = (isoString: string) =>
-    isoString ? isoString.split("T")[0] : "";
+  // Formatea "DDMMYYYY" a "DD-MM-YYYY" para mostrar
+  const formatDateToDisplay = (value: string) => {
+    if (!value) return "";
+    const clean = value.replace(/-/g, "");
+    if (clean.length <= 2) return clean;
+    if (clean.length <= 4) return `${clean.slice(0,2)}-${clean.slice(2)}`;
+    if (clean.length <= 8) return `${clean.slice(0,2)}-${clean.slice(2,4)}-${clean.slice(4,8)}`;
+    return clean;
+  };
+
+  // Convierte "DD-MM-YYYY" o "DDMMYYYY" a "YYYY-MM-DD"
+  const formatDateToISO = (dateString: string) => {
+    if (!dateString) return "";
+    const clean = dateString.replace(/-/g, "");
+    if (clean.length !== 8) return "";
+    const day = clean.slice(0, 2);
+    const month = clean.slice(2, 4);
+    const year = clean.slice(4, 8);
+    return `${year}-${month}-${day}`;
+  };
+
+  // Handler: solo números y máximo 8 caracteres, guarda sin guiones
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/[^0-9]/g, "");
+    if (value.length > 8) value = value.slice(0, 8);
+    setUsuario({ ...usuario, [e.target.name]: value });
+  };
+
+  const validarUsuario = (usuario: any) => {
+    if (!usuario.Apellido_Nombre || usuario.Apellido_Nombre.trim() === "") {
+      setError("El nombre y apellido es obligatorio");
+      return false;
+    }
+    if (!usuario.Tipo_Documento || usuario.Tipo_Documento.trim() === "") {
+      setError("El tipo de documento es obligatorio");
+      return false;
+    }
+    if (
+      !usuario.Numero_Documento ||
+      usuario.Numero_Documento.trim() === "" ||
+      !/^\d+$/.test(usuario.Numero_Documento)
+    ) {
+      setError("El número de documento es obligatorio y debe ser numérico");
+      return false;
+    }
+    if (!usuario.Fecha_Nacimiento || usuario.Fecha_Nacimiento.trim() === "") {
+      setError("La fecha de nacimiento es obligatoria");
+      return false;
+    }
+    if (
+      !usuario.Correo_Electronico ||
+      usuario.Correo_Electronico.trim() === "" ||
+      !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(usuario.Correo_Electronico)
+    ) {
+      setError("El email es obligatorio y debe tener formato válido");
+      return false;
+    }
+    if (!usuario.Telefono || usuario.Telefono.trim() === "") {
+      setError("El teléfono es obligatorio");
+      return false;
+    }
+    if (!usuario.Area || usuario.Area.trim() === "") {
+      setError("El área es obligatoria");
+      return false;
+    }
+    if (!usuario.Cargo || usuario.Cargo.trim() === "") {
+      setError("El cargo es obligatorio");
+      return false;
+    }
+    if (!usuario.Legajo || usuario.Legajo.trim() === "") {
+      setError("El legajo es obligatorio");
+      return false;
+    }
+    if (!usuario.Domicilio || usuario.Domicilio.trim() === "") {
+      setError("El domicilio es obligatorio");
+      return false;
+    }
+    if (!usuario.Estado_Civil || usuario.Estado_Civil.trim() === "") {
+      setError("El estado civil es obligatorio");
+      return false;
+    }
+    if (!usuario.Fecha_Desde || usuario.Fecha_Desde.trim() === "") {
+      setError("La fecha de contrato es obligatoria");
+      return false;
+    }
+    return true;
+  };
 
   const handleEditar = async () => {
     setEditando(true);
     setError(null);
     setMensaje(null);
 
+    // Validación antes de enviar
+    if (!validarUsuario(usuario)) {
+      setEditando(false);
+      return;
+    }
+
     // Mapea el campo antes de enviar
     const usuarioParaEditar = {
       ...usuario,
-      Fecha_Desde: formatDate(usuario.Fecha_Desde),
-      Fecha_Nacimiento: formatDate(usuario.Fecha_Nacimiento),
+      Fecha_Desde: formatDateToISO(usuario.Fecha_Desde),
+      Fecha_Nacimiento: formatDateToISO(usuario.Fecha_Nacimiento),
     };
 
     try {
@@ -263,8 +368,9 @@ const EditarUsuario: React.FC = () => {
           <TextField
             label="Fecha de Nacimiento"
             name="Fecha_Nacimiento"
-            value={usuario?.Fecha_Nacimiento || ""}
-            onChange={handleChange}
+            value={formatDateToDisplay(usuario?.Fecha_Nacimiento || "")}
+            onChange={handleDateChange}
+            inputProps={{ maxLength: 10 }}
           />
 
           <TextField
@@ -319,8 +425,9 @@ const EditarUsuario: React.FC = () => {
           <TextField
             label="Fecha de Contrato"
             name="Fecha_Desde"
-            value={usuario?.Fecha_Desde || ""}
-            onChange={handleChange}
+            value={formatDateToDisplay(usuario?.Fecha_Desde || "")}
+            onChange={handleDateChange}
+            inputProps={{ maxLength: 10 }}
           />
 
           <Button
