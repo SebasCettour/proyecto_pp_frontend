@@ -1,16 +1,44 @@
-import { Typography, Box, Button, Container } from "@mui/material";
+import React, { useState } from "react";
+import {
+  Typography,
+  Box,
+  Button,
+  Container,
+  IconButton,
+  Menu,
+  MenuItem,
+} from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
-import BtnCerrarSesion from "../../components/BtnCerrarSesion";
+import { Settings } from "@mui/icons-material";
 
 export const Contadores = () => {
   const navigate = useNavigate();
 
-  const handleIrALiquidacion = () => navigate("/liquidacion");
-  const handleIrAtras = () => navigate("/superadmin");
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const userRole = localStorage.getItem("role") || "";
+  const userName =
+    localStorage.getItem("nombre") ||
+    localStorage.getItem("username") ||
+    "Usuario";
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) =>
+    setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleOpenModal = () => {
+    setModalOpen(true);
+    setAnchorEl(null);
+  };
+  const handleCerrarSesion = () => {
+    localStorage.clear();
+    navigate("/");
+  };
+  const handleIrALiquidacion = () => navigate("/liquidacion");
+  const handleIrAtras = () => navigate("/superadmin");
 
   return (
     <Box
@@ -19,14 +47,61 @@ export const Contadores = () => {
         backgroundImage: "url('/fondo.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
-
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
       }}
     >
       <Header />
-      <BtnCerrarSesion />
+      {/* Menú Editar y Cerrar Sesión */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 35,
+          right: 32,
+          display: "flex",
+          alignItems: "center",
+          zIndex: 10,
+        }}
+      >
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", mr: 1 }}>
+          <Typography
+            sx={{
+              fontWeight: 400,
+              letterSpacing: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontSize: 16,
+              color: "#333",
+              lineHeight: 1.1,
+            }}
+          >
+            Bienvenido/a
+          </Typography>
+          <Typography
+            sx={{
+              fontWeight: 600,
+              letterSpacing: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontSize: 18,
+              color: "#1976d2",
+              lineHeight: 1.1,
+            }}
+          >
+            {userName}
+          </Typography>
+        </Box>
+        <IconButton onClick={handleMenuOpen}>
+          <Settings sx={{ fontSize: 40 }} />
+        </IconButton>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem onClick={handleOpenModal}>Cambiar Contraseña</MenuItem>
+          <MenuItem onClick={handleCerrarSesion}>Cerrar Sesión</MenuItem>
+        </Menu>
+      </Box>
 
       {/* Botón Volver solo para superadmin */}
       {userRole === "superadmin" && (

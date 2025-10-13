@@ -78,7 +78,9 @@ export const SuperAdminView: React.FC = () => {
     setMsg(null);
     try {
       const username =
-        localStorage.getItem("username") || localStorage.getItem("nombre") || "";
+        localStorage.getItem("username") ||
+        localStorage.getItem("nombre") ||
+        "";
       const res = await fetch(
         "http://localhost:4000/api/usuario/auth/cambiar-password",
         {
@@ -136,13 +138,41 @@ export const SuperAdminView: React.FC = () => {
           zIndex: 10,
         }}
       >
-        <Typography
-          sx={{ fontWeight: 600, fontFamily: "Tektur, sans-serif", mr: 1 }}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            mr: 1,
+          }}
         >
-          {userName}
-        </Typography>
+          <Typography
+            sx={{
+              fontWeight: 400,
+              letterSpacing: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontSize: 16,
+              color: "#333",
+              lineHeight: 1.1,
+            }}
+          >
+            Bienvenido/a
+          </Typography>
+          <Typography
+            sx={{
+              fontWeight: 600,
+              letterSpacing: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontSize: 18,
+              color: "#1976d2",
+              lineHeight: 1.1,
+            }}
+          >
+            {userName}
+          </Typography>
+        </Box>
         <IconButton onClick={handleMenuOpen}>
-          <Settings />
+          <Settings sx={{ fontSize: 40 }} />
         </IconButton>
         <Menu
           anchorEl={anchorEl}
