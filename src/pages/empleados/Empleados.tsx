@@ -12,7 +12,7 @@ import {
   InputAdornment,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { Logout, Settings } from "@mui/icons-material";
+import { Settings } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import Visibility from "@mui/icons-material/Visibility";
@@ -53,7 +53,6 @@ export const Empleados = () => {
     setLoading(true);
     setMsg(null);
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(
         "http://localhost:4000/api/usuario/auth/cambiar-password",
         {
@@ -62,7 +61,10 @@ export const Empleados = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            username: localStorage.getItem("username"), // <-- AGREGA ESTO
+            username:
+              localStorage.getItem("username") ||
+              localStorage.getItem("nombre") ||
+              "",
             oldPassword,
             newPassword,
           }),
@@ -73,7 +75,7 @@ export const Empleados = () => {
         setMsg("Contraseña cambiada correctamente");
         setTimeout(() => setModalOpen(false), 1200);
       } else {
-        setMsg(data.message || "Error al cambiar la contraseña");
+        setMsg(data.error || data.message || "Error al cambiar la contraseña");
       }
     } catch {
       setMsg("Error de conexión");
@@ -117,13 +119,41 @@ export const Empleados = () => {
           zIndex: 10,
         }}
       >
-        <Typography
-          sx={{ fontWeight: 600, fontFamily: "Tektur, sans-serif", mr: 1 }}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            mr: 1,
+          }}
         >
-          {userName}
-        </Typography>
+          <Typography
+            sx={{
+              fontWeight: 400,
+              letterSpacing: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontSize: 16,
+              color: "#333",
+              lineHeight: 1.1,
+            }}
+          >
+            Bienvenido/a
+          </Typography>
+          <Typography
+            sx={{
+              fontWeight: 600,
+              letterSpacing: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontSize: 18,
+              color: "#1976d2",
+              lineHeight: 1.1,
+            }}
+          >
+            {userName}
+          </Typography>
+        </Box>
         <IconButton onClick={handleMenuOpen}>
-          <Settings />
+          <Settings sx={{ fontSize: 40 }} />
         </IconButton>
         <Menu
           anchorEl={anchorEl}
