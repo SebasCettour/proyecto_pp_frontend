@@ -18,7 +18,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Menu,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
+import { Settings, Visibility, VisibilityOff } from "@mui/icons-material";
 import { Link as RouterLink } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
@@ -43,12 +47,26 @@ interface Licencia {
 export default function GestionarLicencias() {
   const [licencias, setLicencias] = useState<Licencia[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedLicencia, setSelectedLicencia] = useState<Licencia | null>(
-    null
-  );
-  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedLicencia, setSelectedLicencia] = useState<Licencia | null>(null);
+  const [modalRespuestaOpen, setModalRespuestaOpen] = useState(false);
   const [respuesta, setRespuesta] = useState("");
   const [accion, setAccion] = useState<"Aprobada" | "Rechazada">("Aprobada");
+
+  // Menú y cambio de contraseña
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [modalPasswordOpen, setModalPasswordOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [loadingPassword, setLoadingPassword] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const userRole = localStorage.getItem("role") || "";
+  const userName =
+    localStorage.getItem("nombre") ||
+    localStorage.getItem("username") ||
+    "Usuario";
 
   // Cargar licencias pendientes
   useEffect(() => {
@@ -58,8 +76,6 @@ export default function GestionarLicencias() {
   const fetchLicencias = async () => {
     try {
       const token = localStorage.getItem("token");
-      console.log("Token en fetchLicencias:", token);
-
       const response = await fetch(
         "http://localhost:4000/api/licencias/pendientes",
         {
@@ -69,22 +85,12 @@ export default function GestionarLicencias() {
           },
         }
       );
-
-      console.log("Response status:", response.status);
-
       if (response.ok) {
         const data = await response.json();
-        console.log("Licencias recibidas:", data);
         setLicencias(data);
-      } else {
-        console.error(
-          "Error en la respuesta:",
-          response.status,
-          response.statusText
-        );
       }
     } catch (error) {
-      console.error("Error cargando licencias:", error);
+      // Manejo de error
     } finally {
       setLoading(false);
     }
@@ -92,16 +98,15 @@ export default function GestionarLicencias() {
 
   const handleResponder = (licencia: Licencia) => {
     setSelectedLicencia(licencia);
-    setModalOpen(true);
+    setModalRespuestaOpen(true);
     setRespuesta("");
     setAccion("Aprobada");
   };
 
   const handleEnviarRespuesta = async () => {
     if (!selectedLicencia) return;
-
     try {
-      const token = localStorage.getItem("token"); // <-- agrega esto
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `http://localhost:4000/api/licencias/responder/${selectedLicencia.Id_Licencia}`,
         {
@@ -116,14 +121,13 @@ export default function GestionarLicencias() {
           }),
         }
       );
-
       if (response.ok) {
         fetchLicencias();
-        setModalOpen(false);
+        setModalRespuestaOpen(false);
         setSelectedLicencia(null);
       }
     } catch (error) {
-      console.error("Error enviando respuesta:", error);
+      // Manejo de error
     }
   };
 
@@ -144,6 +148,60 @@ export default function GestionarLicencias() {
     }
   };
 
+  // Menú usuario
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) =>
+    setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleOpenPasswordModal = () => {
+    setModalPasswordOpen(true);
+    setAnchorEl(null);
+    setMsg(null);
+    setOldPassword("");
+    setNewPassword("");
+  };
+  const handleClosePasswordModal = () => setModalPasswordOpen(false);
+
+  const handleCerrarSesion = () => {
+    localStorage.clear();
+    window.location.href = "/";
+  };
+
+  const handleChangePassword = async () => {
+    setLoadingPassword(true);
+    setMsg(null);
+    try {
+      const username =
+        localStorage.getItem("username") ||
+        localStorage.getItem("nombre") ||
+        "";
+      const res = await fetch(
+        "http://localhost:4000/api/usuario/auth/cambiar-password",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username,
+            oldPassword,
+            newPassword,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        setMsg("Contraseña cambiada correctamente");
+        setOldPassword("");
+        setNewPassword("");
+      } else {
+        setMsg(data.error || "Error al cambiar la contraseña");
+      }
+    } catch (err) {
+      setMsg("Error de conexión con el servidor");
+    } finally {
+      setLoadingPassword(false);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -157,6 +215,62 @@ export default function GestionarLicencias() {
       }}
     >
       <Header />
+      {/* Menú Editar y Cerrar Sesión */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 35,
+          right: 32,
+          display: "flex",
+          alignItems: "center",
+          zIndex: 10,
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            mr: 1,
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 400,
+              letterSpacing: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontSize: 16,
+              color: "#333",
+              lineHeight: 1.1,
+            }}
+          >
+            Bienvenido/a
+          </Typography>
+          <Typography
+            sx={{
+              fontWeight: 600,
+              letterSpacing: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontSize: 18,
+              color: "#1976d2",
+              lineHeight: 1.1,
+            }}
+          >
+            {userName}
+          </Typography>
+        </Box>
+        <IconButton onClick={handleMenuOpen}>
+          <Settings sx={{ fontSize: 40 }} />
+        </IconButton>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem onClick={handleOpenPasswordModal}>Cambiar Contraseña</MenuItem>
+          <MenuItem onClick={handleCerrarSesion}>Cerrar Sesión</MenuItem>
+        </Menu>
+      </Box>
 
       {/* Contenido principal */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -291,7 +405,7 @@ export default function GestionarLicencias() {
       </Box>
 
       {/* Modal de respuesta */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+      <Modal open={modalRespuestaOpen} onClose={() => setModalRespuestaOpen(false)}>
         <Box
           sx={{
             position: "absolute",
@@ -365,7 +479,7 @@ export default function GestionarLicencias() {
           )}
 
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-            <Button variant="outlined" onClick={() => setModalOpen(false)}>
+            <Button variant="outlined" onClick={() => setModalRespuestaOpen(false)}>
               Cancelar
             </Button>
             <Button
@@ -374,6 +488,87 @@ export default function GestionarLicencias() {
               disabled={accion === "Rechazada" && !respuesta.trim()}
             >
               Enviar Respuesta
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Modal para cambiar contraseña */}
+      <Modal open={modalPasswordOpen} onClose={handleClosePasswordModal}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            borderRadius: 3,
+            p: 4,
+            minWidth: 350,
+            maxWidth: "90vw",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Cambiar Contraseña
+          </Typography>
+          <TextField
+            label="Contraseña Actual"
+            type={showOld ? "text" : "password"}
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            fullWidth
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowOld((v) => !v)} edge="end">
+                    {showOld ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <TextField
+            label="Nueva Contraseña"
+            type={showNew ? "text" : "password"}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            fullWidth
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowNew((v) => !v)} edge="end">
+                    {showNew ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          {msg && (
+            <Typography
+              color={
+                msg.includes("correctamente") ? "success.main" : "error.main"
+              }
+              sx={{ mt: 1 }}
+            >
+              {msg}
+            </Typography>
+          )}
+          <Box
+            sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
+          >
+            <Button onClick={handleClosePasswordModal} disabled={loadingPassword}>
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleChangePassword}
+              disabled={loadingPassword || !oldPassword || !newPassword}
+            >
+              Cambiar
             </Button>
           </Box>
         </Box>
