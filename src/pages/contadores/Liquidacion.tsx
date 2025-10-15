@@ -73,7 +73,9 @@ const Liquidacion = () => {
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | React.ChangeEvent<{ name?: string; value: unknown; }>
+    e:
+      | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      | React.ChangeEvent<{ name?: string; value: unknown }>
   ) => {
     const { name, value } = e.target as HTMLInputElement;
     setForm((prev) => ({
@@ -83,7 +85,9 @@ const Liquidacion = () => {
   };
 
   const handleSelectChange = (
-    event: React.ChangeEvent<{ name?: string; value: unknown; }> | SelectChangeEvent<string>
+    event:
+      | React.ChangeEvent<{ name?: string; value: unknown }>
+      | SelectChangeEvent<string>
   ) => {
     const { name, value } = event.target;
     setForm((prev) => ({
@@ -97,8 +101,7 @@ const Liquidacion = () => {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Aquí puedes hacer el cálculo y/o enviar los datos
-    setActiveStep(steps.length - 1);
+    handleNext();
   };
 
   // Ejemplo de campos por paso (puedes personalizar según el convenio seleccionado)
@@ -413,7 +416,9 @@ const Liquidacion = () => {
                 onChange={handleSelectChange}
                 required
               >
-                <MenuItem value={"transferencia"}>Transferencia bancaria</MenuItem>
+                <MenuItem value={"transferencia"}>
+                  Transferencia bancaria
+                </MenuItem>
                 <MenuItem value={"efectivo"}>Efectivo</MenuItem>
                 <MenuItem value={"cheque"}>Cheque</MenuItem>
               </Select>
