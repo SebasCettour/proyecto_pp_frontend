@@ -17,7 +17,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
-import { DateField } from "@mui/x-date-pickers/DateField";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
@@ -341,26 +341,29 @@ const AltaNuevo: React.FC = () => {
                   name="fechaNacimiento"
                   control={control}
                   render={({ field }) => (
-                    <DateField
+                    <DatePicker
                       label="Fecha de Nacimiento"
                       format="DD-MM-YYYY"
-                      fullWidth
                       value={
                         field.value
                           ? dayjs(field.value, ["YYYY-MM-DD", "DD-MM-YYYY"])
                           : null
                       }
                       onChange={(date) => {
-                        // Convierte a string ISO yyyy-mm-dd para el backend y validación
                         field.onChange(
                           date && date.isValid()
                             ? date.format("YYYY-MM-DD")
                             : ""
                         );
                       }}
-                      error={!!errors.fechaNacimiento}
-                      helperText={errors.fechaNacimiento?.message}
-                      disabled={isLoading}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          error: !!errors.fechaNacimiento,
+                          helperText: errors.fechaNacimiento?.message,
+                          disabled: isLoading,
+                        },
+                      }}
                     />
                   )}
                 />
@@ -532,10 +535,9 @@ const AltaNuevo: React.FC = () => {
                   name="fechaContrato"
                   control={control}
                   render={({ field }) => (
-                    <DateField
+                    <DatePicker
                       label="Fecha de Contrato"
                       format="DD-MM-YYYY"
-                      fullWidth
                       value={
                         field.value
                           ? dayjs(field.value, ["YYYY-MM-DD", "DD-MM-YYYY"])
@@ -548,9 +550,14 @@ const AltaNuevo: React.FC = () => {
                             : ""
                         );
                       }}
-                      error={!!errors.fechaContrato}
-                      helperText={errors.fechaContrato?.message}
-                      disabled={isLoading}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          error: !!errors.fechaContrato,
+                          helperText: errors.fechaContrato?.message,
+                          disabled: isLoading,
+                        },
+                      }}
                     />
                   )}
                 />
