@@ -569,9 +569,9 @@ const Liquidacion = () => {
             <Button disabled={activeStep === 0} onClick={handleBack}>
               Atrás
             </Button>
-            {activeStep < steps.length - 2 && (
+            {activeStep < steps.length - 1 && (
               <Button variant="contained" type="submit">
-                Siguiente
+                {activeStep === steps.length - 2 ? "Ir al resumen" : "Siguiente"}
               </Button>
             )}
           </Box>
