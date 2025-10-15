@@ -52,6 +52,21 @@ export const Empleados = () => {
   const handleChangePassword = async () => {
     setLoading(true);
     setMsg(null);
+
+    // Validación de longitud de contraseña
+    if (newPassword.length < 6 || newPassword.length > 20) {
+      setMsg("La nueva contraseña debe tener entre 6 y 20 caracteres.");
+      setLoading(false);
+      return;
+    }
+
+    // Validación: no puede ser igual a la anterior
+    if (oldPassword === newPassword) {
+      setMsg("La nueva contraseña no puede ser igual a la anterior.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(
         "http://localhost:4000/api/usuario/auth/cambiar-password",
@@ -355,6 +370,7 @@ export const Empleados = () => {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             fullWidth
+            inputProps={{ minLength: 6, maxLength: 10 }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">

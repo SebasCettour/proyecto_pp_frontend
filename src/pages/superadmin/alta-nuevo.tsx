@@ -39,7 +39,7 @@ const schema = z.object({
   password: z
     .string()
     .min(6, "La contraseña debe tener al menos 6 caracteres")
-    .max(50, "La contraseña no puede exceder 50 caracteres"),
+    .max(10, "La contraseña no puede exceder 10 caracteres"),
 
   roleId: z.string().min(1, "Debe seleccionar un rol"),
 
