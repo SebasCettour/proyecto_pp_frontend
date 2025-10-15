@@ -1,0 +1,53 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./Proyecto_PP_Backend
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./Proyecto_PP_Backend:/app
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: "empleado_user"
+      DB_PASSWORD: "user_pass"
+      DB_NAME: "ProyectoPP"
+      CIE10_BASE_URL: "https://icdapihome2-eme0b9bdf4fafkbg.northeurope-01.azurewebsites.net"
+      CIE10_CLIENT_ID: "a5077ffc-a40f-4412-a85e-05e9a7f6886f_07e7976b-d016-44e3-8ea3-4572e55387fa"
+      CIE10_CLIENT_SECRET: "ZQxR6UEHRjb0degv95SR10JdmQNsWJn/t29GMFi345Q="
+
+  frontend:
+    build:
+      context: ./Proyecto_PP_Frontend
+      dockerfile: Dockerfile
+      target: dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./Proyecto_PP_Frontend:/app
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  db:
+    image: mysql:8.0
+    container_name: mysql_container
+    command: --host_cache_size=0 --pid-file=/var/lib/mysql/mysqld.pid --default-time-zone='-03:00'
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass
+      MYSQL_DATABASE: "ProyectoPP"
+      MYSQL_USER: "empleado_user"
+      MYSQL_PASSWORD: "user_pass"
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  mysql_data:
