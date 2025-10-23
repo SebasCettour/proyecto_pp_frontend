@@ -31,4 +31,6 @@ Thumbs.db
 
 # IDE
 .vscode/
-.idea/
+.idea/node_modules/
+.cache/
+*.log
