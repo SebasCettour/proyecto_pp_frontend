@@ -1,53 +1,59 @@
 version: "3.8"
 
 services:
+  db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass
+      MYSQL_DATABASE: ProyectoPP
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
   backend:
     build:
       context: ./Proyecto_PP_Backend
-      dockerfile: Dockerfile
       target: dev
     ports:
       - "4000:4000"
-    volumes:
-      - ./Proyecto_PP_Backend:/app
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_USER: "empleado_user"
-      DB_PASSWORD: "user_pass"
-      DB_NAME: "ProyectoPP"
-      CIE10_BASE_URL: "https://icdapihome2-eme0b9bdf4fafkbg.northeurope-01.azurewebsites.net"
-      CIE10_CLIENT_ID: "a5077ffc-a40f-4412-a85e-05e9a7f6886f_07e7976b-d016-44e3-8ea3-4572e55387fa"
-      CIE10_CLIENT_SECRET: "ZQxR6UEHRjb0degv95SR10JdmQNsWJn/t29GMFi345Q="
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root_pass
+      - JWT_SECRET=mi_super_secreto_jwt_muy_seguro_2024
+      - PORT=4000
+    restart: unless-stopped
+    command: ["npx", "tsx", "src/server.ts"]
 
   frontend:
     build:
       context: ./Proyecto_PP_Frontend
-      dockerfile: Dockerfile
       target: dev
     ports:
       - "3000:3000"
-    volumes:
-      - ./Proyecto_PP_Frontend:/app
     environment:
-      - CHOKIDAR_USEPOLLING=true
-
-  db:
-    image: mysql:8.0
-    container_name: mysql_container
-    command: --host_cache_size=0 --pid-file=/var/lib/mysql/mysqld.pid --default-time-zone='-03:00'
-    environment:
-      MYSQL_ROOT_PASSWORD: root_pass
-      MYSQL_DATABASE: "ProyectoPP"
-      MYSQL_USER: "empleado_user"
-      MYSQL_PASSWORD: "user_pass"
-    ports:
-      - "3307:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - REACT_APP_API_URL=http://localhost:4000
+      - NODE_OPTIONS=--max_old_space_size=4096
+      - GENERATE_SOURCEMAP=false
+    depends_on:
+      - backend
+    working_dir: /app
+    command: npm start
 
 volumes:
   mysql_data:
+    driver: local

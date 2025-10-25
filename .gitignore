@@ -31,6 +31,12 @@ Thumbs.db
 
 # IDE
 .vscode/
-.idea/node_modules/
-.cache/
-*.log
+.idea/
+
+# Uploads (archivos subidos por usuarios)
+*/uploads/
+uploads/
+
+# Package locks (opcional, depende de tu preferencia)
+package-lock.json
+*/package-lock.json
