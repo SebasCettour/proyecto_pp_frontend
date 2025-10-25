@@ -25,7 +25,6 @@ router.post("/auth/register", async (req, res) => {
     estadoCivil,
     fechaContrato,
     fechaNacimiento,
-    legajo,
     telefono,
     tipoDocumento,
     numeroDocumento,
@@ -44,6 +43,11 @@ router.post("/auth/register", async (req, res) => {
   console.log("  - Nombre:", nombre);
   console.log("  - Apellido:", apellido);
 
+  // ✅ FUNCIÓN PARA GENERAR LEGAJO AUTOMÁTICO
+  const generateLegajo = (): string => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  };
+
   // ✅ VALIDACIONES MEJORADAS
   if (!username || !email || !password || !numeroDocumento || !rolId) {
     console.log("❌ Faltan campos obligatorios");
@@ -52,6 +56,10 @@ router.post("/auth/register", async (req, res) => {
       received: req.body,
     });
   }
+
+  // ✅ GENERAR LEGAJO AUTOMÁTICAMENTE
+  const legajo = generateLegajo();
+  console.log("🔢 Legajo generado automáticamente:", legajo);
 
   // ✅ SQL CORRECTO - RESPETA EL ORDEN DE LA TABLA
   const sqlEmpleado = `
@@ -103,8 +111,12 @@ router.post("/auth/register", async (req, res) => {
 
     console.log("🔄 Insertando en Usuarios...");
 
+    // ✅ HASH DE LA CONTRASEÑA EN EL BACKEND
+    const hashedPassword = await bcrypt.hash(password, 10);
+    console.log("🔐 Contraseña hasheada en el backend");
+
     // Insertar en Usuarios
-    const usuarioData = [username, email, password, rolId, numeroDocumento];
+    const usuarioData = [username, email, hashedPassword, rolId, numeroDocumento];
 
     console.log("📊 Datos Usuario:", [username, email, "***", rolId, numeroDocumento]);
     await connection.query(sqlUsuario, usuarioData);

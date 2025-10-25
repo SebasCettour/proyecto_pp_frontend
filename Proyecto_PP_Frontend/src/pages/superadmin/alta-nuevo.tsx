@@ -22,7 +22,6 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
-import bcrypt from "bcryptjs";
 
 // ✅ VALIDACIONES
 const schema = z.object({
@@ -98,10 +97,7 @@ const schema = z.object({
       return age >= 18 && age <= 70;
     }, "La fecha debe tener formato yyyy-mm-dd, año de 4 dígitos, no ser futura y la edad entre 18 y 70 años"),
 
-  legajo: z
-    .string()
-    .length(4, "El legajo debe tener exactamente 4 dígitos")
-    .regex(/^[0-9]+$/, "El legajo debe contener solo números"),
+
 
   telefono: z
     .string()
@@ -129,11 +125,6 @@ const AltaNuevo: React.FC = () => {
   // Configurar dayjs en español
   dayjs.locale('es');
 
-  // Función para generar legajo automático
-  const generateLegajo = (): string => {
-    return Math.floor(1000 + Math.random() * 9000).toString();
-  };
-
   const {
     register,
     handleSubmit,
@@ -156,7 +147,6 @@ const AltaNuevo: React.FC = () => {
       estadoCivil: "",
       fechaContrato: "",
       fechaNacimiento: "",
-      legajo: generateLegajo(), // Generar legajo automático
       telefono: "",
       tipoDocumento: "",
       numeroDocumento: "",
@@ -173,9 +163,7 @@ const AltaNuevo: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Encriptar la contraseña antes de enviarla
-      const hashedPassword = await bcrypt.hash(data.password, 10);
-
+      // ✅ NO ENCRIPTAR EN EL FRONTEND - El backend se encarga del hash
       const response = await fetch(
         "http://localhost:4000/api/usuario/auth/register",
         {
@@ -185,7 +173,7 @@ const AltaNuevo: React.FC = () => {
           },
           body: JSON.stringify({
             ...data,
-            password: hashedPassword,
+            // password: data.password, // Enviar contraseña sin hash
             rolId: Number(data.roleId),
           }),
         }
@@ -210,11 +198,6 @@ const AltaNuevo: React.FC = () => {
             setError("El email ya está registrado");
           } else if (result.error.includes("username")) {
             setError("El nombre de usuario ya está registrado");
-          } else if (result.error.includes("legajo")) {
-            // Si el legajo ya existe, generar uno nuevo y reintentar
-            const newLegajo = generateLegajo();
-            setValue("legajo", newLegajo);
-            setError("El legajo se ha regenerado automáticamente. Intente nuevamente.");
           } else {
             setError("Los datos ingresados ya existen en el sistema");
           }
@@ -226,8 +209,6 @@ const AltaNuevo: React.FC = () => {
       } else {
         setSuccess("Usuario creado exitosamente");
         reset();
-        // Regenerar legajo para el siguiente usuario
-        setValue("legajo", generateLegajo());
         setTimeout(() => {
           navigate("/superadmin");
         }, 2000);
@@ -366,15 +347,18 @@ const AltaNuevo: React.FC = () => {
                     <DatePicker
                       label="Fecha de Nacimiento"
                       format="DD-MM-YYYY"
-                      maxDate={dayjs()} // No puede ser fecha futura
+                      maxDate={dayjs().subtract(1, 'day')} // No puede ser fecha futura (hasta ayer)
                       minDate={dayjs().subtract(70, 'years')} // Máximo 70 años
-                      disableFuture={true} // Deshabilitar fechas futuras
                       value={
                         field.value
                           ? dayjs(field.value, ["YYYY-MM-DD", "DD-MM-YYYY"])
                           : null
                       }
                       onChange={(date) => {
+                        // Solo permitir fechas pasadas
+                        if (date && date.isAfter(dayjs().subtract(1, 'day'))) {
+                          return; // No hacer nada si es fecha futura
+                        }
                         field.onChange(
                           date && date.isValid()
                             ? date.format("YYYY-MM-DD")
@@ -382,11 +366,14 @@ const AltaNuevo: React.FC = () => {
                         );
                       }}
                       shouldDisableDate={(date) => {
-                        // Deshabilitar fechas futuras y fechas que resulten en edad menor a 18 o mayor a 70
+                        // Deshabilitar fechas futuras (incluyendo hoy) y fechas que resulten en edad menor a 18 o mayor a 70
                         const today = dayjs();
+                        const yesterday = dayjs().subtract(1, 'day');
                         const age = today.diff(date, 'years');
-                        return date.isAfter(today) || age < 18 || age > 70;
+                        return date.isAfter(yesterday) || age < 18 || age > 70;
                       }}
+                      views={['year', 'month', 'day']}
+                      openTo="year"
                       slotProps={{
                         textField: {
                           fullWidth: true,
@@ -394,6 +381,18 @@ const AltaNuevo: React.FC = () => {
                           helperText: errors.fechaNacimiento?.message,
                           disabled: isLoading,
                         },
+                        calendarHeader: {
+                          format: 'MMMM YYYY'
+                        },
+                        day: {
+                          sx: {
+                            '&.Mui-disabled': {
+                              backgroundColor: '#f5f5f5 !important',
+                              color: '#bdbdbd !important',
+                              pointerEvents: 'none'
+                            }
+                          }
+                        }
                       }}
                     />
                   )}
@@ -568,14 +567,17 @@ const AltaNuevo: React.FC = () => {
                     <DatePicker
                       label="Fecha de Contrato"
                       format="DD-MM-YYYY"
-                      maxDate={dayjs()} // No puede ser fecha futura
-                      disableFuture={true} // Deshabilitar fechas futuras
+                      maxDate={dayjs()} // Hasta hoy
                       value={
                         field.value
                           ? dayjs(field.value, ["YYYY-MM-DD", "DD-MM-YYYY"])
                           : null
                       }
                       onChange={(date) => {
+                        // Solo permitir fechas hasta hoy
+                        if (date && date.isAfter(dayjs())) {
+                          return; // No hacer nada si es fecha futura
+                        }
                         field.onChange(
                           date && date.isValid()
                             ? date.format("YYYY-MM-DD")
@@ -583,9 +585,11 @@ const AltaNuevo: React.FC = () => {
                         );
                       }}
                       shouldDisableDate={(date) => {
-                        // Deshabilitar fechas futuras
+                        // Deshabilitar fechas futuras (después de hoy)
                         return date.isAfter(dayjs());
                       }}
+                      views={['year', 'month', 'day']}
+                      openTo="year"
                       slotProps={{
                         textField: {
                           fullWidth: true,
@@ -593,27 +597,21 @@ const AltaNuevo: React.FC = () => {
                           helperText: errors.fechaContrato?.message,
                           disabled: isLoading,
                         },
+                        calendarHeader: {
+                          format: 'MMMM YYYY'
+                        },
+                        day: {
+                          sx: {
+                            '&.Mui-disabled': {
+                              backgroundColor: '#f5f5f5 !important',
+                              color: '#bdbdbd !important',
+                              pointerEvents: 'none'
+                            }
+                          }
+                        }
                       }}
                     />
                   )}
-                />
-
-                <TextField
-                  fullWidth
-                  label="Legajo (Autogenerado)"
-                  placeholder="Se genera automáticamente"
-                  {...register("legajo")}
-                  error={!!errors.legajo}
-                  helperText={errors.legajo?.message || "Número de 4 dígitos generado automáticamente"}
-                  disabled={isLoading}
-                  InputProps={{
-                    readOnly: true, // Solo lectura
-                  }}
-                  sx={{
-                    '& .MuiInputBase-input': {
-                      backgroundColor: '#f5f5f5', // Fondo gris claro para indicar que no es editable
-                    }
-                  }}
                 />
               </Box>
             </Box>
