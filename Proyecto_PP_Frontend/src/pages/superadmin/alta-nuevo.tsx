@@ -453,7 +453,7 @@ const AltaNuevo: React.FC = () => {
                   error={!!errors.telefono}
                   helperText={errors.telefono?.message}
                   disabled={isLoading}
-                  inputProps={{ maxLength: 10 }}
+                  inputProps={{ maxLength: 20 }}
                 />
 
                 <TextField
