@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass
+      MYSQL_DATABASE: ProyectoPP
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    build:
+      context: ./Proyecto_PP_Backend
+      target: dev
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./Proyecto_PP_Backend:/app
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root_pass
+      - JWT_SECRET=mi_super_secreto_jwt_muy_seguro_2024
+      - PORT=4000
+    restart: unless-stopped
+    command: ["npx", "tsx", "src/server.ts"]
+
+  frontend:
+    build:
+      context: ./Proyecto_PP_Frontend
+      target: dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./Proyecto_PP_Frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:4000
+      - NODE_OPTIONS=--max_old_space_size=4096
+      - GENERATE_SOURCEMAP=false
+    depends_on:
+      - backend
+    working_dir: /app
+    command: npm start
+
+volumes:
+  mysql_data:
+    driver: local
