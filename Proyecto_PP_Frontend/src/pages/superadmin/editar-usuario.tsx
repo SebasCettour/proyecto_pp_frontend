@@ -8,7 +8,26 @@ import {
   Modal,
   Alert,
   CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  Card,
+  CardContent,
+  Chip,
 } from "@mui/material";
+import {
+  ExpandMore as ExpandMoreIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
+  Person as PersonIcon,
+} from "@mui/icons-material";
 import { Link as RouterLink } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
@@ -16,11 +35,16 @@ import Header from "../../components/Header";
 const EditarUsuario: React.FC = () => {
   const [dni, setDni] = useState("");
   const [usuario, setUsuario] = useState<any>(null);
+  const [familiares, setFamiliares] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [openFamiliarModal, setOpenFamiliarModal] = useState(false);
+  const [familiarSeleccionado, setFamiliarSeleccionado] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [editandoFamiliar, setEditandoFamiliar] = useState(false);
   const [mensaje, setMensaje] = useState<string | null>(null);
+  const [modoFamiliar, setModoFamiliar] = useState<"crear" | "editar">("crear");
 
   // Convierte ISO a DDMMAAAA
   const isoToDDMMAAAA = (iso: string) => {
@@ -39,11 +63,34 @@ const EditarUsuario: React.FC = () => {
     setMensaje(null);
     setIsLoading(true);
     try {
+      // Buscar usuario
       const response = await fetch(
         `http://localhost:4000/api/usuario/usuario-dni/${dni}`
       );
       if (!response.ok) throw new Error("Usuario no encontrado");
       const apiUser = await response.json();
+
+      // Buscar familiares
+      console.log("🔍 Buscando familiares para DNI:", dni);
+      const familiariesResponse = await fetch(
+        `http://localhost:4000/api/familiares/empleado-dni/${dni}`
+      );
+      console.log(
+        "📡 Respuesta de familiares:",
+        familiariesResponse.status,
+        familiariesResponse.statusText
+      );
+
+      let familiaresData = [];
+      if (familiariesResponse.ok) {
+        familiaresData = await familiariesResponse.json();
+        console.log("✅ Familiares encontrados:", familiaresData);
+      } else {
+        console.log(
+          "❌ Error al obtener familiares:",
+          await familiariesResponse.text()
+        );
+      }
 
       // Mapear campos del API a los nombres que usa el formulario (soporte para distintos esquemas)
       const mappedUser: any = {
@@ -92,15 +139,32 @@ const EditarUsuario: React.FC = () => {
         ...apiUser,
       };
 
+      console.log("📊 Datos del usuario recibidos:", apiUser);
+      console.log("📊 Datos del usuario mapeados:", mappedUser);
+      console.log("📊 Datos de familiares recibidos:", familiaresData);
+
       // Convertir fechas ISO (YYYY-MM-DD o YYYY/MM/DD) a DDMMYYYY para el formulario
       if (mappedUser.Fecha_Nacimiento) {
-        mappedUser.Fecha_Nacimiento = isoToDDMMAAAA(mappedUser.Fecha_Nacimiento);
+        mappedUser.Fecha_Nacimiento = isoToDDMMAAAA(
+          mappedUser.Fecha_Nacimiento
+        );
       }
       if (mappedUser.Fecha_Desde) {
         mappedUser.Fecha_Desde = isoToDDMMAAAA(mappedUser.Fecha_Desde);
       }
 
+      // Procesar familiares
+      const familiaresConFechasFormateadas = familiaresData.map(
+        (familiar: any) => ({
+          ...familiar,
+          fechaNacimientoFamiliar: familiar.fechaNacimientoFamiliar
+            ? isoToDDMMAAAA(familiar.fechaNacimientoFamiliar)
+            : "",
+        })
+      );
+
       setUsuario(mappedUser);
+      setFamiliares(familiaresConFechasFormateadas);
       setOpen(true);
     } catch (err: any) {
       setError(err.message || "Error al buscar usuario");
@@ -120,8 +184,9 @@ const EditarUsuario: React.FC = () => {
     if (!value) return "";
     const clean = value.replace(/-/g, "");
     if (clean.length <= 2) return clean;
-    if (clean.length <= 4) return `${clean.slice(0,2)}-${clean.slice(2)}`;
-    if (clean.length <= 8) return `${clean.slice(0,2)}-${clean.slice(2,4)}-${clean.slice(4,8)}`;
+    if (clean.length <= 4) return `${clean.slice(0, 2)}-${clean.slice(2)}`;
+    if (clean.length <= 8)
+      return `${clean.slice(0, 2)}-${clean.slice(2, 4)}-${clean.slice(4, 8)}`;
     return clean;
   };
 
@@ -237,6 +302,200 @@ const EditarUsuario: React.FC = () => {
       setError(err.message || "Error al editar usuario");
     } finally {
       setEditando(false);
+    }
+  };
+
+  // Funciones para manejar familiares
+  const abrirModalFamiliar = (familiar?: any) => {
+    if (familiar) {
+      setModoFamiliar("editar");
+      setFamiliarSeleccionado(familiar);
+    } else {
+      setModoFamiliar("crear");
+      setFamiliarSeleccionado({
+        nombreFamiliar: "",
+        parentesco: "",
+        fechaNacimientoFamiliar: "",
+        tipoDocumentoFamiliar: "",
+        numeroDocumentoFamiliar: "",
+      });
+    }
+    setOpenFamiliarModal(true);
+  };
+
+  const cerrarModalFamiliar = () => {
+    setOpenFamiliarModal(false);
+    setFamiliarSeleccionado(null);
+    setError(null);
+  };
+
+  const handleChangeFamiliar = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFamiliarSeleccionado((prev: any) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDateChangeFamiliar = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/[^0-9]/g, "");
+    if (value.length > 8) value = value.slice(0, 8);
+    setFamiliarSeleccionado({
+      ...familiarSeleccionado,
+      [e.target.name]: value,
+    });
+  };
+
+  const validarFamiliar = (familiar: any) => {
+    if (!familiar.nombreFamiliar || familiar.nombreFamiliar.trim() === "") {
+      setError("El nombre del familiar es obligatorio");
+      return false;
+    }
+    if (!familiar.parentesco || familiar.parentesco.trim() === "") {
+      setError("El parentesco es obligatorio");
+      return false;
+    }
+    if (
+      !familiar.fechaNacimientoFamiliar ||
+      familiar.fechaNacimientoFamiliar.trim() === ""
+    ) {
+      setError("La fecha de nacimiento del familiar es obligatoria");
+      return false;
+    }
+    if (
+      !familiar.tipoDocumentoFamiliar ||
+      familiar.tipoDocumentoFamiliar.trim() === ""
+    ) {
+      setError("El tipo de documento del familiar es obligatorio");
+      return false;
+    }
+    if (
+      !familiar.numeroDocumentoFamiliar ||
+      familiar.numeroDocumentoFamiliar.trim() === "" ||
+      !/^\d+$/.test(familiar.numeroDocumentoFamiliar)
+    ) {
+      setError(
+        "El número de documento del familiar es obligatorio y debe ser numérico"
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const guardarFamiliar = async () => {
+    setEditandoFamiliar(true);
+    setError(null);
+
+    if (!validarFamiliar(familiarSeleccionado)) {
+      setEditandoFamiliar(false);
+      return;
+    }
+
+    const familiarParaGuardar = {
+      ...familiarSeleccionado,
+      fechaNacimientoFamiliar: formatDateToISO(
+        familiarSeleccionado.fechaNacimientoFamiliar
+      ),
+    };
+
+    try {
+      if (modoFamiliar === "crear") {
+        // Necesitamos obtener el ID del empleado
+        const empleadoResponse = await fetch(
+          `http://localhost:4000/api/usuario/usuario-dni/${dni}`
+        );
+        const empleado = await empleadoResponse.json();
+
+        const response = await fetch(
+          `http://localhost:4000/api/familiares/crear`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              idEmpleado: empleado.Id_Empleado,
+              ...familiarParaGuardar,
+            }),
+          }
+        );
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "No se pudo crear el familiar");
+        }
+        setMensaje("Familiar creado correctamente");
+      } else {
+        const response = await fetch(
+          `http://localhost:4000/api/familiares/${familiarSeleccionado.id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(familiarParaGuardar),
+          }
+        );
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || "No se pudo actualizar el familiar"
+          );
+        }
+        setMensaje("Familiar actualizado correctamente");
+      }
+
+      // Recargar familiares
+      const familiariesResponse = await fetch(
+        `http://localhost:4000/api/familiares/empleado-dni/${dni}`
+      );
+      if (familiariesResponse.ok) {
+        const familiaresData = await familiariesResponse.json();
+        const familiaresConFechasFormateadas = familiaresData.map(
+          (familiar: any) => ({
+            ...familiar,
+            fechaNacimientoFamiliar: familiar.fechaNacimientoFamiliar
+              ? isoToDDMMAAAA(familiar.fechaNacimientoFamiliar)
+              : "",
+          })
+        );
+        setFamiliares(familiaresConFechasFormateadas);
+      }
+
+      cerrarModalFamiliar();
+    } catch (err: any) {
+      setError(err.message || "Error al guardar familiar");
+    } finally {
+      setEditandoFamiliar(false);
+    }
+  };
+
+  const eliminarFamiliar = async (familiarId: number) => {
+    if (!window.confirm("¿Está seguro de que desea eliminar este familiar?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:4000/api/familiares/${familiarId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!response.ok) throw new Error("No se pudo eliminar el familiar");
+
+      // Recargar familiares
+      const familiariesResponse = await fetch(
+        `http://localhost:4000/api/familiares/empleado-dni/${dni}`
+      );
+      if (familiariesResponse.ok) {
+        const familiaresData = await familiariesResponse.json();
+        const familiaresConFechasFormateadas = familiaresData.map(
+          (familiar: any) => ({
+            ...familiar,
+            fechaNacimientoFamiliar: familiar.fechaNacimientoFamiliar
+              ? isoToDDMMAAAA(familiar.fechaNacimientoFamiliar)
+              : "",
+          })
+        );
+        setFamiliares(familiaresConFechasFormateadas);
+      }
+
+      setMensaje("Familiar eliminado correctamente");
+    } catch (err: any) {
+      setError(err.message || "Error al eliminar familiar");
     }
   };
 
@@ -386,118 +645,358 @@ const EditarUsuario: React.FC = () => {
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: 400,
+            width: "90%",
+            maxWidth: 800,
+            maxHeight: "90vh",
             bgcolor: "background.paper",
             borderRadius: 2,
             boxShadow: 24,
             p: 4,
+            overflowY: "auto",
             display: "flex",
             flexDirection: "column",
-            gap: 2,
           }}
         >
-          <Typography variant="h6" sx={{ mb: 2 }}>
+          <Typography variant="h6" sx={{ mb: 3, textAlign: "center" }}>
             Editar Usuario
           </Typography>
-          <TextField
-            label="Nombre"
-            name="Apellido_Nombre"
-            value={usuario?.Apellido_Nombre || ""}
-            onChange={handleChange}
-          />
 
-          <TextField
-            label="Tipo de Documento"
-            name="Tipo_Documento"
-            value={usuario?.Tipo_Documento || ""}
-            onChange={handleChange}
-          />
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-          <TextField
-            label="Numero de Documento"
-            name="Numero_Documento"
-            value={usuario?.Numero_Documento || ""}
-            onChange={handleChange}
-          />
+          {mensaje && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {mensaje}
+            </Alert>
+          )}
 
-          <TextField
-            label="Fecha de Nacimiento"
-            name="Fecha_Nacimiento"
-            value={formatDateToDisplay(usuario?.Fecha_Nacimiento || "")}
-            onChange={handleDateChange}
-            inputProps={{ maxLength: 10 }}
-          />
+          {/* Datos del Usuario */}
+          <Accordion defaultExpanded sx={{ mb: 2 }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Datos del Usuario</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                  <TextField
+                    fullWidth
+                    label="Nombre"
+                    name="Apellido_Nombre"
+                    value={usuario?.Apellido_Nombre || ""}
+                    onChange={handleChange}
+                    sx={{ minWidth: 200, flex: 1 }}
+                  />
 
-          <TextField
-            label="Teléfono"
-            name="Telefono"
-            value={usuario?.Telefono || ""}
-            onChange={handleChange}
-          />
+                  <TextField
+                    fullWidth
+                    label="Tipo de Documento"
+                    name="Tipo_Documento"
+                    value={usuario?.Tipo_Documento || ""}
+                    onChange={handleChange}
+                    sx={{ minWidth: 200, flex: 1 }}
+                  />
+                </Box>
 
-          <TextField
-            label="Área"
-            name="Area"
-            value={usuario?.Area || ""}
-            onChange={handleChange}
-          />
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                  <TextField
+                    fullWidth
+                    label="Numero de Documento"
+                    name="Numero_Documento"
+                    value={usuario?.Numero_Documento || ""}
+                    onChange={handleChange}
+                    sx={{ minWidth: 200, flex: 1 }}
+                  />
 
-          <TextField
-            label="Cargo"
-            name="Cargo"
-            value={usuario?.Cargo || ""}
-            onChange={handleChange}
-          />
+                  <TextField
+                    fullWidth
+                    label="Fecha de Nacimiento"
+                    name="Fecha_Nacimiento"
+                    value={formatDateToDisplay(usuario?.Fecha_Nacimiento || "")}
+                    onChange={handleDateChange}
+                    inputProps={{ maxLength: 10 }}
+                    sx={{ minWidth: 200, flex: 1 }}
+                  />
+                </Box>
 
-          <TextField
-            label="Legajo"
-            name="Legajo"
-            value={usuario?.Legajo || ""}
-            onChange={handleChange}
-          />
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                  <TextField
+                    fullWidth
+                    label="Teléfono"
+                    name="Telefono"
+                    value={usuario?.Telefono || ""}
+                    onChange={handleChange}
+                    sx={{ minWidth: 200, flex: 1 }}
+                  />
 
-          <TextField
-            label="Email"
-            name="Correo_Electronico"
-            value={usuario?.Correo_Electronico || ""}
-            onChange={handleChange}
-          />
+                  <TextField
+                    fullWidth
+                    label="Área"
+                    name="Area"
+                    value={usuario?.Area || ""}
+                    onChange={handleChange}
+                    sx={{ minWidth: 200, flex: 1 }}
+                  />
+                </Box>
 
-          <TextField
-            label="Domicilio"
-            name="Domicilio"
-            value={usuario?.Domicilio || ""}
-            onChange={handleChange}
-          />
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                  <TextField
+                    fullWidth
+                    label="Cargo"
+                    name="Cargo"
+                    value={usuario?.Cargo || ""}
+                    onChange={handleChange}
+                    sx={{ minWidth: 200, flex: 1 }}
+                  />
 
-          <TextField
-            label="Estado Civil"
-            name="Estado_Civil"
-            value={usuario?.Estado_Civil || ""}
-            onChange={handleChange}
-          />
+                  <TextField
+                    fullWidth
+                    label="Legajo"
+                    name="Legajo"
+                    value={usuario?.Legajo || ""}
+                    onChange={handleChange}
+                    sx={{ minWidth: 200, flex: 1 }}
+                  />
+                </Box>
 
-          <TextField
-            label="Fecha de Contrato"
-            name="Fecha_Desde"
-            value={formatDateToDisplay(usuario?.Fecha_Desde || "")}
-            onChange={handleDateChange}
-            inputProps={{ maxLength: 10 }}
-          />
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="Correo_Electronico"
+                    value={usuario?.Correo_Electronico || ""}
+                    onChange={handleChange}
+                    sx={{ minWidth: 200, flex: 1 }}
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Domicilio"
+                    name="Domicilio"
+                    value={usuario?.Domicilio || ""}
+                    onChange={handleChange}
+                    sx={{ minWidth: 200, flex: 1 }}
+                  />
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                  <TextField
+                    fullWidth
+                    label="Estado Civil"
+                    name="Estado_Civil"
+                    value={usuario?.Estado_Civil || ""}
+                    onChange={handleChange}
+                    sx={{ minWidth: 200, flex: 1 }}
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Fecha de Contrato"
+                    name="Fecha_Desde"
+                    value={formatDateToDisplay(usuario?.Fecha_Desde || "")}
+                    onChange={handleDateChange}
+                    inputProps={{ maxLength: 10 }}
+                    sx={{ minWidth: 200, flex: 1 }}
+                  />
+                </Box>
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Familiares */}
+          <Accordion sx={{ mb: 3 }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <PersonIcon />
+                <Typography variant="h6">
+                  Familiares ({familiares.length})
+                </Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box sx={{ mb: 2 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => abrirModalFamiliar()}
+                  sx={{ mb: 2 }}
+                >
+                  Agregar Familiar
+                </Button>
+              </Box>
+
+              {familiares.length === 0 ? (
+                <Typography
+                  color="text.secondary"
+                  sx={{ textAlign: "center", py: 2 }}
+                >
+                  No hay familiares registrados
+                </Typography>
+              ) : (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {familiares.map((familiar) => (
+                    <Box
+                      key={familiar.id}
+                      sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}
+                    >
+                      <Card variant="outlined" sx={{ flex: 1, minWidth: 300 }}>
+                        <CardContent>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "flex-start",
+                              mb: 1,
+                            }}
+                          >
+                            <Typography variant="h6" component="div">
+                              {familiar.nombreFamiliar}
+                            </Typography>
+                            <Box>
+                              <IconButton
+                                size="small"
+                                onClick={() => abrirModalFamiliar(familiar)}
+                                color="primary"
+                              >
+                                <EditIcon />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                onClick={() => eliminarFamiliar(familiar.id)}
+                                color="error"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                          <Chip
+                            label={familiar.parentesco}
+                            size="small"
+                            color="primary"
+                            sx={{ mb: 1 }}
+                          />
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>DNI:</strong>{" "}
+                            {familiar.numeroDocumentoFamiliar}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Nacimiento:</strong>{" "}
+                            {formatDateToDisplay(
+                              familiar.fechaNacimientoFamiliar
+                            )}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>Tipo Doc:</strong>{" "}
+                            {familiar.tipoDocumentoFamiliar}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </AccordionDetails>
+          </Accordion>
 
           <Button
             variant="contained"
             onClick={handleEditar}
             disabled={editando}
+            sx={{ mt: 2 }}
           >
             {editando ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              "Guardar Cambios"
+              "Guardar Cambios del Usuario"
             )}
           </Button>
         </Box>
       </Modal>
+
+      {/* Modal para Familiares */}
+      <Dialog
+        open={openFamiliarModal}
+        onClose={cerrarModalFamiliar}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {modoFamiliar === "crear" ? "Agregar Familiar" : "Editar Familiar"}
+        </DialogTitle>
+        <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+            <TextField
+              fullWidth
+              label="Nombre del Familiar"
+              name="nombreFamiliar"
+              value={familiarSeleccionado?.nombreFamiliar || ""}
+              onChange={handleChangeFamiliar}
+            />
+
+            <TextField
+              fullWidth
+              label="Parentesco"
+              name="parentesco"
+              value={familiarSeleccionado?.parentesco || ""}
+              onChange={handleChangeFamiliar}
+              placeholder="ej: Hijo/a, Cónyuge, Padre/Madre"
+            />
+
+            <TextField
+              fullWidth
+              label="Fecha de Nacimiento"
+              name="fechaNacimientoFamiliar"
+              value={formatDateToDisplay(
+                familiarSeleccionado?.fechaNacimientoFamiliar || ""
+              )}
+              onChange={handleDateChangeFamiliar}
+              inputProps={{ maxLength: 10 }}
+              placeholder="DDMMAAAA"
+            />
+
+            <TextField
+              fullWidth
+              label="Tipo de Documento"
+              name="tipoDocumentoFamiliar"
+              value={familiarSeleccionado?.tipoDocumentoFamiliar || ""}
+              onChange={handleChangeFamiliar}
+              placeholder="ej: DNI, Pasaporte, etc."
+            />
+
+            <TextField
+              fullWidth
+              label="Número de Documento"
+              name="numeroDocumentoFamiliar"
+              value={familiarSeleccionado?.numeroDocumentoFamiliar || ""}
+              onChange={handleChangeFamiliar}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cerrarModalFamiliar}>Cancelar</Button>
+          <Button
+            onClick={guardarFamiliar}
+            variant="contained"
+            disabled={editandoFamiliar}
+          >
+            {editandoFamiliar ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : modoFamiliar === "crear" ? (
+              "Agregar"
+            ) : (
+              "Actualizar"
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Footer />
     </Box>
