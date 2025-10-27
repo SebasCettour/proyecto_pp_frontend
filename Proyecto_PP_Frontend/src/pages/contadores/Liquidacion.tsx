@@ -23,14 +23,22 @@ import Header from "../../components/Header";
 import { SelectChangeEvent } from "@mui/material/Select";
 
 const steps = [
+  "Buscar Empresa",
   "Buscar Empleado",
-  "Datos del Empleador", 
   "Datos del Trabajador",
   "Período de Liquidación",
   "Remuneraciones",
   "Descuentos y Otros",
   "Resumen",
 ];
+
+interface Empresa {
+  Id_Empresa: number;
+  Nombre_Empresa: string;
+  CUIL_CUIT: string;
+  Direccion: string;
+  Rubro: string;
+}
 
 interface Employee {
   id: number;
@@ -41,31 +49,36 @@ interface Employee {
   categoria: string;
   fechaIngreso: string;
   legajo: string;
+  convenioColectivo?: string;
 }
 
 const Liquidacion = () => {
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
-  const [searchDni, setSearchDni] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Empresa
+  const [searchEmpresa, setSearchEmpresa] = useState("");
+  const [empresaFound, setEmpresaFound] = useState<Empresa | null>(null);
+  const [empresaError, setEmpresaError] = useState("");
+
+  // Empleado
+  const [searchDni, setSearchDni] = useState("");
   const [employeeFound, setEmployeeFound] = useState<Employee | null>(null);
   const [searchError, setSearchError] = useState("");
 
-  // Estado único para todos los datos
+  // Estado general
   const [form, setForm] = useState({
-    // Datos del empleado (se llenarán automáticamente)
+    razonSocial: "",
+    cuitEmpleador: "",
+    domicilioEmpleador: "",
+    actividad: "",
     empleadoId: "",
     nombreEmpleado: "",
     cuilEmpleado: "",
     categoria: "",
     fechaIngreso: "",
     legajo: "",
-    // Datos del empleador
-    razonSocial: "",
-    cuitEmpleador: "",
-    domicilioEmpleador: "",
-    actividad: "",
-    // Resto de campos
     periodoMes: "",
     fechaPago: "",
     diasTrabajados: "",
@@ -96,6 +109,53 @@ const Liquidacion = () => {
     asignacionesFamiliares: "",
   });
 
+  // =====================
+  // 🔍 BUSCAR EMPRESA
+  // =====================
+  const handleSearchEmpresa = async () => {
+    if (!searchEmpresa.trim()) {
+      setEmpresaError("Por favor ingrese el nombre de la empresa");
+      return;
+    }
+
+    setLoading(true);
+    setEmpresaError("");
+
+    try {
+      const response = await fetch(
+        `http://localhost:4000/api/empresa/buscar/${encodeURIComponent(
+          searchEmpresa
+        )}`
+      );
+
+      if (response.ok) {
+        const empresa = await response.json();
+        setEmpresaFound(empresa);
+        setForm((prev) => ({
+          ...prev,
+          razonSocial: empresa.Nombre_Empresa,
+          cuitEmpleador: empresa.CUIL_CUIT,
+          domicilioEmpleador: empresa.Direccion,
+          actividad: empresa.Rubro,
+        }));
+      } else if (response.status === 404) {
+        setEmpresaFound(null);
+        setEmpresaError("No se encontró una empresa con ese nombre");
+      } else {
+        throw new Error("Error en la búsqueda");
+      }
+    } catch (error) {
+      console.error("Error buscando empresa:", error);
+      setEmpresaError("Error al buscar la empresa. Intente nuevamente.");
+      setEmpresaFound(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =====================
+  // 🔍 BUSCAR EMPLEADO
+  // =====================
   const handleSearchEmployee = async () => {
     if (!searchDni) {
       setSearchError("Por favor ingrese un DNI");
@@ -106,7 +166,6 @@ const Liquidacion = () => {
     setSearchError("");
 
     try {
-      // ✅ USAR LA NUEVA RUTA EN USUARIO.TS
       const response = await fetch(
         `http://localhost:4000/api/usuario/empleado-buscar/${searchDni}`
       );
@@ -114,8 +173,6 @@ const Liquidacion = () => {
       if (response.ok) {
         const employee = await response.json();
         setEmployeeFound(employee);
-
-        // ✅ LLENAR FORMULARIO CON DATOS ENCONTRADOS
         setForm((prev) => ({
           ...prev,
           empleadoId: employee.id.toString(),
@@ -125,17 +182,14 @@ const Liquidacion = () => {
           fechaIngreso: employee.fechaIngreso,
           legajo: employee.legajo,
         }));
-
-        setSearchError("");
       } else if (response.status === 404) {
         setEmployeeFound(null);
         setSearchError("No se encontró un empleado con ese DNI");
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error en la búsqueda");
+        throw new Error("Error en la búsqueda");
       }
     } catch (error) {
-      console.error('Error searching employee:', error);
+      console.error("Error searching employee:", error);
       setSearchError("Error al buscar el empleado. Intente nuevamente.");
       setEmployeeFound(null);
     } finally {
@@ -170,14 +224,67 @@ const Liquidacion = () => {
   const handleNext = () => setActiveStep((prev) => prev + 1);
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    handleNext();
-  };
-
+  // =====================
+  // 🧩 CONTENIDO DE CADA PASO
+  // =====================
   const renderStepContent = (step: number) => {
     switch (step) {
       case 0:
+        return (
+          <Box>
+            <Typography variant="h6" sx={{ mb: 3 }}>
+              Buscar Empresa por nombre
+            </Typography>
+            <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+              <TextField
+                fullWidth
+                label="Nombre de la empresa"
+                value={searchEmpresa}
+                onChange={(e) => setSearchEmpresa(e.target.value)}
+                placeholder="Ej: Supermercado La Estrella"
+                required
+              />
+              <Button
+                variant="contained"
+                onClick={handleSearchEmpresa}
+                disabled={loading}
+                sx={{ minWidth: 120 }}
+              >
+                {loading ? <CircularProgress size={24} /> : "Buscar"}
+              </Button>
+            </Box>
+
+            {empresaError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {empresaError}
+              </Alert>
+            )}
+
+            {empresaFound && (
+              <Card sx={{ mb: 3 }}>
+                <CardContent>
+                  <Typography variant="h6" color="primary" gutterBottom>
+                    Empresa Encontrada
+                  </Typography>
+                  <Typography>
+                    <strong>Razón social:</strong> {empresaFound.Nombre_Empresa}
+                  </Typography>
+                  <Typography>
+                    <strong>CUIT:</strong> {empresaFound.CUIL_CUIT}
+                  </Typography>
+                  <Typography>
+                    <strong>Rubro:</strong> {empresaFound.Rubro}
+                  </Typography>
+                  <Typography>
+                    <strong>Dirección:</strong> {empresaFound.Direccion}
+                  </Typography>
+                </CardContent>
+              </Card>
+            )}
+          </Box>
+        );
+
+      case 1:
         return (
           <Box>
             <Typography variant="h6" sx={{ mb: 3 }}>
@@ -214,416 +321,38 @@ const Liquidacion = () => {
                   <Typography variant="h6" color="primary" gutterBottom>
                     Empleado Encontrado
                   </Typography>
-                  <Typography><strong>Nombre:</strong> {employeeFound.apellido}, {employeeFound.nombre}</Typography>
-                  <Typography><strong>DNI:</strong> {employeeFound.dni}</Typography>
-                  <Typography><strong>CUIL:</strong> {employeeFound.cuil}</Typography>
-                  <Typography><strong>Categoría:</strong> {employeeFound.categoria}</Typography>
-                  <Typography><strong>Legajo:</strong> {employeeFound.legajo}</Typography>
-                  <Typography><strong>Fecha Ingreso:</strong> {new Date(employeeFound.fechaIngreso).toLocaleDateString()}</Typography>
+                  <Typography>
+                    <strong>Nombre:</strong> {employeeFound.apellido},{" "}
+                    {employeeFound.nombre}
+                  </Typography>
+                  <Typography>
+                    <strong>DNI:</strong> {employeeFound.dni}
+                  </Typography>
+                  <Typography>
+                    <strong>CUIL:</strong> {employeeFound.cuil}
+                  </Typography>
+                  <Typography>
+                    <strong>Convenio Colectivo:</strong>{" "}
+                    {employeeFound.convenioColectivo}
+                  </Typography>
+                  <Typography>
+                    <strong>Categoría:</strong> {employeeFound.categoria}
+                  </Typography>
+                  <Typography>
+                    <strong>Legajo:</strong> {employeeFound.legajo}
+                  </Typography>
+                  <Typography>
+                    <strong>Fecha Ingreso:</strong>{" "}
+                    {new Date(employeeFound.fechaIngreso).toLocaleDateString()}
+                  </Typography>
                 </CardContent>
               </Card>
             )}
           </Box>
         );
-      case 1:
-        return (
-          <>
-            <TextField
-              fullWidth
-              label="Razón social"
-              name="razonSocial"
-              value={form.razonSocial}
-              onChange={handleChange}
-              required
-              sx={{ mt: 1 }}
-            />
-            <TextField
-              fullWidth
-              label="CUIT"
-              name="cuitEmpleador"
-              value={form.cuitEmpleador}
-              onChange={handleChange}
-              required
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Domicilio"
-              name="domicilioEmpleador"
-              value={form.domicilioEmpleador}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Actividad"
-              name="actividad"
-              value={form.actividad}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-          </>
-        );
-      case 2:
-        return (
-          <>
-            <TextField
-              fullWidth
-              label="Nombre y apellido"
-              name="nombreEmpleado"
-              value={form.nombreEmpleado}
-              onChange={handleChange}
-              required
-              disabled
-              sx={{ mt: 1 }}
-            />
-            <TextField
-              fullWidth
-              label="CUIL"
-              name="cuilEmpleado"
-              value={form.cuilEmpleado}
-              onChange={handleChange}
-              required
-              disabled
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Categoría"
-              name="categoria"
-              value={form.categoria}
-              onChange={handleChange}
-              required
-              disabled
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Fecha de ingreso"
-              name="fechaIngreso"
-              type="date"
-              value={form.fechaIngreso}
-              onChange={handleChange}
-              required
-              disabled
-              InputLabelProps={{ shrink: true }}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Legajo"
-              name="legajo"
-              value={form.legajo}
-              onChange={handleChange}
-              disabled
-              sx={{ mt: 2 }}
-            />
-          </>
-        );
-      case 3:
-        return (
-          <>
-            <TextField
-              fullWidth
-              label="Mes y año"
-              name="periodoMes"
-              type="month"
-              value={form.periodoMes}
-              onChange={handleChange}
-              required
-              InputLabelProps={{ shrink: true }}
-              sx={{ mt: 1 }}
-            />
-            <TextField
-              fullWidth
-              label="Fecha de pago"
-              name="fechaPago"
-              type="date"
-              value={form.fechaPago}
-              onChange={handleChange}
-              required
-              InputLabelProps={{ shrink: true }}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Días trabajados"
-              name="diasTrabajados"
-              type="number"
-              value={form.diasTrabajados}
-              onChange={handleChange}
-              required
-              sx={{ mt: 2 }}
-            />
-          </>
-        );
-      case 4:
-        return (
-          <>
-            <TextField
-              fullWidth
-              label="Sueldo básico"
-              name="sueldoBasico"
-              type="number"
-              value={form.sueldoBasico}
-              onChange={handleChange}
-              required
-              sx={{ mt: 1 }}
-            />
-            <TextField
-              fullWidth
-              label="Antigüedad"
-              name="antiguedad"
-              type="number"
-              value={form.antiguedad}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Horas extras"
-              name="horasExtras"
-              type="number"
-              value={form.horasExtras}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Presentismo"
-              name="presentismo"
-              type="number"
-              value={form.presentismo}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Adicionales por convenio"
-              name="adicionalesConvenio"
-              type="number"
-              value={form.adicionalesConvenio}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Premios o bonos"
-              name="premiosBonos"
-              type="number"
-              value={form.premiosBonos}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Comisiones"
-              name="comisiones"
-              type="number"
-              value={form.comisiones}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Vacaciones"
-              name="vacaciones"
-              type="number"
-              value={form.vacaciones}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Aguinaldo"
-              name="aguinaldo"
-              type="number"
-              value={form.aguinaldo}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-          </>
-        );
-      case 5:
-        return (
-          <>
-            <TextField
-              fullWidth
-              label="Descuentos"
-              name="descuentos"
-              type="number"
-              value={form.descuentos}
-              onChange={handleChange}
-              sx={{ mt: 1 }}
-            />
-            <TextField
-              fullWidth
-              label="Aportes jubilatorios"
-              name="aportesJubilatorios"
-              type="number"
-              value={form.aportesJubilatorios}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Obra social"
-              name="obraSocial"
-              type="number"
-              value={form.obraSocial}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="PAMI"
-              name="pami"
-              type="number"
-              value={form.pami}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Cuota sindical"
-              name="cuotaSindical"
-              type="number"
-              value={form.cuotaSindical}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Impuesto a las ganancias"
-              name="impuestoGanancias"
-              type="number"
-              value={form.impuestoGanancias}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Embargos"
-              name="embargos"
-              type="number"
-              value={form.embargos}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Otros descuentos"
-              name="otrosDescuentos"
-              type="number"
-              value={form.otrosDescuentos}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Aportes voluntarios"
-              name="aportesVoluntarios"
-              type="number"
-              value={form.aportesVoluntarios}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <FormControl fullWidth sx={{ mt: 2 }}>
-              <InputLabel id="formaPago-label">Forma de Pago</InputLabel>
-              <Select
-                labelId="formaPago-label"
-                id="formaPago"
-                name="formaPago"
-                value={form.formaPago}
-                label="Forma de Pago"
-                onChange={handleSelectChange}
-                required
-              >
-                <MenuItem value={"transferencia"}>
-                  Transferencia bancaria
-                </MenuItem>
-                <MenuItem value={"efectivo"}>Efectivo</MenuItem>
-                <MenuItem value={"cheque"}>Cheque</MenuItem>
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              label="CBU / Nº Cuenta bancaria"
-              name="cbuCuenta"
-              value={form.cbuCuenta}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Fecha acreditación"
-              name="fechaAcreditacion"
-              type="date"
-              value={form.fechaAcreditacion}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Convenio colectivo"
-              name="convenioColectivo"
-              value={form.convenioColectivo}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Régimen horario"
-              name="regimenHorario"
-              value={form.regimenHorario}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Licencias"
-              name="licencias"
-              value={form.licencias}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Asignaciones familiares"
-              name="asignacionesFamiliares"
-              value={form.asignacionesFamiliares}
-              onChange={handleChange}
-              sx={{ mt: 2 }}
-            />
-          </>
-        );
-      case 6:
-        return (
-          <Box>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Resumen de Liquidación
-            </Typography>
-            <pre
-              style={{
-                background: "#f5f5f5",
-                padding: 16,
-                borderRadius: 8,
-              }}
-            >
-              {JSON.stringify(form, null, 2)}
-            </pre>
-            <Button
-              variant="contained"
-              color="success"
-              onClick={() => alert("Liquidación generada!")}
-            >
-              Confirmar y Generar
-            </Button>
-          </Box>
-        );
+
       default:
-        return null;
+        return <Typography>Resto de pasos en desarrollo...</Typography>;
     }
   };
 
@@ -661,6 +390,7 @@ const Liquidacion = () => {
           Volver
         </Button>
       </Box>
+
       <Container maxWidth="md" sx={{ mt: 4, mb: 6 }}>
         <Stepper activeStep={activeStep} alternativeLabel>
           {steps.map((label) => (
@@ -669,20 +399,21 @@ const Liquidacion = () => {
             </Step>
           ))}
         </Stepper>
+
         <Box
           component="form"
-          onSubmit={
-            activeStep === steps.length - 2
-              ? handleSubmit
-              : (e) => {
-                  e.preventDefault();
-                  if (activeStep === 0 && !employeeFound) {
-                    setSearchError("Debe buscar y seleccionar un empleado primero");
-                    return;
-                  }
-                  handleNext();
-                }
-          }
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (activeStep === 0 && !empresaFound) {
+              setEmpresaError("Debe buscar y seleccionar una empresa primero");
+              return;
+            }
+            if (activeStep === 1 && !employeeFound) {
+              setSearchError("Debe buscar y seleccionar un empleado primero");
+              return;
+            }
+            handleNext();
+          }}
           sx={{
             backgroundColor: "#fff",
             borderRadius: 2,
@@ -692,13 +423,14 @@ const Liquidacion = () => {
           }}
         >
           {renderStepContent(activeStep)}
+
           <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
             <Button disabled={activeStep === 0} onClick={handleBack}>
               Atrás
             </Button>
             {activeStep < steps.length - 1 && (
               <Button variant="contained" type="submit">
-                {activeStep === steps.length - 2 ? "Ir al resumen" : "Siguiente"}
+                Siguiente
               </Button>
             )}
           </Box>
