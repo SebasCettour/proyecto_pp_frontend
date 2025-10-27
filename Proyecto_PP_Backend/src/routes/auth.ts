@@ -164,13 +164,23 @@ router.post(
 
 // ✅ REGISTER CORREGIDO
 router.post("/register", async (req: Request, res: Response) => {
-  const { username, password, email, roleId } = req.body;
+  const { username, password, email, roleId, area, legajo } = req.body;
 
-  console.log("📝 REGISTER - Datos recibidos:", { username, email, roleId });
+  console.log("📝 REGISTER - Datos recibidos:", req.body);
 
-  if (!username || !password || !roleId) {
-    return res.status(400).json({ error: "Faltan datos obligatorios" });
+  // Solo validar los campos realmente obligatorios
+  const missing = [];
+  if (!username) missing.push('username');
+  if (!password) missing.push('password');
+  if (!roleId) missing.push('roleId');
+  if (missing.length > 0) {
+    console.error('❌ Faltan campos obligatorios:', missing);
+    return res.status(400).json({ error: `Faltan campos obligatorios: ${missing.join(', ')}` });
   }
+
+  // Si area, cargo o legajo llegan como undefined, ponerlos en null
+  req.body.area = typeof area === 'undefined' ? null : area;
+  req.body.legajo = typeof legajo === 'undefined' ? null : legajo;
 
   try {
     // ✅ VERIFICAR SI EL USUARIO YA EXISTE
@@ -201,14 +211,13 @@ router.post("/register", async (req: Request, res: Response) => {
     // ✅ INSERTAR EMPLEADO CON CAMPOS CORRECTOS
     await pool.query(
       `INSERT INTO Empleado (
-          Nombre, Apellido, Area, Cargo, Correo_Electronico, Domicilio, Estado_Civil,
+          Nombre, Apellido, Area, Correo_Electronico, Domicilio, Estado_Civil,
           Fecha_Desde, Fecha_Nacimiento, Legajo, Telefono, Tipo_Documento, Numero_Documento
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         nombre,
         apellido,
         req.body.area,
-        req.body.cargo,
         email,
         req.body.domicilio,
         req.body.estadoCivil,

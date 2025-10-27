@@ -1,3 +1,4 @@
+
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -11,17 +12,24 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import path from "path";
 import { pool } from "./models/db.js";
+
 import authRoutes from "./routes/auth.js";
+import conveniosRouter from "./routes/convenios.js";
 import adminRoutes from "./routes/admin.js";
 import cie10Routes from "./routes/cie10.js";
 import novedadRouter from "./routes/novedad.js";
 import usuarioRouter from "./routes/usuario.js";
 import licenciasRoutes from "./routes/licencias.js";
+import familiaresRouter from "./routes/familiares.js";
+import categoriasRouter from "./routes/categorias.js";
+
+import obrasSocialesRoutes from "./routes/obrasSociales.js";
+import sindicatosRoutes from "./routes/sindicatos.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
-// Configurar CORS para permitir solicitudes desde el frontend
+// Configurar CORS
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -32,19 +40,27 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-// Rutas de autenticación y administración
+// Rutas de la app
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/api/cie10", cie10Routes);
 app.use("/api/novedad", novedadRouter);
 app.use("/api/usuario", usuarioRouter);
 app.use("/api/licencias", licenciasRoutes);
+app.use("/api/familiares", familiaresRouter);
+app.use("/api/convenios", conveniosRouter);
 
-// Ruta raíz para probar la conexión a la base de datos
-app.get("/", async (_req: any, res: any) => {
+// Registrar obras sociales, sindicatos y cargos
+app.use("/api/obras-sociales", obrasSocialesRoutes);
+app.use("/api/sindicatos", sindicatosRoutes);
+
+// Registrar categorías bajo /api/empleado/categorias
+app.use("/api/empleado/categorias", categoriasRouter);
+
+// 🔹 Ruta raíz
+app.get("/", async (_req: Request, res: Response) => {
   try {
     const [rows] = await pool.query("SELECT 'Hola desde MySQL!' as msg");
     res.json(rows);
@@ -54,7 +70,51 @@ app.get("/", async (_req: any, res: any) => {
   }
 });
 
-// Verificar la conexión a la base de datos antes de iniciar el servidor
+// 🔹 Buscar empresa por nombre usando query param
+app.get("/api/empresa/buscar", async (req: Request, res: Response) => {
+  const nombre = req.query.nombre;
+  if (!nombre || typeof nombre !== "string") {
+    return res.status(400).json({ error: "Falta el parámetro 'nombre'" });
+  }
+
+  try {
+    const [rows] = await pool.query(
+      "SELECT * FROM Empresa WHERE Nombre_Empresa LIKE ? LIMIT 10",
+      [`%${nombre}%`]
+    );
+    if (Array.isArray(rows) && rows.length === 0) {
+      return res.status(404).json({ message: "Empresa no encontrada" });
+    }
+    res.json(rows);
+  } catch (err) {
+    console.error("Error buscando empresa por nombre:", err);
+    res.status(500).json({ error: "Error buscando empresa" });
+  }
+});
+
+
+// Endpoint para buscar empresa por nombre (por parámetro en la URL, para Liquidacion.tsx)
+app.get("/api/empresa/buscar/:nombre", async (req: Request, res: Response) => {
+  const nombre = req.params.nombre;
+  if (!nombre) {
+    return res.status(400).json({ error: "Falta el parámetro 'nombre'" });
+  }
+  try {
+    const [rows] = await pool.query(
+      "SELECT * FROM Empresa WHERE Nombre_Empresa LIKE ? LIMIT 1",
+      [`%${nombre}%`]
+    );
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(404).json({ message: "Empresa no encontrada" });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error buscando empresa por nombre:", err);
+    res.status(500).json({ error: "Error buscando empresa" });
+  }
+});
+
+// Conexión a DB y arrancar servidor
 pool
   .getConnection()
   .then((connection) => {

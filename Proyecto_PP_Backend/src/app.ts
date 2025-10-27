@@ -1,9 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+
 import licenciasRoutes from './routes/licencias.js';
 import authRoutes from './routes/auth.js';
 import cie10Routes from './routes/cie10.js';
+import obrasSocialesRoutes from './routes/obrasSociales.js';
+import sindicatosRoutes from './routes/sindicatos.js';
 
 const app = express();
 
@@ -16,9 +19,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Rutas
+
 app.use('/api/auth', authRoutes);
 app.use('/api/licencias', licenciasRoutes);
 app.use('/api/cie10', cie10Routes);
+app.use('/api/obras-sociales', obrasSocialesRoutes);
+app.use('/api/sindicatos', sindicatosRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {

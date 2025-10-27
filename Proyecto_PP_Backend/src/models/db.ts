@@ -16,3 +16,6 @@ export const pool = mysql.createPool({
 });
 
 console.log("✅ Pool de conexiones MySQL creado");
+
+// Export default for compatibility with default imports
+export default pool;

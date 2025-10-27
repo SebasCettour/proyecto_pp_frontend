@@ -16,10 +16,9 @@ interface MySQLError extends Error {
 router.post("/auth/register", async (req, res) => {
   console.log("📝 Datos recibidos:", req.body);
 
+  // Permitir tanto 'rolId' como 'roleId' (compatibilidad frontend)
   const {
     username,
-    area,
-    cargo,
     email,
     domicilio,
     estadoCivil,
@@ -29,9 +28,11 @@ router.post("/auth/register", async (req, res) => {
     tipoDocumento,
     numeroDocumento,
     password,
-    rolId,
     familiares = [],
+    area = "",
   } = req.body;
+  // Soporte para ambos nombres
+  let rolId = req.body.rolId ?? req.body.roleId;
 
   // ✅ SEPARAR NOMBRE Y APELLIDO CORRECTAMENTE
   const nombreCompleto = username || "";
@@ -50,10 +51,17 @@ router.post("/auth/register", async (req, res) => {
   };
 
   // ✅ VALIDACIONES MEJORADAS
-  if (!username || !email || !password || !numeroDocumento || !rolId) {
-    console.log("❌ Faltan campos obligatorios");
+  const missing = [];
+  if (!username) missing.push("username");
+  if (!email) missing.push("email");
+  if (!password) missing.push("password");
+  if (!numeroDocumento) missing.push("numeroDocumento");
+  if (!rolId || rolId === "") missing.push("rolId");
+  if (missing.length > 0) {
+    console.log("❌ Faltan campos obligatorios:", missing);
     return res.status(400).json({
       error: "Faltan campos obligatorios",
+      missing,
       received: req.body,
     });
   }
@@ -65,9 +73,9 @@ router.post("/auth/register", async (req, res) => {
   // ✅ SQL CORRECTO - RESPETA EL ORDEN DE LA TABLA
   const sqlEmpleado = `
     INSERT INTO Empleado (
-      Nombre, Apellido, Area, Cargo, Correo_Electronico, Domicilio, Estado_Civil,
+      Nombre, Apellido, Area, Correo_Electronico, Domicilio, Estado_Civil,
       Fecha_Desde, Fecha_Nacimiento, Legajo, Telefono, Tipo_Documento, Numero_Documento
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const sqlUsuario = `
@@ -86,7 +94,6 @@ router.post("/auth/register", async (req, res) => {
       nombre,
       apellido,
       area,
-      cargo,
       email,
       domicilio,
       estadoCivil,
@@ -105,8 +112,10 @@ router.post("/auth/register", async (req, res) => {
       "SELECT Id_Empleado FROM Empleado WHERE Numero_Documento = ? ORDER BY Id_Empleado DESC LIMIT 1",
       [numeroDocumento]
     );
-    const idEmpleado = empleadoRows && empleadoRows[0] ? empleadoRows[0].Id_Empleado : null;
-    if (!idEmpleado) throw new Error("No se pudo obtener el Id_Empleado insertado");
+    const idEmpleado =
+      empleadoRows && empleadoRows[0] ? empleadoRows[0].Id_Empleado : null;
+    if (!idEmpleado)
+      throw new Error("No se pudo obtener el Id_Empleado insertado");
 
     // Insertar familiares si existen
     if (Array.isArray(familiares) && familiares.length > 0) {
@@ -126,13 +135,21 @@ router.post("/auth/register", async (req, res) => {
 
     // Insertar en Usuarios
     const hashedPassword = await bcrypt.hash(password, 10);
-    const usuarioData = [username, email, hashedPassword, rolId, numeroDocumento];
+    const usuarioData = [
+      username,
+      email,
+      hashedPassword,
+      rolId,
+      numeroDocumento,
+    ];
     await connection.query(sqlUsuario, usuarioData);
     console.log("✅ Usuario insertado exitosamente");
 
     await connection.commit();
     console.log("✅ Usuario y familiares creados exitosamente");
-    res.status(201).json({ message: "Usuario y familiares creados correctamente" });
+    res
+      .status(201)
+      .json({ message: "Usuario y familiares creados correctamente" });
   } catch (err: unknown) {
     if (connection) {
       await connection.rollback();
@@ -188,7 +205,7 @@ router.delete(
   "/eliminar-usuario-dni/:dni",
   async (req: Request, res: Response) => {
     const { dni } = req.params;
-    
+
     console.log("🗑️ INICIO - Eliminación de usuario");
     console.log("📝 DNI recibido:", dni);
     console.log("📝 Tipo de DNI:", typeof dni);
@@ -212,9 +229,9 @@ router.delete(
         "SELECT Id_Empleado, Nombre, Apellido FROM Empleado WHERE Numero_Documento = ?",
         [dni]
       );
-      
+
       console.log("📊 Resultado búsqueda empleado:", checkEmpleado);
-      
+
       if (checkEmpleado.length === 0) {
         await connection.rollback();
         console.log("❌ Empleado no encontrado");
@@ -224,7 +241,7 @@ router.delete(
       console.log("✅ Usuario encontrado:", {
         id: checkEmpleado[0].Id_Empleado,
         nombre: checkEmpleado[0].Nombre,
-        apellido: checkEmpleado[0].Apellido
+        apellido: checkEmpleado[0].Apellido,
       });
 
       // ✅ ELIMINAR DE USUARIOS PRIMERO (por la foreign key)
@@ -233,7 +250,10 @@ router.delete(
         "DELETE FROM Usuarios WHERE Numero_Documento = ?",
         [dni]
       );
-      console.log("📊 Filas eliminadas de Usuarios:", resultUsuarios.affectedRows);
+      console.log(
+        "📊 Filas eliminadas de Usuarios:",
+        resultUsuarios.affectedRows
+      );
 
       // ✅ ELIMINAR DE EMPLEADO
       console.log("🗑️ Eliminando de tabla Empleado...");
@@ -241,13 +261,18 @@ router.delete(
         "DELETE FROM Empleado WHERE Numero_Documento = ?",
         [dni]
       );
-      console.log("📊 Filas eliminadas de Empleado:", resultEmpleado.affectedRows);
+      console.log(
+        "📊 Filas eliminadas de Empleado:",
+        resultEmpleado.affectedRows
+      );
 
       // ✅ VERIFICAR QUE AL MENOS SE ELIMINÓ DE EMPLEADO
       if (resultEmpleado.affectedRows === 0) {
         await connection.rollback();
         console.log("❌ No se pudo eliminar el empleado");
-        return res.status(404).json({ error: "No se pudo eliminar el usuario" });
+        return res
+          .status(404)
+          .json({ error: "No se pudo eliminar el usuario" });
       }
 
       await connection.commit();
@@ -257,11 +282,10 @@ router.delete(
       console.log("  - Empleados eliminados:", resultEmpleado.affectedRows);
 
       res.status(204).send();
-
     } catch (err: unknown) {
       console.log("❌ ERROR en eliminación:");
       console.log("❌ Error completo:", err);
-      
+
       if (connection) {
         try {
           await connection.rollback();
@@ -279,23 +303,22 @@ router.delete(
 
       // ✅ MANEJO DE ERRORES ESPECÍFICOS
       if (error.code === "ER_ROW_IS_REFERENCED_2") {
-        return res.status(409).json({ 
-          error: "No se puede eliminar: el usuario tiene registros asociados" 
+        return res.status(409).json({
+          error: "No se puede eliminar: el usuario tiene registros asociados",
         });
       }
 
       if (error.code === "ER_NO_REFERENCED_ROW_2") {
-        return res.status(400).json({ 
-          error: "Error de referencia en la base de datos" 
+        return res.status(400).json({
+          error: "Error de referencia en la base de datos",
         });
       }
 
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Error interno del servidor",
         details: error.message,
-        code: error.code
+        code: error.code,
       });
-
     } finally {
       if (connection) {
         console.log("🔄 Liberando conexión...");
@@ -313,7 +336,6 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
     Nombre,
     Apellido,
     Area,
-    Cargo,
     Correo_Electronico,
     Domicilio,
     Estado_Civil,
@@ -332,7 +354,6 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
         Nombre = ?,
         Apellido = ?,
         Area = ?,
-        Cargo = ?,
         Correo_Electronico = ?,
         Domicilio = ?,
         Estado_Civil = ?,
@@ -347,7 +368,6 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
         Nombre,
         Apellido,
         Area,
-        Cargo,
         Correo_Electronico,
         Domicilio,
         Estado_Civil,
@@ -424,21 +444,33 @@ router.post("/auth/cambiar-password", async (req: Request, res: Response) => {
 // ✅ BUSCAR EMPLEADO POR DNI PARA LIQUIDACIÓN
 router.get("/empleado-buscar/:dni", async (req: Request, res: Response) => {
   const { dni } = req.params;
-  
+
   console.log("🔍 Buscando empleado para liquidación - DNI:", dni);
-  
+
   try {
     const [rows]: any = await db.query(
-      "SELECT Id_Empleado as id, Nombre as nombre, Apellido as apellido, Numero_Documento as dni, Legajo as legajo, Cargo as categoria, Fecha_Desde as fechaIngreso FROM Empleado WHERE Numero_Documento = ?",
+      `SELECT 
+        e.Id_Empleado as id,
+        e.Nombre as nombre,
+        e.Apellido as apellido,
+        e.Numero_Documento as dni,
+        e.Legajo as legajo,
+        cat.Nombre_Categoria as categoria,
+        e.Fecha_Desde as fechaIngreso,
+        cc.descripcion as convenioColectivo
+      FROM Empleado e
+      LEFT JOIN Categoria cat ON e.Categoria = cat.Id_Categoria
+      LEFT JOIN ConvenioColectivo cc ON cat.Id_Convenio = cc.id_convenio
+      WHERE e.Numero_Documento = ?`,
       [dni]
     );
-    
+
     if (rows.length === 0) {
       return res.status(404).json({ message: "Empleado no encontrado" });
     }
-    
+
     const empleado = rows[0];
-    
+
     // Formatear respuesta para el frontend
     const response = {
       id: empleado.id,
@@ -446,19 +478,20 @@ router.get("/empleado-buscar/:dni", async (req: Request, res: Response) => {
       nombre: empleado.nombre,
       apellido: empleado.apellido,
       cuil: empleado.dni, // Si no tienes CUIL, usar DNI
-      categoria: empleado.categoria || 'No especificado',
-      fechaIngreso: empleado.fechaIngreso ? empleado.fechaIngreso.toISOString().split('T')[0] : '',
-      legajo: empleado.legajo || ''
+      categoria: empleado.categoria || "No especificado",
+      fechaIngreso: empleado.fechaIngreso
+        ? empleado.fechaIngreso.toISOString?.().split("T")[0] : empleado.fechaIngreso || "",
+      legajo: empleado.legajo || "",
+      convenioColectivo: empleado.convenioColectivo || ""
     };
-    
+
     res.json(response);
-    
   } catch (err: unknown) {
     const error = err as Error;
     console.error("❌ Error al buscar empleado:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Error interno del servidor",
-      error: error.message 
+      error: error.message,
     });
   }
 });
