@@ -20,7 +20,14 @@ import {
   Card,
   CardContent,
   Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import {
   ExpandMore as ExpandMoreIcon,
   Edit as EditIcon,
@@ -156,10 +163,14 @@ const EditarUsuario: React.FC = () => {
       // Procesar familiares
       const familiaresConFechasFormateadas = familiaresData.map(
         (familiar: any) => ({
-          ...familiar,
-          fechaNacimientoFamiliar: familiar.fechaNacimientoFamiliar
-            ? isoToDDMMAAAA(familiar.fechaNacimientoFamiliar)
+          id: familiar.Id_Familiar,
+          nombreFamiliar: familiar.Nombre,
+          parentesco: familiar.Parentesco,
+          fechaNacimientoFamiliar: familiar.Fecha_Nacimiento
+            ? isoToDDMMAAAA(familiar.Fecha_Nacimiento)
             : "",
+          tipoDocumentoFamiliar: familiar.Tipo_Documento,
+          numeroDocumentoFamiliar: familiar.Numero_Documento,
         })
       );
 
@@ -388,38 +399,33 @@ const EditarUsuario: React.FC = () => {
       return;
     }
 
+    // Mapear los campos del formulario a los que espera el backend
     const familiarParaGuardar = {
-      ...familiarSeleccionado,
-      fechaNacimientoFamiliar: formatDateToISO(
-        familiarSeleccionado.fechaNacimientoFamiliar
-      ),
+      dni: dni,
+      nombre: familiarSeleccionado.nombreFamiliar,
+      parentesco: familiarSeleccionado.parentesco,
+      fecha_nacimiento: formatDateToISO(familiarSeleccionado.fechaNacimientoFamiliar),
+      tipo_documento: familiarSeleccionado.tipoDocumentoFamiliar,
+      numero_documento: familiarSeleccionado.numeroDocumentoFamiliar,
     };
 
     try {
       if (modoFamiliar === "crear") {
-        // Necesitamos obtener el ID del empleado
-        const empleadoResponse = await fetch(
-          `http://localhost:4000/api/usuario/usuario-dni/${dni}`
-        );
-        const empleado = await empleadoResponse.json();
-
         const response = await fetch(
           `http://localhost:4000/api/familiares/crear`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              idEmpleado: empleado.Id_Empleado,
-              ...familiarParaGuardar,
-            }),
+            body: JSON.stringify(familiarParaGuardar),
           }
         );
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || "No se pudo crear el familiar");
+          throw new Error(errorData.message || errorData.error || "No se pudo crear el familiar");
         }
         setMensaje("Familiar creado correctamente");
       } else {
+        // ...existing code...
         const response = await fetch(
           `http://localhost:4000/api/familiares/${familiarSeleccionado.id}`,
           {
@@ -431,7 +437,7 @@ const EditarUsuario: React.FC = () => {
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(
-            errorData.error || "No se pudo actualizar el familiar"
+            errorData.message || errorData.error || "No se pudo actualizar el familiar"
           );
         }
         setMensaje("Familiar actualizado correctamente");
@@ -445,10 +451,14 @@ const EditarUsuario: React.FC = () => {
         const familiaresData = await familiariesResponse.json();
         const familiaresConFechasFormateadas = familiaresData.map(
           (familiar: any) => ({
-            ...familiar,
-            fechaNacimientoFamiliar: familiar.fechaNacimientoFamiliar
-              ? isoToDDMMAAAA(familiar.fechaNacimientoFamiliar)
+            id: familiar.Id_Familiar,
+            nombreFamiliar: familiar.Nombre,
+            parentesco: familiar.Parentesco,
+            fechaNacimientoFamiliar: familiar.Fecha_Nacimiento
+              ? isoToDDMMAAAA(familiar.Fecha_Nacimiento)
               : "",
+            tipoDocumentoFamiliar: familiar.Tipo_Documento,
+            numeroDocumentoFamiliar: familiar.Numero_Documento,
           })
         );
         setFamiliares(familiaresConFechasFormateadas);
@@ -484,10 +494,14 @@ const EditarUsuario: React.FC = () => {
         const familiaresData = await familiariesResponse.json();
         const familiaresConFechasFormateadas = familiaresData.map(
           (familiar: any) => ({
-            ...familiar,
-            fechaNacimientoFamiliar: familiar.fechaNacimientoFamiliar
-              ? isoToDDMMAAAA(familiar.fechaNacimientoFamiliar)
+            id: familiar.Id_Familiar,
+            nombreFamiliar: familiar.Nombre,
+            parentesco: familiar.Parentesco,
+            fechaNacimientoFamiliar: familiar.Fecha_Nacimiento
+              ? isoToDDMMAAAA(familiar.Fecha_Nacimiento)
               : "",
+            tipoDocumentoFamiliar: familiar.Tipo_Documento,
+            numeroDocumentoFamiliar: familiar.Numero_Documento,
           })
         );
         setFamiliares(familiaresConFechasFormateadas);
@@ -782,14 +796,31 @@ const EditarUsuario: React.FC = () => {
                 </Box>
 
                 <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                  <TextField
-                    fullWidth
-                    label="Estado Civil"
-                    name="Estado_Civil"
-                    value={usuario?.Estado_Civil || ""}
-                    onChange={handleChange}
-                    sx={{ minWidth: 200, flex: 1 }}
-                  />
+                  <FormControl fullWidth sx={{ minWidth: 200, flex: 1 }}>
+                    <InputLabel id="estado-civil-label">
+                      Estado Civil
+                    </InputLabel>
+                    <Select
+                      labelId="estado-civil-label"
+                      id="estado-civil"
+                      name="Estado_Civil"
+                      value={usuario?.Estado_Civil || ""}
+                      label="Estado Civil"
+                      onChange={(e) =>
+                        setUsuario((prev: any) => ({
+                          ...(prev || {}),
+                          Estado_Civil: e.target.value,
+                        }))
+                      }
+                    >
+                      <MenuItem value="">-- Seleccionar --</MenuItem>
+                      <MenuItem value="Soltero">Soltero</MenuItem>
+                      <MenuItem value="Casado">Casado</MenuItem>
+                      <MenuItem value="Divorciado">Divorciado</MenuItem>
+                      <MenuItem value="Viudo">Viudo</MenuItem>
+                      <MenuItem value="En Unión Civil">En Unión Civil</MenuItem>
+                    </Select>
+                  </FormControl>
 
                   <TextField
                     fullWidth
@@ -838,7 +869,7 @@ const EditarUsuario: React.FC = () => {
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {familiares.map((familiar) => (
                     <Box
-                      key={familiar.id}
+                      key={familiar.Id_Familiar || familiar.id || familiar.numeroDocumentoFamiliar}
                       sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}
                     >
                       <Card variant="outlined" sx={{ flex: 1, minWidth: 300 }}>
@@ -941,35 +972,80 @@ const EditarUsuario: React.FC = () => {
               onChange={handleChangeFamiliar}
             />
 
-            <TextField
-              fullWidth
-              label="Parentesco"
-              name="parentesco"
-              value={familiarSeleccionado?.parentesco || ""}
-              onChange={handleChangeFamiliar}
-              placeholder="ej: Hijo/a, Cónyuge, Padre/Madre"
-            />
+            <FormControl fullWidth>
+              <InputLabel id="parentesco-label">Parentesco</InputLabel>
+              <Select
+                labelId="parentesco-label"
+                id="parentesco"
+                name="parentesco"
+                value={familiarSeleccionado?.parentesco || ""}
+                label="Parentesco"
+                onChange={(e) =>
+                  setFamiliarSeleccionado((prev: any) => ({
+                    ...(prev || {}),
+                    parentesco: e.target.value,
+                  }))
+                }
+              >
+                <MenuItem value="">-- Seleccionar --</MenuItem>
+                <MenuItem value="Padre">Padre</MenuItem>
+                <MenuItem value="Madre">Madre</MenuItem>
+                <MenuItem value="Cónyuge">Cónyuge</MenuItem>
+                <MenuItem value="Hijo">Hijo</MenuItem>
+                <MenuItem value="Hija">Hija</MenuItem>
+              </Select>
+            </FormControl>
 
-            <TextField
-              fullWidth
-              label="Fecha de Nacimiento"
-              name="fechaNacimientoFamiliar"
-              value={formatDateToDisplay(
-                familiarSeleccionado?.fechaNacimientoFamiliar || ""
-              )}
-              onChange={handleDateChangeFamiliar}
-              inputProps={{ maxLength: 10 }}
-              placeholder="DDMMAAAA"
-            />
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Fecha de Nacimiento"
+                value={
+                  familiarSeleccionado?.fechaNacimientoFamiliar
+                    ? (() => {
+                        const val = familiarSeleccionado.fechaNacimientoFamiliar;
+                        if (dayjs.isDayjs(val)) return val;
+                        if (typeof val === 'string' && val.length === 8) {
+                          // DDMMAAAA
+                          const d = val.slice(0, 2);
+                          const m = val.slice(2, 4);
+                          const y = val.slice(4, 8);
+                          return dayjs(`${y}-${m}-${d}`);
+                        }
+                        return null;
+                      })()
+                    : null
+                }
+                onChange={(date: Dayjs | null, _context: any) => {
+                  let formatted = "";
+                  if (date && date.isValid()) {
+                    formatted = date.format("DDMMYYYY");
+                  }
+                  setFamiliarSeleccionado((prev: any) => ({ ...(prev || {}), fechaNacimientoFamiliar: formatted }));
+                }}
+                format="DD/MM/YYYY"
+                slotProps={{ textField: { fullWidth: true } }}
+              />
+            </LocalizationProvider>
 
-            <TextField
-              fullWidth
-              label="Tipo de Documento"
-              name="tipoDocumentoFamiliar"
-              value={familiarSeleccionado?.tipoDocumentoFamiliar || ""}
-              onChange={handleChangeFamiliar}
-              placeholder="ej: DNI, Pasaporte, etc."
-            />
+            <FormControl fullWidth>
+              <InputLabel id="tipo-doc-familiar-label">Tipo de Documento</InputLabel>
+              <Select
+                labelId="tipo-doc-familiar-label"
+                id="tipoDocumentoFamiliar"
+                name="tipoDocumentoFamiliar"
+                value={familiarSeleccionado?.tipoDocumentoFamiliar || ""}
+                label="Tipo de Documento"
+                onChange={(e) =>
+                  setFamiliarSeleccionado((prev: any) => ({ ...(prev || {}), tipoDocumentoFamiliar: e.target.value }))
+                }
+              >
+                <MenuItem value="">-- Seleccionar --</MenuItem>
+                <MenuItem value="DNI">DNI</MenuItem>
+                <MenuItem value="LE">LE</MenuItem>
+                <MenuItem value="LC">LC</MenuItem>
+                <MenuItem value="Pasaporte">Pasaporte</MenuItem>
+              </Select>
+            </FormControl>
 
             <TextField
               fullWidth

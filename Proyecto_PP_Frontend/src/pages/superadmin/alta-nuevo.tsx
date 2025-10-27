@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link as RouterLink } from "react-router-dom";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { z } from "zod";
 import {
   Box,
@@ -18,154 +18,62 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-
-import { useNavigate } from "react-router-dom";
-import Footer from "../../components/Footer";
-import Header from "../../components/Header";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import "dayjs/locale/es";
+import Footer from "../../components/Footer";
+import Header from "../../components/Header";
 
-// ✅ VALIDACIONES
+type ObraSocial = { id: string; nombre: string };
+type Sindicato = { id: string; nombre: string };
+
 const schema = z.object({
   username: z
     .string()
     .min(3, "El nombre debe tener al menos 3 caracteres")
     .max(100, "El nombre no puede exceder 100 caracteres")
     .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios"),
-
-  email: z
-    .string()
-    .email("Email inválido")
-    .max(100, "El email no puede exceder 100 caracteres"),
-
-  password: z
-    .string()
-    .min(6, "La contraseña debe tener al menos 6 caracteres")
-    .max(100, "La contraseña no puede exceder 100 caracteres"),
-
+  email: z.string().email("Email inválido").max(100),
+  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").max(100),
   roleId: z.string().min(1, "Debe seleccionar un rol"),
-
-  area: z
-    .string()
-    .min(2, "El área debe tener al menos 2 caracteres")
-    .max(50, "El área no puede exceder 50 caracteres"),
-
-  cargo: z
-    .string()
-    .min(2, "El cargo debe tener al menos 2 caracteres")
-    .max(50, "El cargo no puede exceder 50 caracteres"),
-
-  domicilio: z
-    .string()
-    .min(10, "El domicilio debe ser más específico")
-    .max(150, "El domicilio no puede exceder 150 caracteres"),
-
+  area: z.string().min(2, "El área debe tener al menos 2 caracteres").max(50),
+  cargo: z.string().min(2, "El cargo debe tener al menos 2 caracteres").max(50),
+  domicilio: z.string().min(10, "El domicilio debe ser más específico").max(150),
   estadoCivil: z.string().min(1, "Debe seleccionar un estado civil"),
-
+  obraSocialId: z.string().min(1, "Debe seleccionar una obra social"),
   fechaContrato: z
     .string()
     .min(1, "La fecha de contrato es requerida")
-    .refine((date) => {
-      const today = new Date();
-      const contractDate = new Date(date);
-      return contractDate <= today;
-    }, "La fecha de contrato no puede ser futura"),
-
-  fechaNacimiento: z
-    .string()
-    .min(10, "La fecha debe tener formato yyyy-mm-dd")
-    .max(10, "La fecha debe tener formato yyyy-mm-dd")
-    .refine((date) => {
-      // Solo acepta exactamente 4 dígitos para el año al inicio
-      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-      if (!match) return false;
-      const year = Number(match[1]);
-      const month = Number(match[2]);
-      const day = Number(match[3]);
-      if (year < 1900 || year > 2099) return false;
-      // Validar fecha real
-      const birthDate = new Date(
-        `${year}-${month.toString().padStart(2, "0")}-${day
-          .toString()
-          .padStart(2, "0")}`
-      );
-      const today = new Date();
-      if (birthDate > today) return false;
-      let age = today.getFullYear() - year;
-      const m = today.getMonth() + 1 - month;
-      if (m < 0 || (m === 0 && today.getDate() < day)) {
-        age--;
-      }
-      return age >= 18 && age <= 70;
-    }, "La fecha debe tener formato yyyy-mm-dd, año de 4 dígitos, no ser futura y la edad entre 18 y 70 años"),
-
-  telefono: z
-    .string()
-    .min(8, "El teléfono debe tener al menos 8 dígitos")
-    .max(20, "El teléfono no puede exceder 20 caracteres")
-    .regex(/^[0-9+\-\s()]+$/, "Formato de teléfono inválido"),
-
+    .refine((date) => new Date(date) <= new Date(), "La fecha de contrato no puede ser futura"),
+  fechaNacimiento: z.string().refine((date) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+    if (!match) return false;
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const birthDate = new Date(`${year}-${month}-${day}`);
+    const today = new Date();
+    const age = today.getFullYear() - year - (today < new Date(today.getFullYear(), month - 1, day) ? 1 : 0);
+    return birthDate <= today && age >= 18 && age <= 70;
+  }, "La fecha debe tener formato yyyy-mm-dd y la edad debe ser entre 18 y 70 años"),
+  telefono: z.string().min(8, "El teléfono debe tener al menos 8 dígitos").max(20, "El teléfono no puede exceder 20 caracteres").regex(/^[0-9+\-\s()]+$/, "Formato de teléfono inválido"),
   tipoDocumento: z.string().min(1, "Debe seleccionar un tipo de documento"),
-
-  numeroDocumento: z
-    .string()
-    .min(7, "El número de documento debe tener al menos 7 dígitos")
-    .max(50, "El número de documento no puede exceder 50 caracteres")
-    .regex(/^[0-9]+$/, "Solo se permiten números"),
-
+  numeroDocumento: z.string().min(7).max(50).regex(/^[0-9]+$/, "Solo se permiten números"),
   sindicatoId: z.string().min(1, "Debe seleccionar un sindicato"),
-
-  // Campos del grupo familiar
-  familiares: z
-    .array(
-      z.object({
-        nombreFamiliar: z
-          .string()
-          .min(2, "El nombre debe tener al menos 2 caracteres")
-          .max(100, "El nombre no puede exceder 100 caracteres")
-          .regex(
-            /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-            "Solo se permiten letras y espacios"
-          ),
-
-        parentesco: z.string().min(1, "Debe seleccionar un parentesco"),
-
-        fechaNacimientoFamiliar: z
-          .string()
-          .min(1, "La fecha de nacimiento es requerida")
-          .refine((value) => {
-            // Validar formato de fecha
-            const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-            if (!match) return false;
-            const year = Number(match[1]);
-            const month = Number(match[2]);
-            const day = Number(match[3]);
-            if (year < 1900 || year > 2099) return false;
-            // Validar que no sea fecha futura
-            const birthDate = new Date(
-              `${year}-${month.toString().padStart(2, "0")}-${day
-                .toString()
-                .padStart(2, "0")}`
-            );
-            const today = new Date();
-            return birthDate <= today;
-          }, "La fecha debe tener formato yyyy-mm-dd, año de 4 dígitos y no ser futura"),
-
-        tipoDocumentoFamiliar: z
-          .string()
-          .min(1, "Debe seleccionar un tipo de documento"),
-
-        numeroDocumentoFamiliar: z
-          .string()
-          .min(7, "El número de documento debe tener al menos 7 dígitos")
-          .max(50, "El número de documento no puede exceder 50 caracteres")
-          .regex(/^[0-9]+$/, "Solo se permiten números"),
-      })
-    )
-    .optional(),
+  familiares: z.array(
+    z.object({
+      nombreFamiliar: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(100, "El nombre no puede exceder 100 caracteres").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios"),
+      parentesco: z.string().min(1, "Debe seleccionar un parentesco"),
+      fechaNacimientoFamiliar: z.string().min(1, "La fecha de nacimiento es requerida").refine((value) => {
+        const date = new Date(value);
+        return !isNaN(date.getTime()) && date <= new Date();
+      }, "La fecha no puede ser futura"),
+      tipoDocumentoFamiliar: z.string().min(1, "Debe seleccionar un tipo de documento"),
+      numeroDocumentoFamiliar: z.string().min(7, "Debe tener al menos 7 dígitos").max(50).regex(/^[0-9]+$/, "Solo se permiten números"),
+    })
+  ).optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -175,21 +83,45 @@ const AltaNuevo: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [obrasSociales, setObrasSociales] = useState<ObraSocial[]>([]);
+  const [loadingObras, setLoadingObras] = useState(false);
+  const [sindicatos, setSindicatos] = useState<Sindicato[]>([]);
+  const [loadingSindicatos, setLoadingSindicatos] = useState(false);
 
-  // Configurar dayjs en español
-  dayjs.locale("es");
+  useEffect(() => {
+    dayjs.locale("es");
+    const fetchObrasSociales = async () => {
+      setLoadingObras(true);
+      try {
+        const res = await fetch("http://localhost:4000/api/obras-sociales");
+        if (!res.ok) throw new Error("Error al obtener obras sociales");
+        const data = await res.json();
+        setObrasSociales(data.map((os: any) => ({ id: String(os.ID_ObraSocial || os.id), nombre: os.Nombre || os.nombre })));
+      } catch {
+        setObrasSociales([{ id: "1", nombre: "OSECAC" }]);
+      } finally {
+        setLoadingObras(false);
+      }
+    };
+    const fetchSindicatos = async () => {
+      setLoadingSindicatos(true);
+      try {
+        const res = await fetch("http://localhost:4000/api/sindicatos");
+        if (!res.ok) throw new Error("Error al obtener sindicatos");
+        const data = await res.json();
+        setSindicatos(data.map((s: any) => ({ id: String(s.ID_Sindicato || s.id), nombre: s.Nombre || s.nombre })));
+      } catch {
+        setSindicatos([{ id: "1", nombre: "Sindicato Empleados de Comercio" }]);
+      } finally {
+        setLoadingSindicatos(false);
+      }
+    };
+    fetchObrasSociales();
+    fetchSindicatos();
+  }, []);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    control,
-    watch,
-    setValue,
-  } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors }, reset, control, watch } = useForm<FormData>({
     resolver: zodResolver(schema),
-    // ✅ VALORES INICIALES VACÍOS
     defaultValues: {
       username: "",
       email: "",
@@ -199,821 +131,159 @@ const AltaNuevo: React.FC = () => {
       cargo: "",
       domicilio: "",
       estadoCivil: "",
+      obraSocialId: "",
       fechaContrato: "",
       fechaNacimiento: "",
       telefono: "",
       tipoDocumento: "",
       numeroDocumento: "",
       sindicatoId: "",
-      // Campos del grupo familiar
       familiares: [],
     },
   });
 
-  // Hook para manejar el array de familiares
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "familiares",
-  });
-
-  // Función para agregar un nuevo familiar
-  const agregarFamiliar = () => {
-    append({
-      nombreFamiliar: "",
-      parentesco: "",
-      fechaNacimientoFamiliar: "",
-      tipoDocumentoFamiliar: "",
-      numeroDocumentoFamiliar: "",
-    });
-  };
-
-  // obtener el tipo de documento seleccionado y calcular máximo permitido
+  const { fields, append, remove } = useFieldArray({ control, name: "familiares" });
   const tipoDocumentoValue = watch("tipoDocumento");
   const numeroMaxLength = tipoDocumentoValue === "Pasaporte" ? 10 : 9;
 
+  const agregarFamiliar = () => append({ nombreFamiliar: "", parentesco: "", fechaNacimientoFamiliar: "", tipoDocumentoFamiliar: "", numeroDocumentoFamiliar: "" });
+
   const onSubmit = async (data: FormData) => {
-    setError(null);
-    setSuccess(null);
-    setIsLoading(true);
-
+    setError(null); setSuccess(null); setIsLoading(true);
     try {
-      const empleadoData = {
-        username: data.username,
-        email: data.email,
-        password: data.password,
-        rolId: Number(data.roleId),
-        area: data.area,
-        cargo: data.cargo,
-        domicilio: data.domicilio,
-        estadoCivil: data.estadoCivil,
-        fechaContrato: data.fechaContrato,
-        fechaNacimiento: data.fechaNacimiento,
-        telefono: data.telefono,
-        tipoDocumento: data.tipoDocumento,
-        numeroDocumento: data.numeroDocumento,
-        sindicatoId: data.sindicatoId,
-        // ✅ AGREGAR FAMILIARES AL PAYLOAD
-        familiares: data.familiares || [],
-      };
-
-      console.log("Datos del empleado a enviar:", empleadoData);
-
-      // ✅ REMOVER EL TODO - YA ESTÁ IMPLEMENTADO
-      if (data.familiares && data.familiares.length > 0) {
-        console.log("Familiares a procesar:", data.familiares);
-      }
-
-      const response = await fetch(
-        "http://localhost:4000/api/usuario/auth/register",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(empleadoData),
-        }
-      );
-
-      // ✅ VERIFICAR SI LA RESPUESTA ES JSON
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        const text = await response.text();
-        console.log("Respuesta del servidor:", text);
-        throw new Error("El servidor no devolvió JSON válido");
-      }
-
+      const response = await fetch("http://localhost:4000/api/usuario/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const result = await response.json();
-
-      if (!response.ok) {
-        // MANEJO DE ERRORES ESPECÍFICOS
-        if (response.status === 409) {
-          if (result.error.includes("documento")) {
-            setError("El número de documento ya está registrado");
-          } else if (result.error.includes("email")) {
-            setError("El email ya está registrado");
-          } else if (result.error.includes("username")) {
-            setError("El nombre de usuario ya está registrado");
-          } else {
-            setError("Los datos ingresados ya existen en el sistema");
-          }
-        } else if (response.status === 400 && result.errors) {
-          setError(result.errors.join(", "));
-        } else {
-          setError(result.error || "Error al crear usuario");
-        }
-      } else {
-        setSuccess("Usuario creado exitosamente");
-        reset();
-        setTimeout(() => {
-          navigate("/superadmin");
-        }, 2000);
-      }
+      if (!response.ok) throw new Error(result.error || "Error al crear usuario");
+      setSuccess("Usuario creado exitosamente");
+      reset();
+      setTimeout(() => navigate("/superadmin"), 2000);
     } catch (err) {
-      console.error("Error completo:", err);
-      setError(
-        "Error de conexión. Verifique que el servidor esté funcionando."
-      );
-    } finally {
-      setIsLoading(false);
-    }
+      console.error(err);
+      setError("Error de conexión. Verifique que el servidor esté funcionando.");
+    } finally { setIsLoading(false); }
   };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
-      <Box
-        sx={{
-          minHeight: "100vh",
-          backgroundImage: "url('/fondo.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          display: "flex",
-          flexDirection: "column",
-          overflowX: "hidden",
-        }}
-      >
+      <Box sx={{ minHeight: "100vh", backgroundImage: "url('/fondo.jpg')", backgroundSize: "cover", backgroundPosition: "center", display: "flex", flexDirection: "column", overflowX: "hidden" }}>
         <Header />
-
-        {/* BOTÓN VOLVER */}
         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-          <Button
-            component={RouterLink}
-            to="/superadmin"
-            variant="outlined"
-            sx={{
-              backgroundColor: "#1565C0",
-              color: "#ffffff",
-              width: 180,
-              letterSpacing: 3,
-              fontSize: 20,
-              borderRadius: 3,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 500,
-              textTransform: "none",
-              "&:hover": {
-                backgroundColor: "#0d47a1",
-              },
-            }}
-          >
-            Volver
-          </Button>
+          <Button component={RouterLink} to="/superadmin" variant="outlined" sx={{ backgroundColor: "#1565C0", color: "#ffffff", width: 180, letterSpacing: 3, fontSize: 20, borderRadius: 3, mr: 5, fontFamily: "Tektur, sans-serif", fontWeight: 500, textTransform: "none" }}>Volver</Button>
         </Box>
+        <Container maxWidth="lg">
+          <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{
+            py: { xs: 3, md: 5 },
+            px: { xs: 1, sm: 4, md: 6 },
+            backgroundColor: '#fff',
+            borderRadius: 4,
+            boxShadow: 3,
+            mb: 6,
+          }}>
+            <Typography variant="h4" textAlign="center" fontWeight={600} mb={3}>Alta de Nuevo Empleado</Typography>
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
-        {/* Contenido principal */}
-        <Container
-          maxWidth="md"
-          sx={{
-            mt: 4,
-            mb: 8,
-            flexGrow: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-          }}
-        >
-          <Box
-            component="form"
-            onSubmit={handleSubmit(onSubmit)}
-            sx={{
-              backgroundColor: "white",
-              borderRadius: 2,
-              p: 4,
-              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              width: "100%",
-            }}
-          >
-            <Typography
-              component="h1"
-              variant="h4"
-              sx={{
-                mb: 4,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 600,
-                color: "#333",
-                textAlign: "center",
-              }}
-            >
-              Alta Nuevo Usuario
-            </Typography>
-
-            {/* ✅ ALERTAS */}
-            {error && (
-              <Alert severity="error" sx={{ width: "100%", mb: 3 }}>
-                {error}
-              </Alert>
-            )}
-
-            {success && (
-              <Alert severity="success" sx={{ width: "100%", mb: 3 }}>
-                {success}
-              </Alert>
-            )}
-
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: { xs: "column", md: "row" },
-                gap: 3,
-                width: "100%",
-              }}
-            >
-              {/* Columna 1 */}
-              <Box
-                sx={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                }}
-              >
-                <TextField
-                  fullWidth
-                  label="Nombre y Apellido"
-                  placeholder="Ej: Juan Carlos Pérez"
-                  {...register("username")}
-                  error={!!errors.username}
-                  helperText={errors.username?.message}
-                  disabled={isLoading}
-                />
-
-                <Controller
-                  name="fechaNacimiento"
-                  control={control}
-                  render={({ field }) => (
-                    <DatePicker
-                      label="Fecha de Nacimiento"
-                      format="DD-MM-YYYY"
-                      maxDate={dayjs().subtract(1, "day")} // No puede ser fecha futura (hasta ayer)
-                      minDate={dayjs().subtract(70, "years")} // Máximo 70 años
-                      value={
-                        field.value
-                          ? dayjs(field.value, ["YYYY-MM-DD", "DD-MM-YYYY"])
-                          : null
-                      }
-                      onChange={(date) => {
-                        // Solo permitir fechas pasadas
-                        if (date && date.isAfter(dayjs().subtract(1, "day"))) {
-                          return; // No hacer nada si es fecha futura
-                        }
-                        field.onChange(
-                          date && date.isValid()
-                            ? date.format("YYYY-MM-DD")
-                            : ""
-                        );
-                      }}
-                      shouldDisableDate={(date) => {
-                        // Deshabilitar fechas futuras (incluyendo hoy) y fechas que resulten en edad menor a 18 o mayor a 70
-                        const today = dayjs();
-                        const yesterday = dayjs().subtract(1, "day");
-                        const age = today.diff(date, "years");
-                        return date.isAfter(yesterday) || age < 18 || age > 70;
-                      }}
-                      views={["year", "month", "day"]}
-                      openTo="year"
-                      slotProps={{
-                        textField: {
-                          fullWidth: true,
-                          error: !!errors.fechaNacimiento,
-                          helperText: errors.fechaNacimiento?.message,
-                          disabled: isLoading,
-                        },
-                        calendarHeader: {
-                          format: "MMMM YYYY",
-                        },
-                        day: {
-                          sx: {
-                            "&.Mui-disabled": {
-                              backgroundColor: "#f5f5f5 !important",
-                              color: "#bdbdbd !important",
-                              pointerEvents: "none",
-                            },
-                          },
-                        },
-                      }}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="tipoDocumento"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      select
-                      fullWidth
-                      label="Tipo de Documento"
-                      {...field}
-                      value={field.value || ""}
-                      error={!!errors.tipoDocumento}
-                      helperText={errors.tipoDocumento?.message}
-                      disabled={isLoading}
-                    >
-                      <MenuItem value="" disabled>
-                        Seleccione tipo de documento...
-                      </MenuItem>
-                      <MenuItem value="DNI">DNI</MenuItem>
-                      <MenuItem value="Pasaporte">Pasaporte</MenuItem>
-                      <MenuItem value="LC">LC</MenuItem>
-                      <MenuItem value="LE">LE</MenuItem>
-                    </TextField>
-                  )}
-                />
-
-                <TextField
-                  fullWidth
-                  label="Número de Documento"
-                  placeholder="Ej: 12345678"
-                  {...register("numeroDocumento")}
-                  error={!!errors.numeroDocumento}
-                  helperText={errors.numeroDocumento?.message}
-                  disabled={isLoading}
-                  inputProps={{ maxLength: numeroMaxLength }}
-                />
-
-                <TextField
-                  fullWidth
-                  label="Email"
-                  type="email"
-                  placeholder="ejemplo@correo.com"
-                  {...register("email")}
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                  disabled={isLoading}
-                />
-
-                <TextField
-                  fullWidth
-                  label="Teléfono"
-                  placeholder="Ej: +54 9 11 1234-5678"
-                  {...register("telefono")}
-                  error={!!errors.telefono}
-                  helperText={errors.telefono?.message}
-                  disabled={isLoading}
-                  inputProps={{ maxLength: 20 }}
-                />
-
-                <TextField
-                  fullWidth
-                  label="Domicilio"
-                  placeholder="Calle, número, ciudad, provincia"
-                  {...register("domicilio")}
-                  error={!!errors.domicilio}
-                  helperText={errors.domicilio?.message}
-                  disabled={isLoading}
-                />
-
-                <Controller
-                  name="estadoCivil"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      select
-                      fullWidth
-                      label="Estado Civil"
-                      {...field}
-                      value={field.value || ""}
-                      error={!!errors.estadoCivil}
-                      helperText={errors.estadoCivil?.message}
-                      disabled={isLoading}
-                    >
-                      <MenuItem value="" disabled>
-                        Seleccione estado civil...
-                      </MenuItem>
-                      <MenuItem value="Soltero/a">Soltero/a</MenuItem>
-                      <MenuItem value="Casado/a">Casado/a</MenuItem>
-                      <MenuItem value="Divorciado/a">Divorciado/a</MenuItem>
-                      <MenuItem value="Viudo/a">Viudo/a</MenuItem>
-                      <MenuItem value="En unión convivencial">
-                        En unión convivencial
-                      </MenuItem>
-                    </TextField>
-                  )}
-                />
+            {/* Columnas principales */}
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3 }}>
+              {/* Primera columna */}
+              <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, backgroundColor: '#fff', p: 2 }}>
+                <TextField fullWidth label="Nombre y Apellido" {...register("username")} error={!!errors.username} helperText={errors.username?.message} disabled={isLoading} />
+                <Controller name="fechaNacimiento" control={control} render={({ field }) => (
+                  <DatePicker label="Fecha de Nacimiento" format="DD-MM-YYYY" maxDate={dayjs().subtract(1, "day")} minDate={dayjs().subtract(70, "years")} value={field.value ? dayjs(field.value) : null} onChange={(date) => field.onChange(date?.format("YYYY-MM-DD") || "")} slotProps={{ textField: { fullWidth: true, error: !!errors.fechaNacimiento, helperText: errors.fechaNacimiento?.message, disabled: isLoading } }} />
+                )} />
+                <Controller name="tipoDocumento" control={control} render={({ field }) => (
+                  <TextField select fullWidth label="Tipo de Documento" {...field} error={!!errors.tipoDocumento} helperText={errors.tipoDocumento?.message} disabled={isLoading}>
+                    <MenuItem value="" disabled>Seleccione tipo de documento...</MenuItem>
+                    <MenuItem value="DNI">DNI</MenuItem>
+                    <MenuItem value="Pasaporte">Pasaporte</MenuItem>
+                    <MenuItem value="LC">LC</MenuItem>
+                    <MenuItem value="LE">LE</MenuItem>
+                  </TextField>
+                )} />
+                <TextField fullWidth label="Número de Documento" {...register("numeroDocumento")} error={!!errors.numeroDocumento} helperText={errors.numeroDocumento?.message} disabled={isLoading} inputProps={{ maxLength: numeroMaxLength }} />
+                <TextField fullWidth label="Email" {...register("email")} error={!!errors.email} helperText={errors.email?.message} disabled={isLoading} />
+                <TextField fullWidth label="Teléfono" {...register("telefono")} error={!!errors.telefono} helperText={errors.telefono?.message} disabled={isLoading} inputProps={{ maxLength: 20 }} />
+                <TextField fullWidth label="Domicilio" {...register("domicilio")} error={!!errors.domicilio} helperText={errors.domicilio?.message} disabled={isLoading} />
+                <Controller name="estadoCivil" control={control} render={({ field }) => (
+                  <TextField select fullWidth label="Estado Civil" {...field} error={!!errors.estadoCivil} helperText={errors.estadoCivil?.message} disabled={isLoading}>
+                    <MenuItem value="" disabled>Seleccione estado civil...</MenuItem>
+                    <MenuItem value="Soltero/a">Soltero/a</MenuItem>
+                    <MenuItem value="Casado/a">Casado/a</MenuItem>
+                    <MenuItem value="Divorciado/a">Divorciado/a</MenuItem>
+                    <MenuItem value="Viudo/a">Viudo/a</MenuItem>
+                    <MenuItem value="En unión convivencial">En unión convivencial</MenuItem>
+                  </TextField>
+                )} />
               </Box>
 
-              {/* Columna 2 */}
-              <Box
-                sx={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                }}
-              >
-                <TextField
-                  fullWidth
-                  label="Contraseña"
-                  type="password"
-                  placeholder="Mínimo 6 caracteres"
-                  {...register("password")}
-                  error={!!errors.password}
-                  helperText={errors.password?.message}
-                  disabled={isLoading}
-                />
-
-                <Controller
-                  name="roleId"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      select
-                      fullWidth
-                      label="Rol"
-                      {...field}
-                      value={field.value || ""}
-                      error={!!errors.roleId}
-                      helperText={errors.roleId?.message}
-                      disabled={isLoading}
-                    >
-                      <MenuItem value="" disabled>
-                        Seleccione un rol...
-                      </MenuItem>
-                      <MenuItem value="1">Superadmin</MenuItem>
-                      <MenuItem value="2">RRHH</MenuItem>
-                      <MenuItem value="3">Contador</MenuItem>
-                      <MenuItem value="4">Empleado</MenuItem>
-                    </TextField>
-                  )}
-                />
-
-                <TextField
-                  fullWidth
-                  label="Área"
-                  placeholder="Ej: Administración, Ventas, IT"
-                  {...register("area")}
-                  error={!!errors.area}
-                  helperText={errors.area?.message}
-                  disabled={isLoading}
-                />
-
-                <TextField
-                  fullWidth
-                  label="Cargo"
-                  placeholder="Ej: Gerente, Analista, Asistente"
-                  {...register("cargo")}
-                  error={!!errors.cargo}
-                  helperText={errors.cargo?.message}
-                  disabled={isLoading}
-                />
-
-                <Controller
-                  name="fechaContrato"
-                  control={control}
-                  render={({ field }) => (
-                    <DatePicker
-                      label="Fecha de Contrato"
-                      format="DD-MM-YYYY"
-                      maxDate={dayjs()} // Hasta hoy
-                      value={
-                        field.value
-                          ? dayjs(field.value, ["YYYY-MM-DD", "DD-MM-YYYY"])
-                          : null
-                      }
-                      onChange={(date) => {
-                        // Solo permitir fechas hasta hoy
-                        if (date && date.isAfter(dayjs())) {
-                          return; // No hacer nada si es fecha futura
-                        }
-                        field.onChange(
-                          date && date.isValid()
-                            ? date.format("YYYY-MM-DD")
-                            : ""
-                        );
-                      }}
-                      shouldDisableDate={(date) => {
-                        // Deshabilitar fechas futuras (después de hoy)
-                        return date.isAfter(dayjs());
-                      }}
-                      views={["year", "month", "day"]}
-                      openTo="year"
-                      slotProps={{
-                        textField: {
-                          fullWidth: true,
-                          error: !!errors.fechaContrato,
-                          helperText: errors.fechaContrato?.message,
-                          disabled: isLoading,
-                        },
-                        calendarHeader: {
-                          format: "MMMM YYYY",
-                        },
-                        day: {
-                          sx: {
-                            "&.Mui-disabled": {
-                              backgroundColor: "#f5f5f5 !important",
-                              color: "#bdbdbd !important",
-                              pointerEvents: "none",
-                            },
-                          },
-                        },
-                      }}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="sindicatoId"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      select
-                      fullWidth
-                      label="Sindicato"
-                      {...field}
-                      value={field.value || ""}
-                      error={!!errors.sindicatoId}
-                      helperText={errors.sindicatoId?.message}
-                      disabled={isLoading}
-                    >
-                      <MenuItem value="" disabled>
-                        Seleccione un sindicato...
-                      </MenuItem>
-                      <MenuItem value="1">
-                        Sindicato Empleados de Comercio
-                      </MenuItem>
-                    </TextField>
-                  )}
-                />
+              {/* Segunda columna */}
+              <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, backgroundColor: '#fff', p: 2 }}>
+                <TextField fullWidth label="Contraseña" type="password" {...register("password")} error={!!errors.password} helperText={errors.password?.message} disabled={isLoading} />
+                <Controller name="roleId" control={control} render={({ field }) => (
+                  <TextField select fullWidth label="Rol" {...field} error={!!errors.roleId} helperText={errors.roleId?.message} disabled={isLoading}>
+                    <MenuItem value="" disabled>Seleccione un rol...</MenuItem>
+                    <MenuItem value="1">Superadmin</MenuItem>
+                    <MenuItem value="2">RRHH</MenuItem>
+                    <MenuItem value="3">Contador</MenuItem>
+                    <MenuItem value="4">Empleado</MenuItem>
+                  </TextField>
+                )} />
+                <TextField fullWidth label="Área" {...register("area")} error={!!errors.area} helperText={errors.area?.message} disabled={isLoading} />
+                <TextField fullWidth label="Cargo" {...register("cargo")} error={!!errors.cargo} helperText={errors.cargo?.message} disabled={isLoading} />
+                <Controller name="fechaContrato" control={control} render={({ field }) => (
+                  <DatePicker label="Fecha de Contrato" format="DD-MM-YYYY" maxDate={dayjs()} value={field.value ? dayjs(field.value) : null} onChange={(date) => field.onChange(date?.format("YYYY-MM-DD") || "")} slotProps={{ textField: { fullWidth: true, error: !!errors.fechaContrato, helperText: errors.fechaContrato?.message, disabled: isLoading } }} />
+                )} />
+                <Controller name="obraSocialId" control={control} render={({ field }) => (
+                  <TextField select fullWidth label="Obra Social" {...field} error={!!errors.obraSocialId} helperText={errors.obraSocialId?.message} disabled={isLoading}>
+                    {loadingObras ? <MenuItem disabled><CircularProgress size={20} /></MenuItem> : obrasSociales.map((os) => <MenuItem key={os.id} value={os.id}>{os.nombre}</MenuItem>)}
+                  </TextField>
+                )} />
+                <Controller name="sindicatoId" control={control} render={({ field }) => (
+                  <TextField select fullWidth label="Sindicato" {...field} error={!!errors.sindicatoId} helperText={errors.sindicatoId?.message} disabled={isLoading}>
+                    {loadingSindicatos ? <MenuItem disabled><CircularProgress size={20} /></MenuItem> : <>
+                      <MenuItem value="" disabled>Seleccione sindicato...</MenuItem>
+                      {sindicatos.map((s) => <MenuItem key={s.id} value={s.id}>{s.nombre}</MenuItem>)}
+                    </>}
+                  </TextField>
+                )} />
               </Box>
             </Box>
 
-            {/* Sección del Grupo Familiar */}
-            <Typography
-              variant="h5"
-              sx={{
-                mt: 4,
-                mb: 2,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 500,
-                color: "#333",
-                textAlign: "center",
-              }}
-            >
-              Grupo Familiar
-            </Typography>
-
-            {/* Botón para agregar familiar */}
-            <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-              <Button
-                onClick={agregarFamiliar}
-                variant="outlined"
-                startIcon={<AddIcon />}
-                sx={{
-                  borderColor: "#1565C0",
-                  color: "#1565C0",
-                  "&:hover": {
-                    backgroundColor: "#1565C0",
-                    color: "white",
-                  },
-                }}
-              >
-                Agregar Familiar
-              </Button>
+            {/* Familiares */}
+            <Box mt={6} sx={{
+              background: 'rgba(245, 247, 250, 0.85)',
+              borderRadius: 3,
+              px: { xs: 2, sm: 4 },
+              py: { xs: 3, sm: 4 },
+              boxShadow: 0,
+            }}>
+              <Typography variant="h5" mb={3} fontWeight={600} color="#1565C0" sx={{ letterSpacing: 1 }}>
+                Grupo Familiar
+              </Typography>
+              {fields.map((item, index) => (
+                <Card key={item.id} variant="outlined" sx={{ mb: 3, backgroundColor: '#fff', borderRadius: 2, boxShadow: 1, p: 2 }}>
+                  <CardContent sx={{ p: 0 }}>
+                    <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                      <TextField label="Nombre Familiar" {...register(`familiares.${index}.nombreFamiliar`)} error={!!errors.familiares?.[index]?.nombreFamiliar} helperText={errors.familiares?.[index]?.nombreFamiliar?.message} />
+                      <TextField label="Parentesco" {...register(`familiares.${index}.parentesco`)} error={!!errors.familiares?.[index]?.parentesco} helperText={errors.familiares?.[index]?.parentesco?.message} />
+                      <Controller name={`familiares.${index}.fechaNacimientoFamiliar`} control={control} render={({ field }) => (
+                        <DatePicker label="Fecha de Nacimiento" format="DD-MM-YYYY" maxDate={dayjs()} value={field.value ? dayjs(field.value) : null} onChange={(date) => field.onChange(date?.format("YYYY-MM-DD") || "")} slotProps={{ textField: { error: !!errors.familiares?.[index]?.fechaNacimientoFamiliar, helperText: errors.familiares?.[index]?.fechaNacimientoFamiliar?.message } }} />
+                      )} />
+                      <TextField label="Tipo Documento" {...register(`familiares.${index}.tipoDocumentoFamiliar`)} error={!!errors.familiares?.[index]?.tipoDocumentoFamiliar} helperText={errors.familiares?.[index]?.tipoDocumentoFamiliar?.message} />
+                      <TextField label="Número Documento" {...register(`familiares.${index}.numeroDocumentoFamiliar`)} error={!!errors.familiares?.[index]?.numeroDocumentoFamiliar} helperText={errors.familiares?.[index]?.numeroDocumentoFamiliar?.message} />
+                      <IconButton color="error" onClick={() => remove(index)}><DeleteIcon /></IconButton>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+              <Button variant="outlined" startIcon={<AddIcon />} onClick={agregarFamiliar}>Agregar Familiar</Button>
             </Box>
 
-            {/* Lista de familiares */}
-            {fields.map((field, index) => (
-              <Card key={field.id} sx={{ mb: 3, p: 2 }}>
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mb: 2,
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      sx={{ fontFamily: "Tektur, sans-serif" }}
-                    >
-                      Familiar {index + 1}
-                    </Typography>
-                    <IconButton
-                      onClick={() => remove(index)}
-                      color="error"
-                      size="small"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: { xs: "column", md: "row" },
-                      gap: 3,
-                      width: "100%",
-                    }}
-                  >
-                    {/* Columna 1 - Datos del Familiar */}
-                    <Box
-                      sx={{
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
-                      }}
-                    >
-                      <TextField
-                        fullWidth
-                        label="Nombre y Apellido del Familiar"
-                        placeholder="Ej: María González"
-                        {...register(`familiares.${index}.nombreFamiliar`)}
-                        error={!!errors.familiares?.[index]?.nombreFamiliar}
-                        helperText={
-                          errors.familiares?.[index]?.nombreFamiliar?.message
-                        }
-                        disabled={isLoading}
-                      />
-
-                      <Controller
-                        name={`familiares.${index}.parentesco`}
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            select
-                            fullWidth
-                            label="Parentesco"
-                            {...field}
-                            value={field.value || ""}
-                            error={!!errors.familiares?.[index]?.parentesco}
-                            helperText={
-                              errors.familiares?.[index]?.parentesco?.message
-                            }
-                            disabled={isLoading}
-                          >
-                            <MenuItem value="" disabled>
-                              Seleccione parentesco...
-                            </MenuItem>
-                            <MenuItem value="Padre">Padre</MenuItem>
-                            <MenuItem value="Madre">Madre</MenuItem>
-                            <MenuItem value="Cónyuge">Cónyuge</MenuItem>
-                            <MenuItem value="Hijo">Hijo</MenuItem>
-                          </TextField>
-                        )}
-                      />
-
-                      <Controller
-                        name={`familiares.${index}.fechaNacimientoFamiliar`}
-                        control={control}
-                        render={({ field }) => (
-                          <DatePicker
-                            label="Fecha de Nacimiento del Familiar"
-                            format="DD-MM-YYYY"
-                            maxDate={dayjs()} // No puede ser fecha futura
-                            value={
-                              field.value
-                                ? dayjs(field.value, [
-                                    "YYYY-MM-DD",
-                                    "DD-MM-YYYY",
-                                  ])
-                                : null
-                            }
-                            onChange={(date) => {
-                              // Solo permitir fechas pasadas
-                              if (date && date.isAfter(dayjs())) {
-                                return; // No hacer nada si es fecha futura
-                              }
-                              field.onChange(
-                                date && date.isValid()
-                                  ? date.format("YYYY-MM-DD")
-                                  : ""
-                              );
-                            }}
-                            shouldDisableDate={(date) => {
-                              // Deshabilitar fechas futuras
-                              return date.isAfter(dayjs());
-                            }}
-                            views={["year", "month", "day"]}
-                            openTo="year"
-                            slotProps={{
-                              textField: {
-                                fullWidth: true,
-                                error:
-                                  !!errors.familiares?.[index]
-                                    ?.fechaNacimientoFamiliar,
-                                helperText:
-                                  errors.familiares?.[index]
-                                    ?.fechaNacimientoFamiliar?.message,
-                                disabled: isLoading,
-                              },
-                              calendarHeader: {
-                                format: "MMMM YYYY",
-                              },
-                              day: {
-                                sx: {
-                                  "&.Mui-disabled": {
-                                    backgroundColor: "#f5f5f5 !important",
-                                    color: "#bdbdbd !important",
-                                    pointerEvents: "none",
-                                  },
-                                },
-                              },
-                            }}
-                          />
-                        )}
-                      />
-                    </Box>
-
-                    {/* Columna 2 - Documentación del Familiar */}
-                    <Box
-                      sx={{
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
-                      }}
-                    >
-                      <Controller
-                        name={`familiares.${index}.tipoDocumentoFamiliar`}
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            select
-                            fullWidth
-                            label="Tipo de Documento del Familiar"
-                            {...field}
-                            value={field.value || ""}
-                            error={
-                              !!errors.familiares?.[index]
-                                ?.tipoDocumentoFamiliar
-                            }
-                            helperText={
-                              errors.familiares?.[index]?.tipoDocumentoFamiliar
-                                ?.message
-                            }
-                            disabled={isLoading}
-                          >
-                            <MenuItem value="" disabled>
-                              Seleccione tipo de documento...
-                            </MenuItem>
-                            <MenuItem value="DNI">DNI</MenuItem>
-                            <MenuItem value="Pasaporte">Pasaporte</MenuItem>
-                            <MenuItem value="LC">LC</MenuItem>
-                            <MenuItem value="LE">LE</MenuItem>
-                            <MenuItem value="Certificado de Nacimiento">
-                              Certificado de Nacimiento
-                            </MenuItem>
-                          </TextField>
-                        )}
-                      />
-
-                      <TextField
-                        fullWidth
-                        label="Número de Documento del Familiar"
-                        placeholder="Ej: 12345678"
-                        {...register(
-                          `familiares.${index}.numeroDocumentoFamiliar`
-                        )}
-                        error={
-                          !!errors.familiares?.[index]?.numeroDocumentoFamiliar
-                        }
-                        helperText={
-                          errors.familiares?.[index]?.numeroDocumentoFamiliar
-                            ?.message
-                        }
-                        disabled={isLoading}
-                        inputProps={{ maxLength: 50 }}
-                      />
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            ))}
-
-            {/* Mostrar mensaje si no hay familiares */}
-            {fields.length === 0 && (
-              <Box sx={{ textAlign: "center", py: 3, color: "#666" }}>
-                <Typography variant="body1">
-                  No hay familiares agregados. Haga clic en "Agregar Familiar"
-                  para comenzar.
-                </Typography>
-              </Box>
-            )}
-
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              disabled={isLoading}
-              sx={{
-                mt: 4,
-                py: 1.5,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 600,
-                fontSize: "1.1rem",
-                borderRadius: 1,
-                textTransform: "none",
-              }}
-            >
-              {isLoading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                "Crear Usuario"
-              )}
+            <Button type="submit" variant="contained" fullWidth sx={{ mt: 4 }} disabled={isLoading}>
+              {isLoading ? <CircularProgress size={24} color="inherit" /> : "Registrar Empleado"}
             </Button>
           </Box>
         </Container>
-
         <Footer />
       </Box>
     </LocalizationProvider>
