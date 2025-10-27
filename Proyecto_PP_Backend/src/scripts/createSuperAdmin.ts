@@ -7,11 +7,25 @@ const createSuperadmin = async () => {
   const email = "superadmin@admin.com";
   const hashedPassword = hashPassword(password);
   const roleId = 1;
+  const roleName = "Superadmin";
 
   try {
+    // Verificar si ya existe el rol Superadmin
+    const [existingRole] = await pool.query(
+      "SELECT * FROM Rol WHERE Id_Rol = ? OR Nombre_Rol = ?",
+      [roleId, roleName]
+    );
+    if ((existingRole as any).length === 0) {
+      await pool.query(
+        "INSERT INTO Rol (Id_Rol, Nombre_Rol) VALUES (?, ?)",
+        [roleId, roleName]
+      );
+      console.log("✅ Rol Superadmin creado en la tabla Rol");
+    }
+
     // Verificar si ya existe el superadmin
     const [existing] = await pool.query(
-      "SELECT * FROM User WHERE Nombre_Usuario = ?",
+      "SELECT * FROM Usuarios WHERE Nombre_Usuario = ?",
       [username]
     );
 
@@ -21,7 +35,7 @@ const createSuperadmin = async () => {
       console.log(`📧 Email: ${email}`);
     } else {
       await pool.query(
-        "INSERT INTO User (Nombre_Usuario, Correo_Electronico, Contrasenia, Id_Rol) VALUES (?, ?, ?, ?)",
+        "INSERT INTO Usuarios (Nombre_Usuario, Correo_Electronico, Contrasenia, Id_Rol) VALUES (?, ?, ?, ?)",
         [username, email, hashedPassword, roleId]
       );
       console.log("✅ Superadmin creado con éxito");

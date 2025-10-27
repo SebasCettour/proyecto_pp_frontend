@@ -30,6 +30,7 @@ router.post("/auth/register", async (req, res) => {
     numeroDocumento,
     password,
     rolId,
+    familiares = [],
   } = req.body;
 
   // ✅ SEPARAR NOMBRE Y APELLIDO CORRECTAMENTE
@@ -81,11 +82,9 @@ router.post("/auth/register", async (req, res) => {
     await connection.beginTransaction();
 
     console.log("🔄 Insertando en Empleado...");
-
-    // ✅ DATOS EN EL ORDEN CORRECTO: NOMBRE PRIMERO, APELLIDO SEGUNDO
     const empleadoData = [
-      nombre,           // ✅ NOMBRE (primer campo)
-      apellido,         // ✅ APELLIDO (segundo campo)
+      nombre,
+      apellido,
       area,
       cargo,
       email,
@@ -98,59 +97,61 @@ router.post("/auth/register", async (req, res) => {
       tipoDocumento,
       numeroDocumento,
     ];
-
-    console.log("📊 Datos en orden correcto:");
-    console.log("  1. Nombre:", nombre);
-    console.log("  2. Apellido:", apellido);
-    console.log("  3. Area:", area);
-    console.log("  4. Cargo:", cargo);
-    console.log("📊 Array completo:", empleadoData);
-    
     await connection.query(sqlEmpleado, empleadoData);
     console.log("✅ Empleado insertado exitosamente");
 
-    console.log("🔄 Insertando en Usuarios...");
+    // Obtener el Id_Empleado recién insertado
+    const [empleadoRows]: any = await connection.query(
+      "SELECT Id_Empleado FROM Empleado WHERE Numero_Documento = ? ORDER BY Id_Empleado DESC LIMIT 1",
+      [numeroDocumento]
+    );
+    const idEmpleado = empleadoRows && empleadoRows[0] ? empleadoRows[0].Id_Empleado : null;
+    if (!idEmpleado) throw new Error("No se pudo obtener el Id_Empleado insertado");
 
-    // ✅ HASH DE LA CONTRASEÑA EN EL BACKEND
-    const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("🔐 Contraseña hasheada en el backend");
+    // Insertar familiares si existen
+    if (Array.isArray(familiares) && familiares.length > 0) {
+      const sqlFamiliar = `INSERT INTO Familiares (Id_Empleado, Nombre, Parentesco, Fecha_Nacimiento, Tipo_Documento, Numero_Documento) VALUES (?, ?, ?, ?, ?, ?)`;
+      for (const fam of familiares) {
+        await connection.query(sqlFamiliar, [
+          idEmpleado,
+          fam.nombreFamiliar,
+          fam.parentesco,
+          fam.fechaNacimientoFamiliar,
+          fam.tipoDocumentoFamiliar,
+          fam.numeroDocumentoFamiliar,
+        ]);
+      }
+      console.log(`✅ Familiares insertados: ${familiares.length}`);
+    }
 
     // Insertar en Usuarios
+    const hashedPassword = await bcrypt.hash(password, 10);
     const usuarioData = [username, email, hashedPassword, rolId, numeroDocumento];
-
-    console.log("📊 Datos Usuario:", [username, email, "***", rolId, numeroDocumento]);
     await connection.query(sqlUsuario, usuarioData);
     console.log("✅ Usuario insertado exitosamente");
 
     await connection.commit();
-    console.log("✅ Usuario creado exitosamente");
-
-    res.status(201).json({ message: "Usuario creado correctamente" });
+    console.log("✅ Usuario y familiares creados exitosamente");
+    res.status(201).json({ message: "Usuario y familiares creados correctamente" });
   } catch (err: unknown) {
     if (connection) {
       await connection.rollback();
     }
-
     const error = err as MySQLError;
     console.error("❌ Error detallado:", error);
-
-    // ✅ MANEJO DE ERRORES ESPECÍFICOS
     if (error.code === "ER_DUP_ENTRY") {
       return res.status(409).json({
         error: "El número de documento o email ya existe en el sistema",
       });
     }
-
     if (error.code === "ER_NO_REFERENCED_ROW_2") {
       return res.status(400).json({ error: "El rol seleccionado no existe" });
     }
-
     if (error.code === "ER_BAD_NULL_ERROR") {
       return res.status(400).json({
         error: "Faltan campos obligatorios en la base de datos",
       });
     }
-
     res.status(500).json({
       error: "Error interno del servidor",
       details: error.message,

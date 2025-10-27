@@ -18,10 +18,18 @@ createUploadDir();
 
 // Configuración de multer para subir archivos PDF de liquidaciones
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (
+    req: express.Request,
+    file: Express.Multer.File,
+    cb: (error: Error | null, destination: string) => void
+  ) => {
     cb(null, "uploads/liquidaciones/");
   },
-  filename: (req, file, cb) => {
+  filename: (
+    req: express.Request,
+    file: Express.Multer.File,
+    cb: (error: Error | null, filename: string) => void
+  ) => {
     const uniqueName = `liquidacion_${Date.now()}-${Math.round(
       Math.random() * 1e9
     )}${path.extname(file.originalname)}`;
@@ -31,7 +39,11 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  fileFilter: (req, file, cb) => {
+  fileFilter: (
+    req: express.Request,
+    file: Express.Multer.File,
+    cb: multer.FileFilterCallback
+  ) => {
     if (file.mimetype === "application/pdf") {
       cb(null, true);
     } else {
