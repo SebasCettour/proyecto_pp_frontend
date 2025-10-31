@@ -56,6 +56,8 @@ const Liquidacion = () => {
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  // Estado para el menú de horas extras (debe estar fuera de renderStepContent)
+  const [horasExtrasMenu, setHorasExtrasMenu] = useState(false);
 
   // Empresa
   const [searchEmpresa, setSearchEmpresa] = useState("");
@@ -85,6 +87,8 @@ const Liquidacion = () => {
     sueldoBasico: "",
     antiguedad: "",
     horasExtras: "",
+    horasExtras50: "",
+    horasExtras100: "",
     presentismo: "",
     adicionalesConvenio: "",
     premiosBonos: "",
@@ -227,6 +231,21 @@ const Liquidacion = () => {
   // =====================
   // 🧩 CONTENIDO DE CADA PASO
   // =====================
+  // Cálculo de descuentos automáticos
+  const calcularDescuentos = (sueldo: number, adicional: number) => {
+    const base = sueldo + adicional;
+    return {
+      jubilacion: +(base * 0.11).toFixed(2),
+      pami: +(base * 0.03).toFixed(2),
+      obraSocial: +(base * 0.03).toFixed(2),
+      sindicato: +(base * 0.02).toFixed(2),
+    };
+  };
+
+  // Para el adicional por asistencia y puntualidad (8.33%)
+  const calcularAdicional = (sueldo: number, checked: boolean) =>
+    checked ? +(sueldo * 0.0833).toFixed(2) : 0;
+
   const renderStepContent = (step: number) => {
     switch (step) {
       case 0:
@@ -351,6 +370,167 @@ const Liquidacion = () => {
           </Box>
         );
 
+      case 2: {
+        // Paso 3: Remuneraciones y descuentos automáticos
+        const sueldo = parseFloat(form.sueldoBasico) || 0;
+        const adicionalChecked = form.presentismo === "true";
+        const adicional = calcularAdicional(sueldo, adicionalChecked);
+        const descuentos = calcularDescuentos(sueldo, adicional);
+        return (
+          <Box>
+            <Typography
+              variant="h4"
+              sx={{ mb: 4, fontWeight: 800, color: "#1565C0", textAlign: 'center' }}
+            >
+              Liquidación: Haberes y Descuentos
+            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                gap: 6,
+                flexWrap: "wrap",
+                justifyContent: "center",
+              }}
+            >
+              {/* Haberes */}
+              <Card
+                sx={{
+                  minWidth: 400,
+                  flex: 1,
+                  background: "#e3f2fd",
+                  boxShadow: 6,
+                  p: 3,
+                  fontSize: 22,
+                }}
+              >
+                <CardContent>
+                  <Typography
+                    variant="h5"
+                    sx={{ mb: 3, fontWeight: 700 }}
+                    color="primary"
+                  >
+                    Haberes
+                  </Typography>
+                  <TextField
+                    label="Sueldo básico"
+                    name="sueldoBasico"
+                    type="number"
+                    value={form.sueldoBasico}
+                    onChange={handleChange}
+                    InputProps={{ inputProps: { min: 0, step: 0.01, style: { fontSize: 22 } } }}
+                    sx={{ mb: 3, width: "100" }}
+                    required
+                  />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      mb: 2,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      id="presentismo"
+                      name="presentismo"
+                      checked={adicionalChecked}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          presentismo: e.target.checked ? "true" : "false",
+                        }))
+                      }
+                      style={{ transform: "scale(1.5)", marginRight: 12 }}
+                    />
+                    <label
+                      htmlFor="presentismo"
+                      style={{ fontSize: 20, cursor: "pointer" }}
+                    >
+                      Adicional por asistencia y puntualidad (8,33%)
+                    </label>
+                  </Box>
+                  {adicionalChecked && (
+                    <Typography
+                      sx={{ ml: 4, color: "#388e3c", fontWeight: 600, fontSize: 20 }}
+                    >
+                      +${adicional} de adicional
+                    </Typography>
+                  )}
+                  <Box sx={{ mt: 4 }}>
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      sx={{ fontSize: 20, px: 4, py: 2, borderRadius: 2 }}
+                      onClick={() => setHorasExtrasMenu((v) => !v)}
+                    >
+                      {horasExtrasMenu ? 'Ocultar Horas Extras' : 'Agregar Horas Extras'}
+                    </Button>
+                    {horasExtrasMenu && (
+                      <Box sx={{ mt: 3, pl: 1, pr: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <TextField
+                          label="Horas extras al 50%"
+                          name="horasExtras50"
+                          type="number"
+                          value={form.horasExtras50 || ''}
+                          onChange={handleChange}
+                          InputProps={{ inputProps: { min: 0, step: 0.01, style: { fontSize: 20 } } }}
+                          sx={{ width: '100%' }}
+                        />
+                        <TextField
+                          label="Horas extras al 100%"
+                          name="horasExtras100"
+                          type="number"
+                          value={form.horasExtras100 || ''}
+                          onChange={handleChange}
+                          InputProps={{ inputProps: { min: 0, step: 0.01, style: { fontSize: 20 } } }}
+                          sx={{ width: '100%' }}
+                        />
+                      </Box>
+                    )}
+                  </Box>
+                </CardContent>
+              </Card>
+              {/* Descuentos */}
+              <Card
+                sx={{
+                  minWidth: 400,
+                  flex: 1,
+                  background: "#f5f5f5",
+                  boxShadow: 6,
+                  p: 3,
+                  fontSize: 22,
+                }}
+              >
+                <CardContent>
+                  <Typography
+                    variant="h5"
+                    sx={{ mb: 3, fontWeight: 700 }}
+                    color="primary"
+                  >
+                    Descuentos automáticos
+                  </Typography>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                  >
+                    <Typography sx={{ fontSize: 20 }}>
+                      Jubilación – Ley 24.241 (11%): <strong>${descuentos.jubilacion}</strong>
+                    </Typography>
+                    <Typography sx={{ fontSize: 20 }}>
+                      Ley 19.032 – INSSJP (PAMI, 3%): <strong>${descuentos.pami}</strong>
+                    </Typography>
+                    <Typography sx={{ fontSize: 20 }}>
+                      Obra social (3%): <strong>${descuentos.obraSocial}</strong>
+                    </Typography>
+                    <Typography sx={{ fontSize: 20 }}>
+                      Sindicato – Art. 100 CCT 130/75 (2%): <strong>${descuentos.sindicato}</strong>
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Box>
+          </Box>
+        );
+      }
       default:
         return <Typography>Resto de pasos en desarrollo...</Typography>;
     }
