@@ -1,9 +1,15 @@
 {
   "dependencies": {
+    "@date-io/date-fns": "^3.2.1",
+    "@mui/icons-material": "^7.3.4",
+    "@mui/x-date-pickers": "^8.15.0",
+    "@mui/x-date-pickers-pro": "^8.15.0",
+    "dayjs": "^1.11.18",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@types/date-fns": "^2.5.3",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "eslint": "^8.57.1",
