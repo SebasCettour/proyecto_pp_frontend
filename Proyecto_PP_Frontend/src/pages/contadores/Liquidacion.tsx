@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { TextField as MuiTextField } from "@mui/material";
 import {
   Typography,
   Box,
@@ -16,7 +17,11 @@ import {
   CircularProgress,
   Card,
   CardContent,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
@@ -58,6 +63,7 @@ const Liquidacion = () => {
   const [loading, setLoading] = useState(false);
   // Estado para el menú de horas extras (debe estar fuera de renderStepContent)
   const [horasExtrasMenu, setHorasExtrasMenu] = useState(false);
+  const [periodo, setPeriodo] = useState<string>("");
 
   // Empresa
   const [searchEmpresa, setSearchEmpresa] = useState("");
@@ -69,49 +75,50 @@ const Liquidacion = () => {
   const [employeeFound, setEmployeeFound] = useState<Employee | null>(null);
   const [searchError, setSearchError] = useState("");
 
-  // Estado general
-  const [form, setForm] = useState({
-    razonSocial: "",
-    cuitEmpleador: "",
-    domicilioEmpleador: "",
-    actividad: "",
-    empleadoId: "",
-    nombreEmpleado: "",
-    cuilEmpleado: "",
-    categoria: "",
-    fechaIngreso: "",
-    legajo: "",
-    periodoMes: "",
-    fechaPago: "",
-    diasTrabajados: "",
-    sueldoBasico: "",
-    antiguedad: "",
-    horasExtras: "",
-    horasExtras50: "",
-    horasExtras100: "",
-    presentismo: "",
-    adicionalesConvenio: "",
-    premiosBonos: "",
-    comisiones: "",
-    vacaciones: "",
-    aguinaldo: "",
-    descuentos: "",
-    aportesJubilatorios: "",
-    obraSocial: "",
-    pami: "",
-    cuotaSindical: "",
-    impuestoGanancias: "",
-    embargos: "",
-    otrosDescuentos: "",
-    aportesVoluntarios: "",
-    formaPago: "",
-    cbuCuenta: "",
-    fechaAcreditacion: "",
-    convenioColectivo: "",
-    regimenHorario: "",
-    licencias: "",
-    asignacionesFamiliares: "",
-  });
+  // Estado para conceptos dinámicos
+  const [conceptos, setConceptos] = useState<any[]>([]);
+  const [valores, setValores] = useState<{ [key: string]: string }>({});
+  const [conceptosLoading, setConceptosLoading] = useState(false);
+  // Estado para valores calculados de descuentos/adicionales
+  const [valoresCalculados, setValoresCalculados] = useState<{
+    [key: string]: number;
+  }>({});
+  // Recalcular descuentos/adicionales cuando el input pierde el foco o al cargar conceptos
+  const recalcularValoresCalculados = React.useCallback(() => {
+    const sueldoBasico = parseFloat(valores["Sueldo básico"]) || 0;
+    const nuevosValores: { [key: string]: number } = {};
+    conceptos.forEach((c: any) => {
+      if (c.porcentaje && !c.editable) {
+        nuevosValores[c.nombre] = +(
+          sueldoBasico * parseFloat(c.porcentaje)
+        ).toFixed(2);
+      }
+    });
+    setValoresCalculados(nuevosValores);
+  }, [valores["Sueldo básico"], conceptos]);
+
+  // Inicializar valores calculados al cargar conceptos
+  useEffect(() => {
+    recalcularValoresCalculados();
+  }, [conceptos, recalcularValoresCalculados]);
+  // Cargar conceptos desde el backend al montar el componente (ejemplo para CCT 130/75)
+  useEffect(() => {
+    if (activeStep === 2 && conceptos.length === 0) {
+      setConceptosLoading(true);
+      fetch("http://localhost:4000/api/conceptos/cct130_75")
+        .then((res) => res.json())
+        .then((data) => {
+          setConceptos(data);
+          // Inicializar valores editables
+          const inicial: { [key: string]: string } = {};
+          data.forEach((c: any) => {
+            inicial[c.nombre] = "";
+          });
+          setValores(inicial);
+        })
+        .finally(() => setConceptosLoading(false));
+    }
+  }, [activeStep, conceptos.length]);
 
   // =====================
   // 🔍 BUSCAR EMPRESA
@@ -135,13 +142,6 @@ const Liquidacion = () => {
       if (response.ok) {
         const empresa = await response.json();
         setEmpresaFound(empresa);
-        setForm((prev) => ({
-          ...prev,
-          razonSocial: empresa.Nombre_Empresa,
-          cuitEmpleador: empresa.CUIL_CUIT,
-          domicilioEmpleador: empresa.Direccion,
-          actividad: empresa.Rubro,
-        }));
       } else if (response.status === 404) {
         setEmpresaFound(null);
         setEmpresaError("No se encontró una empresa con ese nombre");
@@ -177,15 +177,6 @@ const Liquidacion = () => {
       if (response.ok) {
         const employee = await response.json();
         setEmployeeFound(employee);
-        setForm((prev) => ({
-          ...prev,
-          empleadoId: employee.id.toString(),
-          nombreEmpleado: `${employee.apellido}, ${employee.nombre}`,
-          cuilEmpleado: employee.cuil || employee.dni,
-          categoria: employee.categoria,
-          fechaIngreso: employee.fechaIngreso,
-          legajo: employee.legajo,
-        }));
       } else if (response.status === 404) {
         setEmployeeFound(null);
         setSearchError("No se encontró un empleado con ese DNI");
@@ -201,29 +192,7 @@ const Liquidacion = () => {
     }
   };
 
-  const handleChange = (
-    e:
-      | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-      | React.ChangeEvent<{ name?: string; value: unknown }>
-  ) => {
-    const { name, value } = e.target as HTMLInputElement;
-    setForm((prev) => ({
-      ...prev,
-      [name as string]: value,
-    }));
-  };
-
-  const handleSelectChange = (
-    event:
-      | React.ChangeEvent<{ name?: string; value: unknown }>
-      | SelectChangeEvent<string>
-  ) => {
-    const { name, value } = event.target;
-    setForm((prev) => ({
-      ...prev,
-      [name as string]: value,
-    }));
-  };
+  // Eliminar handleChange y handleSelectChange porque ahora se usan setValores para los conceptos dinámicos
 
   const handleNext = () => setActiveStep((prev) => prev + 1);
   const handleBack = () => setActiveStep((prev) => prev - 1);
@@ -371,162 +340,341 @@ const Liquidacion = () => {
         );
 
       case 2: {
-        // Paso 3: Remuneraciones y descuentos automáticos
-        const sueldo = parseFloat(form.sueldoBasico) || 0;
-        const adicionalChecked = form.presentismo === "true";
-        const adicional = calcularAdicional(sueldo, adicionalChecked);
-        const descuentos = calcularDescuentos(sueldo, adicional);
+        // Paso 3: Renderizar conceptos dinámicos en tabla
+        if (conceptosLoading)
+          return <Typography>Cargando conceptos...</Typography>;
+        if (!conceptos.length)
+          return <Typography>No hay conceptos para mostrar.</Typography>;
+        // ...
+
+        const getUnidad = (c: any) => {
+          if (c.nombre === "Sueldo básico") return 30;
+          if (c.porcentaje)
+            return (parseFloat(c.porcentaje) * 100).toFixed(2) + "%";
+          return "";
+        };
+        // Horas extras: inputs ocultos y desplegables
+        const esHorasExtras = (c: any) =>
+          c.nombre.toLowerCase().includes("horas extras");
         return (
           <Box>
             <Typography
               variant="h4"
-              sx={{ mb: 4, fontWeight: 800, color: "#1565C0", textAlign: 'center' }}
+              sx={{
+                mb: 2,
+                fontWeight: 800,
+                color: "#1565C0",
+                textAlign: "center",
+              }}
             >
-              Liquidación: Haberes y Descuentos
+              Liquidación de haberes
             </Typography>
             <Box
               sx={{
                 display: "flex",
-                gap: 6,
-                flexWrap: "wrap",
-                justifyContent: "center",
+                justifyContent: "flex-start",
+                alignItems: "center",
+                mb: 3,
+                gap: 2,
+                pl: 1,
               }}
             >
-              {/* Haberes */}
-              <Card
+              {/* Datos del empleado */}
+              {employeeFound && (
+                <Box
+                  sx={{
+                    background: "#f5f5f5",
+                    borderRadius: 2,
+                    p: 1.2,
+                    minWidth: 200,
+                    maxWidth: 230,
+                    boxShadow: "0 1px 6px #bbb",
+                    fontSize: 14,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 0.5,
+                    mr: 1,
+                  }}
+                >
+                  <span>
+                    <strong>Nombre:</strong> {employeeFound.nombre}
+                  </span>
+                  <span>
+                    <strong>Apellido:</strong> {employeeFound.apellido}
+                  </span>
+                  <span>
+                    <strong>DNI:</strong> {employeeFound.dni}
+                  </span>
+                </Box>
+              )}
+              <MuiTextField
+                label="Periodo a liquidar"
+                type="month"
+                value={periodo}
+                onChange={(e) => setPeriodo(e.target.value)}
                 sx={{
-                  minWidth: 400,
-                  flex: 1,
-                  background: "#e3f2fd",
-                  boxShadow: 6,
-                  p: 3,
-                  fontSize: 22,
-                }}
-              >
-                <CardContent>
-                  <Typography
-                    variant="h5"
-                    sx={{ mb: 3, fontWeight: 700 }}
-                    color="primary"
-                  >
-                    Haberes
-                  </Typography>
-                  <TextField
-                    label="Sueldo básico"
-                    name="sueldoBasico"
-                    type="number"
-                    value={form.sueldoBasico}
-                    onChange={handleChange}
-                    InputProps={{ inputProps: { min: 0, step: 0.01, style: { fontSize: 22 } } }}
-                    sx={{ mb: 3, width: "100" }}
-                    required
-                  />
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      mb: 2,
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      id="presentismo"
-                      name="presentismo"
-                      checked={adicionalChecked}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          presentismo: e.target.checked ? "true" : "false",
-                        }))
-                      }
-                      style={{ transform: "scale(1.5)", marginRight: 12 }}
-                    />
-                    <label
-                      htmlFor="presentismo"
-                      style={{ fontSize: 20, cursor: "pointer" }}
-                    >
-                      Adicional por asistencia y puntualidad (8,33%)
-                    </label>
-                  </Box>
-                  {adicionalChecked && (
-                    <Typography
-                      sx={{ ml: 4, color: "#388e3c", fontWeight: 600, fontSize: 20 }}
-                    >
-                      +${adicional} de adicional
-                    </Typography>
-                  )}
-                  <Box sx={{ mt: 4 }}>
-                    <Button
-                      variant="outlined"
-                      size="large"
-                      sx={{ fontSize: 20, px: 4, py: 2, borderRadius: 2 }}
-                      onClick={() => setHorasExtrasMenu((v) => !v)}
-                    >
-                      {horasExtrasMenu ? 'Ocultar Horas Extras' : 'Agregar Horas Extras'}
-                    </Button>
-                    {horasExtrasMenu && (
-                      <Box sx={{ mt: 3, pl: 1, pr: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <TextField
-                          label="Horas extras al 50%"
-                          name="horasExtras50"
-                          type="number"
-                          value={form.horasExtras50 || ''}
-                          onChange={handleChange}
-                          InputProps={{ inputProps: { min: 0, step: 0.01, style: { fontSize: 20 } } }}
-                          sx={{ width: '100%' }}
-                        />
-                        <TextField
-                          label="Horas extras al 100%"
-                          name="horasExtras100"
-                          type="number"
-                          value={form.horasExtras100 || ''}
-                          onChange={handleChange}
-                          InputProps={{ inputProps: { min: 0, step: 0.01, style: { fontSize: 20 } } }}
-                          sx={{ width: '100%' }}
-                        />
-                      </Box>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-              {/* Descuentos */}
-              <Card
-                sx={{
-                  minWidth: 400,
-                  flex: 1,
+                  minWidth: 200,
+                  ml: 35,
+                  fontSize: 16,
                   background: "#f5f5f5",
-                  boxShadow: 6,
-                  p: 3,
+                  borderRadius: 2,
+                }}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <table
+                style={{
                   fontSize: 22,
+                  minWidth: 800,
+                  background: "#fff",
+                  borderRadius: 12,
+                  boxShadow: "0 2px 12px #bbb",
+                  borderCollapse: "collapse",
+                  fontFamily: "Segoe UI, Arial, sans-serif",
                 }}
               >
-                <CardContent>
-                  <Typography
-                    variant="h5"
-                    sx={{ mb: 3, fontWeight: 700 }}
-                    color="primary"
-                  >
-                    Descuentos automáticos
-                  </Typography>
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
-                  >
-                    <Typography sx={{ fontSize: 20 }}>
-                      Jubilación – Ley 24.241 (11%): <strong>${descuentos.jubilacion}</strong>
-                    </Typography>
-                    <Typography sx={{ fontSize: 20 }}>
-                      Ley 19.032 – INSSJP (PAMI, 3%): <strong>${descuentos.pami}</strong>
-                    </Typography>
-                    <Typography sx={{ fontSize: 20 }}>
-                      Obra social (3%): <strong>${descuentos.obraSocial}</strong>
-                    </Typography>
-                    <Typography sx={{ fontSize: 20 }}>
-                      Sindicato – Art. 100 CCT 130/75 (2%): <strong>${descuentos.sindicato}</strong>
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </Card>
+                <thead>
+                  <tr style={{ background: "#e3f2fd" }}>
+                    <th
+                      style={{ padding: 16, borderBottom: "2px solid #90caf9" }}
+                    >
+                      Concepto
+                    </th>
+                    <th
+                      style={{ padding: 16, borderBottom: "2px solid #90caf9" }}
+                    >
+                      Unidad
+                    </th>
+                    <th
+                      style={{ padding: 16, borderBottom: "2px solid #90caf9" }}
+                    >
+                      Tipo
+                    </th>
+                    <th
+                      style={{ padding: 16, borderBottom: "2px solid #90caf9" }}
+                    >
+                      Valor
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {conceptos.map((c, idx, arr) => {
+                    if (esHorasExtras(c)) {
+                      return (
+                        <tr key={c.id}>
+                          <td style={{ padding: 12 }}>{c.nombre}</td>
+                          <td style={{ padding: 12, textAlign: "center" }}>
+                            {getUnidad(c)}
+                          </td>
+                          <td style={{ padding: 12 }}>{c.tipo}</td>
+                          <td style={{ padding: 12 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "flex-start",
+                              }}
+                            >
+                              <input
+                                type="number"
+                                style={{
+                                  fontSize: 20,
+                                  padding: 6,
+                                  width: 110,
+                                  borderRadius: 6,
+                                  border: "1px solid #90caf9",
+                                  marginBottom: 2,
+                                }}
+                                value={valores[c.nombre] || ""}
+                                onChange={(e) =>
+                                  setValores((v) => ({
+                                    ...v,
+                                    [c.nombre]: e.target.value,
+                                  }))
+                                }
+                              />
+                              <span
+                                style={{
+                                  fontSize: 13,
+                                  color: "#888",
+                                  marginTop: 2,
+                                }}
+                              >
+                                {c.tipo.charAt(0).toUpperCase() +
+                                  c.tipo.slice(1)}
+                              </span>
+                            </Box>
+                          </td>
+                        </tr>
+                      );
+                    }
+                    const isSueldoBasico = c.nombre === "Sueldo básico";
+                    const isAdicional =
+                      c.nombre.toLowerCase().includes("asistencia") ||
+                      c.nombre.toLowerCase().includes("puntualidad");
+                    const nextIsNotAdicional =
+                      arr[idx + 1] &&
+                      !(
+                        arr[idx + 1].nombre
+                          .toLowerCase()
+                          .includes("asistencia") ||
+                        arr[idx + 1].nombre
+                          .toLowerCase()
+                          .includes("puntualidad")
+                      );
+                    return (
+                      <React.Fragment key={c.id}>
+                        <tr>
+                          <td style={{ padding: 12 }}>{c.nombre}</td>
+                          <td style={{ padding: 12, textAlign: "center" }}>
+                            {getUnidad(c)}
+                          </td>
+                          <td style={{ padding: 12 }}>{c.tipo}</td>
+                          <td style={{ padding: 12 }}>
+                            {isSueldoBasico ? (
+                              <input
+                                type="number"
+                                style={{
+                                  fontSize: 20,
+                                  padding: 6,
+                                  width: 140,
+                                  borderRadius: 6,
+                                  border: "1px solid #90caf9",
+                                }}
+                                value={valores[c.nombre] || ""}
+                                onChange={(e) =>
+                                  setValores((v) => ({
+                                    ...v,
+                                    [c.nombre]: e.target.value,
+                                  }))
+                                }
+                                onBlur={recalcularValoresCalculados}
+                              />
+                            ) : c.editable ? (
+                              <input
+                                type="number"
+                                style={{
+                                  fontSize: 20,
+                                  padding: 6,
+                                  width: 140,
+                                  borderRadius: 6,
+                                  border: "1px solid #90caf9",
+                                }}
+                                value={valores[c.nombre] || ""}
+                                onChange={(e) =>
+                                  setValores((v) => ({
+                                    ...v,
+                                    [c.nombre]: e.target.value,
+                                  }))
+                                }
+                              />
+                            ) : (
+                              <input
+                                type="number"
+                                style={{
+                                  fontSize: 20,
+                                  padding: 6,
+                                  width: 140,
+                                  borderRadius: 6,
+                                  border: "1px solid #90caf9",
+                                  background: "#f0f4f8",
+                                  color: "#1976d2",
+                                  fontWeight: 600,
+                                }}
+                                value={valoresCalculados[c.nombre] ?? ""}
+                                readOnly
+                                tabIndex={-1}
+                              />
+                            )}
+                          </td>
+                        </tr>
+                        {/* Insertar el Accordion debajo del adicional por asistencia y puntualidad */}
+                        {isAdicional &&
+                          (nextIsNotAdicional || idx === arr.length - 1) && (
+                            <tr>
+                              <td colSpan={4} style={{ padding: 0, border: 0 }}>
+                                <Accordion
+                                  sx={{
+                                    mt: 1,
+                                    mb: 2,
+                                    width: 350,
+                                    marginLeft: 2,
+                                  }}
+                                >
+                                  <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon />}
+                                  >
+                                    <Typography
+                                      sx={{ fontSize: 16, fontWeight: 500 }}
+                                    >
+                                      Agregar Horas Extras
+                                    </Typography>
+                                  </AccordionSummary>
+                                  <AccordionDetails>
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        gap: 2,
+                                        justifyContent: "center",
+                                      }}
+                                    >
+                                      {conceptos
+                                        .filter(esHorasExtras)
+                                        .map((c) => (
+                                          <Box
+                                            key={c.id}
+                                            sx={{
+                                              display: "flex",
+                                              flexDirection: "column",
+                                              alignItems: "center",
+                                            }}
+                                          >
+                                            <Typography
+                                              sx={{ fontSize: 15, mb: 0.5 }}
+                                            >
+                                              {c.nombre}
+                                            </Typography>
+                                            <Typography
+                                              sx={{
+                                                fontSize: 13,
+                                                color: "#888",
+                                                mb: 1,
+                                              }}
+                                            >
+                                              {c.tipo.charAt(0).toUpperCase() +
+                                                c.tipo.slice(1)}
+                                            </Typography>
+                                            <input
+                                              type="number"
+                                              style={{
+                                                fontSize: 18,
+                                                padding: 5,
+                                                width: 110,
+                                                borderRadius: 6,
+                                                border: "1px solid #90caf9",
+                                              }}
+                                              value={valores[c.nombre] || ""}
+                                              onChange={(e) =>
+                                                setValores((v) => ({
+                                                  ...v,
+                                                  [c.nombre]: e.target.value,
+                                                }))
+                                              }
+                                            />
+                                          </Box>
+                                        ))}
+                                    </Box>
+                                  </AccordionDetails>
+                                </Accordion>
+                              </td>
+                            </tr>
+                          )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
             </Box>
           </Box>
         );
