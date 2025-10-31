@@ -1,4 +1,3 @@
-
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -22,6 +21,7 @@ import usuarioRouter from "./routes/usuario.js";
 import licenciasRoutes from "./routes/licencias.js";
 import familiaresRouter from "./routes/familiares.js";
 import categoriasRouter from "./routes/categorias.js";
+import conceptosRoutes from "./routes/conceptos.js";
 
 import obrasSocialesRoutes from "./routes/obrasSociales.js";
 import sindicatosRoutes from "./routes/sindicatos.js";
@@ -51,6 +51,7 @@ app.use("/api/usuario", usuarioRouter);
 app.use("/api/licencias", licenciasRoutes);
 app.use("/api/familiares", familiaresRouter);
 app.use("/api/convenios", conveniosRouter);
+app.use("/api/conceptos", conceptosRoutes);
 
 // Registrar obras sociales, sindicatos y cargos
 app.use("/api/obras-sociales", obrasSocialesRoutes);
@@ -91,7 +92,6 @@ app.get("/api/empresa/buscar", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Error buscando empresa" });
   }
 });
-
 
 // Endpoint para buscar empresa por nombre (por parámetro en la URL, para Liquidacion.tsx)
 app.get("/api/empresa/buscar/:nombre", async (req: Request, res: Response) => {
