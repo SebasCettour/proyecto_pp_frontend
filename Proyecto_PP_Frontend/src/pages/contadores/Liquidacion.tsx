@@ -104,7 +104,7 @@ const Liquidacion = () => {
 
     const nuevosValores: { [key: string]: number } = {};
     conceptos.forEach((c: any) => {
-      // Si es Adicional por asistencia y puntualidad y no está activo, no lo calcules
+      // Adicional por asistencia y puntualidad
       if (
         c.nombre
           .toLowerCase()
@@ -114,6 +114,32 @@ const Liquidacion = () => {
         nuevosValores[c.nombre] = 0;
         return;
       }
+      // Antigüedad: detectar por nombre flexible
+      const nombreAntiguedad = c.nombre.toLowerCase();
+      if (
+        nombreAntiguedad.includes("adicional por antigüedad") ||
+        nombreAntiguedad.includes("antigüedad")
+      ) {
+        if (employeeFound && employeeFound.fechaIngreso) {
+          const fechaIngreso = new Date(employeeFound.fechaIngreso);
+          const hoy = new Date();
+          let antiguedad = hoy.getFullYear() - fechaIngreso.getFullYear();
+          // Ajuste si aún no cumplió el año este año
+          if (
+            hoy.getMonth() < fechaIngreso.getMonth() ||
+            (hoy.getMonth() === fechaIngreso.getMonth() &&
+              hoy.getDate() < fechaIngreso.getDate())
+          ) {
+            antiguedad--;
+          }
+          const monto = +(sueldoBasico * 0.01 * antiguedad).toFixed(2);
+          nuevosValores[c.nombre] = monto > 0 ? monto : 0;
+        } else {
+          nuevosValores[c.nombre] = 0;
+        }
+        return;
+      }
+      // Porcentaje fijo
       if (c.porcentaje && !c.editable) {
         nuevosValores[c.nombre] = +(
           sueldoBasico * parseFloat(c.porcentaje)
@@ -129,7 +155,7 @@ const Liquidacion = () => {
       }
     });
     setValoresCalculados(nuevosValores);
-  }, [valores, conceptos, tipoJornada, asistenciaActiva]);
+  }, [valores, conceptos, tipoJornada, asistenciaActiva, employeeFound]);
 
   useEffect(() => {
     recalcularValoresCalculados();
@@ -158,6 +184,8 @@ const Liquidacion = () => {
       fetch("http://localhost:4000/api/conceptos/cct130_75")
         .then((res) => res.json())
         .then((data) => {
+          // Log para depuración: mostrar nombres de conceptos
+          console.log("Conceptos recibidos:", data.map((c: any) => c.nombre));
           setConceptos(data);
           const inicial: { [key: string]: string } = {};
           data.forEach((c: any) => (inicial[c.nombre] = ""));
@@ -400,9 +428,35 @@ const Liquidacion = () => {
               type="month"
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value)}
-              sx={{ mb: 3, width: 260 }}
+              sx={{ mb: 3, width: 260, display: 'inline-block', verticalAlign: 'top' }}
               InputLabelProps={{ shrink: true }}
             />
+            {employeeFound && (
+              <Box
+                sx={{
+                  display: 'inline-block',
+                  verticalAlign: 'top',
+                  ml: 4,
+                  mb: 3,
+                  background: '#f5f5f5',
+                  borderRadius: 2,
+                  px: 2,
+                  py: 1,
+                  minWidth: 220,
+                  boxShadow: 1,
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  {employeeFound.apellido}, {employeeFound.nombre}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  DNI: {employeeFound.dni}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  Categoría: {employeeFound.categoria}
+                </Typography>
+              </Box>
+            )}
 
             <Box sx={{ overflowX: "auto", mb: 2 }}>
               <table
