@@ -83,6 +83,10 @@ const Liquidacion = () => {
     "completa" | "dos_tercios" | "media"
   >("completa");
 
+  // Estados para el input de sueldo básico
+  const [sueldoDisplay, setSueldoDisplay] = useState<string>("");
+  const [editingSueldo, setEditingSueldo] = useState<boolean>(false);
+
   const horasMensualesPorJornada: Record<string, number> = {
     completa: 192,
     dos_tercios: 128,
@@ -130,6 +134,23 @@ const Liquidacion = () => {
   useEffect(() => {
     recalcularValoresCalculados();
   }, [conceptos, valores, recalcularValoresCalculados]);
+
+  // Sincronizar display del sueldo cuando no se está editando
+  useEffect(() => {
+    if (!editingSueldo) {
+      const raw = valores["Sueldo básico"] || "";
+      let formatted = "";
+      if (raw) {
+        const num = Number(raw);
+        if (!isNaN(num)) {
+          formatted = num.toLocaleString("es-AR");
+        } else {
+          formatted = raw;
+        }
+      }
+      setSueldoDisplay(formatted);
+    }
+  }, [valores["Sueldo básico"], editingSueldo]);
 
   useEffect(() => {
     if (activeStep === 2 && conceptos.length === 0) {
@@ -462,39 +483,117 @@ const Liquidacion = () => {
                             <input
                               type="text"
                               value={
-                                c.nombre.toLowerCase() === "sueldo básico"
-                                  ? displayValue
-                                  : valoresCalculados[c.nombre] !== undefined && valoresCalculados[c.nombre] !== 0
-                                    ? valoresCalculados[c.nombre].toLocaleString("es-AR")
-                                    : ""
+                                isSueldoBasico
+                                  ? sueldoDisplay
+                                  : valoresCalculados[c.nombre] !== undefined &&
+                                    valoresCalculados[c.nombre] !== 0
+                                  ? valoresCalculados[c.nombre].toLocaleString(
+                                      "es-AR"
+                                    )
+                                  : ""
                               }
-                              inputMode="decimal"
-                              pattern="[0-9]*"
-                              onChange={c.nombre.toLowerCase() === "sueldo básico" ? (e: React.ChangeEvent<HTMLInputElement>) => {
-                                let val = e.target.value
-                                  .replace(/\./g, "")
-                                  .replace(/,/g, "");
-                                val = val.replace(/[^0-9]/g, "");
-                                setValores((v) => ({
-                                  ...v,
-                                  [c.nombre]: val,
-                                }));
-                              } : undefined}
-                              onWheel={c.nombre.toLowerCase() === "sueldo básico" ? (e: React.WheelEvent<HTMLInputElement>) => e.currentTarget.blur() : undefined}
-                              onKeyDown={c.nombre.toLowerCase() === "sueldo básico" ? (e: React.KeyboardEvent<HTMLInputElement>) => {
-                                if (
-                                  e.key === "ArrowUp" ||
-                                  e.key === "ArrowDown"
-                                )
-                                  e.preventDefault();
-                              } : undefined}
+                              inputMode="text"
+                              pattern="[0-9.,]*"
+                              maxLength={12}
+                              onChange={
+                                isSueldoBasico
+                                  ? (
+                                      e: React.ChangeEvent<HTMLInputElement>
+                                    ) => {
+                                      const typed = e.target.value;
+                                      setSueldoDisplay(typed);
+                                      let cleaned = typed
+                                        .replace(/\./g, "")
+                                        .replace(/,/g, ".")
+                                        .replace(/[^0-9.]/g, "");
+                                      const dotIndex = cleaned.indexOf(".");
+                                      let intPart =
+                                        dotIndex !== -1
+                                          ? cleaned
+                                              .substring(0, dotIndex)
+                                              .slice(0, 8)
+                                          : cleaned.slice(0, 8);
+                                      let decPart =
+                                        dotIndex !== -1
+                                          ? cleaned
+                                              .substring(dotIndex + 1)
+                                              .slice(0, 2)
+                                          : "";
+                                      let cleanVal =
+                                        intPart +
+                                        (decPart ? "." + decPart : "");
+                                      if (cleanVal === ".") cleanVal = "";
+                                      setValores((prev) => ({
+                                        ...prev,
+                                        [c.nombre]: cleanVal,
+                                      }));
+                                    }
+                                  : undefined
+                              }
+                              onFocus={
+                                isSueldoBasico
+                                  ? () => setEditingSueldo(true)
+                                  : undefined
+                              }
+                              onBlur={
+                                isSueldoBasico
+                                  ? (e: React.FocusEvent<HTMLInputElement>) => {
+                                      setEditingSueldo(false);
+                                      let raw = valores[c.nombre];
+                                      let formatted = "";
+                                      let newRaw = raw;
+                                      if (raw) {
+                                        let num = Number(raw);
+                                        if (!isNaN(num)) {
+                                          if (num > 99999999.98) {
+                                            newRaw = "99999999.98";
+                                            num = 99999999.98;
+                                          }
+                                          formatted =
+                                            num.toLocaleString("es-AR");
+                                        } else {
+                                          formatted = "";
+                                          newRaw = "";
+                                        }
+                                      }
+                                      if (newRaw !== raw) {
+                                        setValores((prev) => ({
+                                          ...prev,
+                                          [c.nombre]: newRaw,
+                                        }));
+                                      }
+                                      setSueldoDisplay(formatted);
+                                    }
+                                  : undefined
+                              }
+                              onWheel={
+                                isSueldoBasico
+                                  ? (e: React.WheelEvent<HTMLInputElement>) =>
+                                      e.currentTarget.blur()
+                                  : undefined
+                              }
+                              onKeyDown={
+                                isSueldoBasico
+                                  ? (
+                                      e: React.KeyboardEvent<HTMLInputElement>
+                                    ) => {
+                                      if (
+                                        e.key === "ArrowUp" ||
+                                        e.key === "ArrowDown"
+                                      )
+                                        e.preventDefault();
+                                    }
+                                  : undefined
+                              }
                               style={{
                                 width: "100px",
                                 maxWidth: "100px",
                                 minWidth: "60px",
                                 border: "1px solid #bdbdbd",
                                 outline: "none",
-                                background: c.nombre.toLowerCase() === "sueldo básico" ? "#f7fafd" : "#f0f0f0",
+                                background: isSueldoBasico
+                                  ? "#f7fafd"
+                                  : "#f0f0f0",
                                 fontSize: "15px",
                                 textAlign: "right",
                                 paddingRight: "8px",
@@ -505,10 +604,10 @@ const Liquidacion = () => {
                                 whiteSpace: "nowrap",
                                 textOverflow: "ellipsis",
                                 transition: "border 0.2s",
-                                color: c.nombre.toLowerCase() === "sueldo básico" ? undefined : "#1976d2",
-                                fontWeight: c.nombre.toLowerCase() === "sueldo básico" ? undefined : 500,
+                                color: isSueldoBasico ? undefined : "#1976d2",
+                                fontWeight: isSueldoBasico ? undefined : 500,
                               }}
-                              disabled={c.nombre.toLowerCase() !== "sueldo básico"}
+                              disabled={!isSueldoBasico}
                             />
                           </Box>
                         </td>
@@ -518,112 +617,8 @@ const Liquidacion = () => {
                 </tbody>
               </table>
             </Box>
-
-            {horasExtras.length > 0 && (
-              <Accordion sx={{ mb: 2, boxShadow: 1 }}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography sx={{ fontWeight: 500 }}>Horas Extras</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Box sx={{ overflowX: "auto" }}>
-                    <table
-                      style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        fontSize: 15,
-                        background: "#f9f9f9",
-                        borderRadius: 8,
-                        boxShadow: "0 2px 8px #e3e3e3",
-                      }}
-                    >
-                      <thead style={{ background: "#e3eafc" }}>
-                        <tr>
-                          <th align="left" style={{ padding: 8 }}>
-                            Concepto
-                          </th>
-                          <th style={{ padding: 8 }}>Tipo</th>
-                          <th style={{ padding: 8 }}>Porcentaje</th>
-                          <th style={{ padding: 8 }}>Valor</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {horasExtras.map((c) => {
-                          let porcentaje = "-";
-                          if (typeof c.porcentaje === "number") {
-                            porcentaje = (c.porcentaje * 100).toFixed(2) + "%";
-                          } else if (
-                            typeof c.porcentaje === "string" &&
-                            c.porcentaje !== ""
-                          ) {
-                            const num = Number(c.porcentaje);
-                            if (!isNaN(num))
-                              porcentaje = (num * 100).toFixed(2) + "%";
-                          }
-                          return (
-                            <tr
-                              key={c.id}
-                              style={{ borderBottom: "1px solid #e0e0e0" }}
-                            >
-                              <td style={{ padding: 8 }}>{c.nombre}</td>
-                              <td style={{ padding: 8 }}>{c.tipo}</td>
-                              <td style={{ padding: 8 }}>{porcentaje}</td>
-                              <td style={{ padding: 8 }}>
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1,
-                                    background: "#fff",
-                                    borderRadius: 1,
-                                    border: "1px solid #bdbdbd",
-                                    px: 1,
-                                    py: 0.5,
-                                    width: 140,
-                                  }}
-                                >
-                                  <input
-                                    type="number"
-                                    value={valores[c.nombre] || ""}
-                                    onChange={(e) =>
-                                      setValores((v) => ({
-                                        ...v,
-                                        [c.nombre]: e.target.value,
-                                      }))
-                                    }
-                                    style={{
-                                      width: 70,
-                                      border: "none",
-                                      outline: "none",
-                                      background: "transparent",
-                                      fontSize: 15,
-                                    }}
-                                  />
-                                  {valoresCalculados[c.nombre] ? (
-                                    <Typography
-                                      sx={{
-                                        fontSize: 13,
-                                        color: "#1976d2",
-                                        fontWeight: 500,
-                                        ml: 1,
-                                      }}
-                                    >
-                                      ${valoresCalculados[c.nombre]}
-                                    </Typography>
-                                  ) : null}
-                                </Box>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </Box>
-                </AccordionDetails>
-              </Accordion>
-            )}
           </Box>
         );
-
       default:
         return <Typography>Próximos pasos en desarrollo...</Typography>;
     }
