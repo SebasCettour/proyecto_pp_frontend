@@ -271,35 +271,36 @@ const Liquidacion = () => {
       case 0:
         return (
           <Box>
-            <Typography variant="h6" sx={{ mb: 3 }}>
+            <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: 'primary.main', letterSpacing: 1 }}>
               Buscar Empresa por nombre
             </Typography>
-            <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+            <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: 'wrap' }}>
               <MuiTextField
                 fullWidth
                 label="Nombre de la empresa"
                 value={searchEmpresa}
                 onChange={(e) => setSearchEmpresa(e.target.value)}
+                sx={{ background: '#f7fafd', borderRadius: 2 }}
               />
               <Button
                 variant="contained"
                 onClick={handleSearchEmpresa}
                 disabled={loading}
-                sx={{ minWidth: 120 }}
+                sx={{ minWidth: 120, fontWeight: 600, borderRadius: 2, boxShadow: 2 }}
               >
                 {loading ? <CircularProgress size={24} /> : "Buscar"}
               </Button>
             </Box>
-            {empresaError && <Alert severity="error">{empresaError}</Alert>}
+            {empresaError && <Alert severity="error" sx={{ mb: 2 }}>{empresaError}</Alert>}
             {empresaFound && (
-              <Card sx={{ mt: 2 }}>
+              <Card sx={{ mt: 2, background: '#f5faff', borderRadius: 3, boxShadow: 2 }}>
                 <CardContent>
-                  <Typography variant="h6" color="primary">
+                  <Typography variant="h6" color="primary" sx={{ fontWeight: 700, mb: 1 }}>
                     {empresaFound.Nombre_Empresa}
                   </Typography>
-                  <Typography>CUIT: {empresaFound.CUIL_CUIT}</Typography>
-                  <Typography>Rubro: {empresaFound.Rubro}</Typography>
-                  <Typography>Dirección: {empresaFound.Direccion}</Typography>
+                  <Typography sx={{ fontSize: 15, color: 'text.secondary' }}>CUIT: {empresaFound.CUIL_CUIT}</Typography>
+                  <Typography sx={{ fontSize: 15, color: 'text.secondary' }}>Rubro: {empresaFound.Rubro}</Typography>
+                  <Typography sx={{ fontSize: 15, color: 'text.secondary' }}>Dirección: {empresaFound.Direccion}</Typography>
                 </CardContent>
               </Card>
             )}
@@ -309,38 +310,38 @@ const Liquidacion = () => {
       case 1:
         return (
           <Box>
-            <Typography variant="h6" sx={{ mb: 3 }}>
+            <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: 'primary.main', letterSpacing: 1 }}>
               Buscar Empleado por DNI
             </Typography>
-            <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+            <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: 'wrap' }}>
               <MuiTextField
                 fullWidth
                 label="DNI"
                 value={searchDni}
                 onChange={(e) => setSearchDni(e.target.value)}
+                sx={{ background: '#f7fafd', borderRadius: 2 }}
               />
               <Button
                 variant="contained"
                 onClick={handleSearchEmployee}
                 disabled={loading}
-                sx={{ minWidth: 120 }}
+                sx={{ minWidth: 120, fontWeight: 600, borderRadius: 2, boxShadow: 2 }}
               >
                 {loading ? <CircularProgress size={24} /> : "Buscar"}
               </Button>
             </Box>
-            {searchError && <Alert severity="error">{searchError}</Alert>}
+            {searchError && <Alert severity="error" sx={{ mb: 2 }}>{searchError}</Alert>}
             {employeeFound && (
-              <Card sx={{ mt: 2 }}>
+              <Card sx={{ mt: 2, background: '#f5faff', borderRadius: 3, boxShadow: 2 }}>
                 <CardContent>
-                  <Typography variant="h6" color="primary">
+                  <Typography variant="h6" color="primary" sx={{ fontWeight: 700, mb: 1 }}>
                     {employeeFound.apellido}, {employeeFound.nombre}
                   </Typography>
-                  <Typography>DNI: {employeeFound.dni}</Typography>
-                  <Typography>CUIL: {employeeFound.cuil}</Typography>
-                  <Typography>Categoría: {employeeFound.categoria}</Typography>
-                  <Typography>
-                    Fecha Ingreso:{" "}
-                    {new Date(employeeFound.fechaIngreso).toLocaleDateString()}
+                  <Typography sx={{ fontSize: 15, color: 'text.secondary' }}>DNI: {employeeFound.dni}</Typography>
+                  <Typography sx={{ fontSize: 15, color: 'text.secondary' }}>CUIL: {employeeFound.cuil}</Typography>
+                  <Typography sx={{ fontSize: 15, color: 'text.secondary' }}>Categoría: {employeeFound.categoria}</Typography>
+                  <Typography sx={{ fontSize: 15, color: 'text.secondary' }}>
+                    Fecha Ingreso: {new Date(employeeFound.fechaIngreso).toLocaleDateString()}
                   </Typography>
                 </CardContent>
               </Card>
@@ -350,9 +351,9 @@ const Liquidacion = () => {
 
       case 2:
         if (conceptosLoading)
-          return <Typography>Cargando conceptos...</Typography>;
+          return <Typography sx={{ color: 'primary.main', fontWeight: 500 }}>Cargando conceptos...</Typography>;
         if (!conceptos.length)
-          return <Typography>No hay conceptos disponibles.</Typography>;
+          return <Typography sx={{ color: 'text.secondary' }}>No hay conceptos disponibles.</Typography>;
 
         // Separar conceptos de horas extras y el resto
         const horasExtras = conceptos.filter((c) =>
@@ -366,20 +367,19 @@ const Liquidacion = () => {
           <Box>
             <Typography
               variant="h5"
-              sx={{ mb: 2, color: "primary.main", fontWeight: 600 }}
+              sx={{ mb: 2, color: "primary.main", fontWeight: 700, letterSpacing: 1 }}
             >
               Liquidación de Haberes
             </Typography>
 
             <Accordion
-              sx={{ mb: 3, boxShadow: 1 }}
+              sx={{ mb: 3, boxShadow: 2, borderRadius: 2, background: '#f7fafd' }}
               expanded={jornadaAccordionOpen}
               onChange={(_, expanded) => setJornadaAccordionOpen(expanded)}
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography sx={{ fontWeight: 500 }}>
-                  Tipo de Jornada:{" "}
-                  {tipoJornada === "completa"
+                <Typography sx={{ fontWeight: 600, color: 'primary.main' }}>
+                  Tipo de Jornada: {tipoJornada === "completa"
                     ? "Completa"
                     : tipoJornada === "dos_tercios"
                     ? "2/3 Jornada"
@@ -389,24 +389,22 @@ const Liquidacion = () => {
               <AccordionDetails>
                 <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
                   <Button
-                    variant={
-                      tipoJornada === "completa" ? "contained" : "outlined"
-                    }
+                    variant={tipoJornada === "completa" ? "contained" : "outlined"}
                     onClick={() => {
                       setTipoJornada("completa");
                       setJornadaAccordionOpen(false);
                     }}
+                    sx={{ fontWeight: 600, borderRadius: 2 }}
                   >
                     Completa
                   </Button>
                   <Button
-                    variant={
-                      tipoJornada === "dos_tercios" ? "contained" : "outlined"
-                    }
+                    variant={tipoJornada === "dos_tercios" ? "contained" : "outlined"}
                     onClick={() => {
                       setTipoJornada("dos_tercios");
                       setJornadaAccordionOpen(false);
                     }}
+                    sx={{ fontWeight: 600, borderRadius: 2 }}
                   >
                     2/3 Jornada
                   </Button>
@@ -416,6 +414,7 @@ const Liquidacion = () => {
                       setTipoJornada("media");
                       setJornadaAccordionOpen(false);
                     }}
+                    sx={{ fontWeight: 600, borderRadius: 2 }}
                   >
                     Media Jornada
                   </Button>
@@ -423,60 +422,53 @@ const Liquidacion = () => {
               </AccordionDetails>
             </Accordion>
 
-            <MuiTextField
-              label="Período a liquidar"
-              type="month"
-              value={periodo}
-              onChange={(e) => setPeriodo(e.target.value)}
-              sx={{ mb: 3, width: 260, display: 'inline-block', verticalAlign: 'top' }}
-              InputLabelProps={{ shrink: true }}
-            />
-            {employeeFound && (
-              <Box
-                sx={{
-                  display: 'inline-block',
-                  verticalAlign: 'top',
-                  ml: 4,
-                  mb: 3,
-                  background: '#f5f5f5',
-                  borderRadius: 2,
-                  px: 2,
-                  py: 1,
-                  minWidth: 220,
-                  boxShadow: 1,
-                }}
-              >
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  {employeeFound.apellido}, {employeeFound.nombre}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  DNI: {employeeFound.dni}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  Categoría: {employeeFound.categoria}
-                </Typography>
-              </Box>
-            )}
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 3, gap: 4, justifyContent: 'space-between' }}>
+              <MuiTextField
+                label="Período a liquidar"
+                type="month"
+                value={periodo}
+                onChange={(e) => setPeriodo(e.target.value)}
+                sx={{ width: 260, background: '#f7fafd', borderRadius: 2 }}
+                InputLabelProps={{ shrink: true }}
+              />
+              {employeeFound && (
+                <Card sx={{ minWidth: 260, maxWidth: 320, background: '#f5faff', borderRadius: 3, boxShadow: 2, ml: 'auto' }}>
+                  <CardContent>
+                    <Typography variant="h6" color="primary" sx={{ fontWeight: 700, mb: 1 }}>
+                      {employeeFound.apellido}, {employeeFound.nombre}
+                    </Typography>
+                    <Typography sx={{ fontSize: 15, color: 'text.secondary' }}>DNI: {employeeFound.dni}</Typography>
+                    <Typography sx={{ fontSize: 15, color: 'text.secondary' }}>CUIL: {employeeFound.cuil}</Typography>
+                    <Typography sx={{ fontSize: 15, color: 'text.secondary' }}>Categoría: {employeeFound.categoria}</Typography>
+                    <Typography sx={{ fontSize: 15, color: 'text.secondary' }}>
+                      Fecha Ingreso: {new Date(employeeFound.fechaIngreso).toLocaleDateString()}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              )}
+            </Box>
 
             <Box sx={{ overflowX: "auto", mb: 2 }}>
               <table
                 style={{
                   width: "100%",
-                  borderCollapse: "collapse",
+                  borderCollapse: "separate",
+                  borderSpacing: 0,
                   fontSize: 15,
                   background: "#f9f9f9",
-                  borderRadius: 8,
-                  boxShadow: "0 2px 8px #e3e3e3",
+                  borderRadius: 12,
+                  boxShadow: "0 2px 12px #e3e3e3",
+                  marginTop: 8,
                 }}
               >
                 <thead style={{ background: "#e3eafc" }}>
                   <tr>
-                    <th align="left" style={{ padding: 8 }}>
+                    <th align="left" style={{ padding: 10, fontWeight: 700, fontSize: 16, color: '#1976d2' }}>
                       Concepto
                     </th>
-                    <th style={{ padding: 8 }}>Tipo</th>
-                    <th style={{ padding: 8 }}>Porcentaje</th>
-                    <th style={{ padding: 8 }}>Valor</th>
+                    <th style={{ padding: 10, fontWeight: 700, fontSize: 16, color: '#1976d2' }}>Tipo</th>
+                    <th style={{ padding: 10, fontWeight: 700, fontSize: 16, color: '#1976d2' }}>Porcentaje</th>
+                    <th style={{ padding: 10, fontWeight: 700, fontSize: 16, color: '#1976d2' }}>Valor</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -508,14 +500,15 @@ const Liquidacion = () => {
                     return (
                       <tr
                         key={c.id}
-                        style={{ borderBottom: "1px solid #e0e0e0" }}
+                        style={{ borderBottom: "1.5px solid #e0e0e0" }}
                       >
                         <td
                           style={{
-                            padding: 8,
+                            padding: 10,
                             display: "flex",
                             alignItems: "center",
                             gap: 1,
+                            fontWeight: 500,
                           }}
                         >
                           {c.nombre}
@@ -530,9 +523,9 @@ const Liquidacion = () => {
                             />
                           )}
                         </td>
-                        <td style={{ padding: 8 }}>{c.tipo}</td>
-                        <td style={{ padding: 8 }}>{porcentaje}</td>
-                        <td style={{ padding: 8 }}>
+                        <td style={{ padding: 10, fontWeight: 500 }}>{c.tipo}</td>
+                        <td style={{ padding: 10, fontWeight: 500 }}>{porcentaje}</td>
+                        <td style={{ padding: 10, fontWeight: 600, color: isSueldoBasico ? '#1976d2' : '#388e3c' }}>
                           <Box>
                             <input
                               type="text"
@@ -643,7 +636,7 @@ const Liquidacion = () => {
                                 width: "100px",
                                 maxWidth: "100px",
                                 minWidth: "60px",
-                                border: "1px solid #bdbdbd",
+                                border: "1.5px solid #bdbdbd",
                                 outline: "none",
                                 background: isSueldoBasico
                                   ? "#f7fafd"
@@ -651,15 +644,15 @@ const Liquidacion = () => {
                                 fontSize: "15px",
                                 textAlign: "right",
                                 paddingRight: "8px",
-                                borderRadius: "4px",
+                                borderRadius: "6px",
                                 MozAppearance: "textfield",
                                 appearance: "textfield",
                                 overflow: "hidden",
                                 whiteSpace: "nowrap",
                                 textOverflow: "ellipsis",
                                 transition: "border 0.2s",
-                                color: isSueldoBasico ? undefined : "#1976d2",
-                                fontWeight: isSueldoBasico ? undefined : 500,
+                                color: isSueldoBasico ? '#1976d2' : '#388e3c',
+                                fontWeight: isSueldoBasico ? 700 : 600,
                               }}
                               disabled={!isSueldoBasico}
                             />
