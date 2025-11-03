@@ -1,1082 +1,761 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
-  Box,
-  Button,
-  Typography,
-  Container,
-  TextField,
-  Modal,
-  Alert,
-  CircularProgress,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Grid,
-  Card,
-  CardContent,
-  Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+	Box,
+	Button,
+	Typography,
+	Container,
+	TextField,
+	Alert,
+	CircularProgress,
+	MenuItem,
+	IconButton,
+	Card,
+	CardContent,
 } from "@mui/material";
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs, { Dayjs } from 'dayjs';
-import {
-  ExpandMore as ExpandMoreIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Add as AddIcon,
-  Person as PersonIcon,
-} from "@mui/icons-material";
-import { Link as RouterLink } from "react-router-dom";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
+import { Link as RouterLink } from "react-router-dom";
+
+type ObraSocial = { id: string; nombre: string };
+type Sindicato = { id: string; nombre: string };
+type Convenio = { id: number; nombre: string };
+type Categoria = { Id_Categoria: number; Nombre_Categoria: string };
+
+const schema = z.object({
+	Nombre: z.string().min(2).max(100),
+	Apellido: z.string().min(2).max(100),
+	Area: z.string().min(2).max(50),
+	Categoria: z.string().min(1),
+	Correo_Electronico: z.string().email().max(100),
+	Domicilio: z.string().min(10).max(150),
+	Estado_Civil: z.string().min(1),
+	Fecha_Desde: z.string().min(1),
+	Fecha_Nacimiento: z.string().min(1),
+	Legajo: z.string().max(20),
+	Telefono: z.string().min(8).max(20).regex(/^[0-9+\-\s()]+$/),
+	Tipo_Documento: z.string().min(1),
+	Numero_Documento: z.string().min(7).max(20).regex(/^[0-9]+$/),
+	Id_Departamento: z.string().min(1),
+	Id_Cargo: z.string().min(1),
+	Id_Sindicato: z.string().min(1),
+	Id_ObraSocial: z.string().min(1),
+	id_convenio: z.string().min(1),
+	familiares: z
+		.array(
+			z.object({
+				nombreFamiliar: z
+					.string()
+					.min(2)
+					.max(100)
+					.regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/),
+				parentesco: z.string().min(1),
+				fechaNacimientoFamiliar: z
+					.string()
+					.min(1)
+					.refine(
+						(value) => dayjs(value).isValid() && dayjs(value).isBefore(dayjs())
+					),
+				tipoDocumentoFamiliar: z.string().min(1),
+				numeroDocumentoFamiliar: z
+					.string()
+					.min(7)
+					.max(50)
+					.regex(/^[0-9]+$/),
+			})
+		)
+		.optional(),
+});
+
+type FormData = z.infer<typeof schema>;
 
 const EditarUsuario: React.FC = () => {
-  const [dni, setDni] = useState("");
-  const [usuario, setUsuario] = useState<any>(null);
-  const [familiares, setFamiliares] = useState<any[]>([]);
-  const [open, setOpen] = useState(false);
-  const [openFamiliarModal, setOpenFamiliarModal] = useState(false);
-  const [familiarSeleccionado, setFamiliarSeleccionado] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [editando, setEditando] = useState(false);
-  const [editandoFamiliar, setEditandoFamiliar] = useState(false);
-  const [mensaje, setMensaje] = useState<string | null>(null);
-  const [modoFamiliar, setModoFamiliar] = useState<"crear" | "editar">("crear");
+	const [error, setError] = useState<string | null>(null);
+	const [success, setSuccess] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+	const [obrasSociales, setObrasSociales] = useState<ObraSocial[]>([]);
+	const [sindicatos, setSindicatos] = useState<Sindicato[]>([]);
+	const [convenios, setConvenios] = useState<Convenio[]>([]);
+	const [categorias, setCategorias] = useState<Categoria[]>([]);
+	const [loadingObras, setLoadingObras] = useState(false);
+	const [loadingSindicatos, setLoadingSindicatos] = useState(false);
+	const [loadingCategorias, setLoadingCategorias] = useState(false);
+	const [usuarioDni, setUsuarioDni] = useState<string | null>(null);
 
-  // Convierte ISO a DDMMAAAA
-  const isoToDDMMAAAA = (iso: string) => {
-    if (!iso) return "";
-    const date = new Date(iso);
-    if (isNaN(date.getTime())) return "";
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}${month}${year}`;
-  };
+	const {
+		register,
+		handleSubmit,
+		control,
+		reset,
+		watch,
+		formState: { errors },
+	} = useForm<FormData>({
+		resolver: zodResolver(schema),
+		defaultValues: {
+			Nombre: "",
+			Apellido: "",
+			Area: "",
+			Categoria: "",
+			Correo_Electronico: "",
+			Domicilio: "",
+			Estado_Civil: "",
+			Fecha_Desde: "",
+			Fecha_Nacimiento: "",
+			Legajo: "",
+			Telefono: "",
+			Tipo_Documento: "",
+			Numero_Documento: "",
+			Id_Departamento: "",
+			Id_Cargo: "",
+			Id_Sindicato: "",
+			Id_ObraSocial: "",
+			id_convenio: "",
+			familiares: [],
+		},
+	});
 
-  const handleBuscar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setMensaje(null);
-    setIsLoading(true);
-    try {
-      // Buscar usuario
-      const response = await fetch(
-        `http://localhost:4000/api/usuario/usuario-dni/${dni}`
-      );
-      if (!response.ok) throw new Error("Usuario no encontrado");
-      const apiUser = await response.json();
+	const { fields, append, remove } = useFieldArray({
+		control,
+		name: "familiares",
+	});
 
-      // Buscar familiares
-      console.log("🔍 Buscando familiares para DNI:", dni);
-      const familiariesResponse = await fetch(
-        `http://localhost:4000/api/familiares/empleado-dni/${dni}`
-      );
-      console.log(
-        "📡 Respuesta de familiares:",
-        familiariesResponse.status,
-        familiariesResponse.statusText
-      );
+	const tipoDocumentoValue = watch("tipoDocumento");
+	const convenioValue = watch("convenioId");
+	const numeroMaxLength = tipoDocumentoValue === "Pasaporte" ? 10 : 9;
 
-      let familiaresData = [];
-      if (familiariesResponse.ok) {
-        familiaresData = await familiariesResponse.json();
-        console.log("✅ Familiares encontrados:", familiaresData);
-      } else {
-        console.log(
-          "❌ Error al obtener familiares:",
-          await familiariesResponse.text()
-        );
-      }
+	useEffect(() => {
+		setLoadingObras(true);
+		fetch("http://localhost:4000/api/obras-sociales")
+			.then((res) => res.json())
+			.then((data) =>
+				setObrasSociales(
+					data.map((os: any) => ({
+						id: String(os.ID_ObraSocial || os.id),
+						nombre: os.Nombre || os.nombre,
+					}))
+				)
+			)
+			.catch(() => setObrasSociales([{ id: "1", nombre: "OSECAC" }]))
+			.finally(() => setLoadingObras(false));
+	}, []);
 
-      // Mapear campos del API a los nombres que usa el formulario (soporte para distintos esquemas)
-      const mappedUser: any = {
-        Apellido_Nombre:
-          apiUser.Apellido_Nombre ||
-          apiUser.apellido_nombre ||
-          `${apiUser.Nombre || ""} ${apiUser.Apellido || ""}`.trim(),
-        Tipo_Documento:
-          apiUser.Tipo_Documento ||
-          apiUser.tipo_documento ||
-          apiUser.tipoDocumento ||
-          apiUser.tipo ||
-          "",
-        Numero_Documento:
-          apiUser.Numero_Documento ||
-          apiUser.numero_documento ||
-          apiUser.numeroDocumento ||
-          apiUser.documento ||
-          apiUser.DNI ||
-          "",
-        Fecha_Nacimiento:
-          apiUser.Fecha_Nacimiento ||
-          apiUser.fechaNacimiento ||
-          apiUser.fecha_nacimiento ||
-          apiUser.nacimiento ||
-          "",
-        Fecha_Desde:
-          apiUser.Fecha_Desde ||
-          apiUser.fechaDesde ||
-          apiUser.fecha_desde ||
-          apiUser.fecha_contrato ||
-          "",
-        Telefono: apiUser.Telefono || apiUser.telefono || apiUser.celular || "",
-        Area: apiUser.Area || apiUser.area || "",
-        Cargo: apiUser.Cargo || apiUser.cargo || "",
-        Legajo: apiUser.Legajo || apiUser.legajo || "",
-        Correo_Electronico:
-          apiUser.Correo_Electronico || apiUser.email || apiUser.Correo || "",
-        Domicilio: apiUser.Domicilio || apiUser.domicilio || "",
-        Estado_Civil:
-          apiUser.Estado_Civil ||
-          apiUser.estadoCivil ||
-          apiUser.estado_civil ||
-          "",
-        // conservar el resto por si hay campos adicionales
-        ...apiUser,
-      };
+	useEffect(() => {
+		setLoadingSindicatos(true);
+		fetch("http://localhost:4000/api/sindicatos")
+			.then((res) => res.json())
+			.then((data) =>
+				setSindicatos(
+					data.map((s: any) => ({
+						id: String(s.ID_Sindicato || s.id),
+						nombre: s.Nombre || s.nombre,
+					}))
+				)
+			)
+			.catch(() =>
+				setSindicatos([{ id: "1", nombre: "Sindicato Empleados de Comercio" }])
+			)
+			.finally(() => setLoadingSindicatos(false));
+	}, []);
 
-      console.log("📊 Datos del usuario recibidos:", apiUser);
-      console.log("📊 Datos del usuario mapeados:", mappedUser);
-      console.log("📊 Datos de familiares recibidos:", familiaresData);
+	useEffect(() => {
+		fetch("http://localhost:4000/api/convenios")
+			.then((res) => res.json())
+			.then((data) =>
+				setConvenios(
+					data.map((c: any) => ({
+						id: c.id,
+						nombre: c.nombre,
+					}))
+				)
+			);
+	}, []);
 
-      // Convertir fechas ISO (YYYY-MM-DD o YYYY/MM/DD) a DDMMYYYY para el formulario
-      if (mappedUser.Fecha_Nacimiento) {
-        mappedUser.Fecha_Nacimiento = isoToDDMMAAAA(
-          mappedUser.Fecha_Nacimiento
-        );
-      }
-      if (mappedUser.Fecha_Desde) {
-        mappedUser.Fecha_Desde = isoToDDMMAAAA(mappedUser.Fecha_Desde);
-      }
+	useEffect(() => {
+		if (!convenioValue) {
+			setCategorias([]);
+			return;
+		}
+		setLoadingCategorias(true);
+		fetch(`http://localhost:4000/api/empleado/categorias/${convenioValue}`)
+			.then((res) => res.json())
+			.then((data) => setCategorias(Array.isArray(data) ? data : []))
+			.finally(() => setLoadingCategorias(false));
+	}, [convenioValue]);
 
-      // Procesar familiares
-      const familiaresConFechasFormateadas = familiaresData.map(
-        (familiar: any) => ({
-          id: familiar.Id_Familiar,
-          nombreFamiliar: familiar.Nombre,
-          parentesco: familiar.Parentesco,
-          fechaNacimientoFamiliar: familiar.Fecha_Nacimiento
-            ? isoToDDMMAAAA(familiar.Fecha_Nacimiento)
-            : "",
-          tipoDocumentoFamiliar: familiar.Tipo_Documento,
-          numeroDocumentoFamiliar: familiar.Numero_Documento,
-        })
-      );
+	// Buscar usuario por DNI (puedes adaptar esta función a tu backend)
+	const handleBuscar = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setError(null);
+		setSuccess(null);
+		setIsLoading(true);
+		setUsuarioDni(null);
+		try {
+			const dni = watch("Numero_Documento");
+			const response = await fetch(`http://localhost:4000/api/usuario/usuario-dni/${dni}`);
+			if (!response.ok) throw new Error("Usuario no encontrado");
+			const user = await response.json();
+			setUsuarioDni(dni);
+			reset({
+				Nombre: user.Nombre || "",
+				Apellido: user.Apellido || "",
+				Area: user.Area || "",
+				Categoria: String(user.Categoria || ""),
+				Correo_Electronico: user.Correo_Electronico || "",
+				Domicilio: user.Domicilio || "",
+				Estado_Civil: user.Estado_Civil || "",
+				Fecha_Desde: user.Fecha_Desde || "",
+				Fecha_Nacimiento: user.Fecha_Nacimiento || "",
+				Legajo: user.Legajo || "",
+				Telefono: user.Telefono || "",
+				Tipo_Documento: user.Tipo_Documento || "",
+				Numero_Documento: user.Numero_Documento || "",
+				Id_Departamento: String(user.Id_Departamento || ""),
+				Id_Cargo: String(user.Id_Cargo || ""),
+				Id_Sindicato: String(user.Id_Sindicato || ""),
+				Id_ObraSocial: String(user.Id_ObraSocial || ""),
+				id_convenio: String(user.id_convenio || ""),
+				familiares: Array.isArray(user.familiares)
+					? user.familiares.map((f: any) => ({
+						nombreFamiliar: f.nombreFamiliar || f.Nombre || "",
+						parentesco: f.parentesco || f.Parentesco || "",
+						fechaNacimientoFamiliar: f.fechaNacimientoFamiliar || f.Fecha_Nacimiento || "",
+						tipoDocumentoFamiliar: f.tipoDocumentoFamiliar || f.Tipo_Documento || "",
+						numeroDocumentoFamiliar: f.numeroDocumentoFamiliar || f.Numero_Documento || "",
+					}))
+					: [],
+			});
+			setSuccess("Usuario cargado correctamente");
+		} catch (err: any) {
+			setError(err.message || "Error al buscar usuario");
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
-      setUsuario(mappedUser);
-      setFamiliares(familiaresConFechasFormateadas);
-      setOpen(true);
-    } catch (err: any) {
-      setError(err.message || "Error al buscar usuario");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+	const onSubmit = async (data: FormData) => {
+		setError(null);
+		setSuccess(null);
+		setIsLoading(true);
+		try {
+			// Convertir los campos numéricos
+			const payload = {
+				...data,
+				Categoria: Number(data.Categoria),
+				Id_Departamento: Number(data.Id_Departamento),
+				Id_Cargo: Number(data.Id_Cargo),
+				Id_Sindicato: Number(data.Id_Sindicato),
+				Id_ObraSocial: Number(data.Id_ObraSocial),
+				id_convenio: Number(data.id_convenio),
+			};
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    // si la propiedad no existe aún en usuario, la añadimos
-    setUsuario((prev: any) => ({ ...(prev || {}), [name]: value }));
-  };
+			const response = await fetch(
+				`http://localhost:4000/api/usuario/editar-usuario-dni/${payload.Numero_Documento}`,
+				{
+					method: "PUT",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload),
+				}
+			);
+			const result = await response.json();
+			if (!response.ok) {
+				setError(result.error || "Error al editar usuario");
+				return;
+			}
+			setSuccess("Usuario editado exitosamente");
+		} catch (err) {
+			setError("Error de conexión. Verifique el servidor.");
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
-  // Formatea "DDMMYYYY" a "DD-MM-YYYY" para mostrar
-  const formatDateToDisplay = (value: string) => {
-    if (!value) return "";
-    const clean = value.replace(/-/g, "");
-    if (clean.length <= 2) return clean;
-    if (clean.length <= 4) return `${clean.slice(0, 2)}-${clean.slice(2)}`;
-    if (clean.length <= 8)
-      return `${clean.slice(0, 2)}-${clean.slice(2, 4)}-${clean.slice(4, 8)}`;
-    return clean;
-  };
+	const agregarFamiliar = () =>
+		append({
+			nombreFamiliar: "",
+			parentesco: "",
+			fechaNacimientoFamiliar: "",
+			tipoDocumentoFamiliar: "",
+			numeroDocumentoFamiliar: "",
+		});
 
-  // Convierte "DD-MM-YYYY" o "DDMMYYYY" a "YYYY-MM-DD"
-  const formatDateToISO = (dateString: string) => {
-    if (!dateString) return "";
-    const clean = dateString.replace(/-/g, "");
-    if (clean.length !== 8) return "";
-    const day = clean.slice(0, 2);
-    const month = clean.slice(2, 4);
-    const year = clean.slice(4, 8);
-    return `${year}-${month}-${day}`;
-  };
+	return (
+		<LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+			<Box
+				sx={{
+					minHeight: "100vh",
+					backgroundImage: "url('/fondo.jpg')",
+					backgroundSize: "cover",
+					backgroundPosition: "center",
+					display: "flex",
+					flexDirection: "column",
+					overflowX: "hidden",
+				}}
+			>
+				<Header />
+				<Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
+					<Button
+						component={RouterLink}
+						to="/superadmin"
+						variant="outlined"
+						sx={{
+							backgroundColor: "#1565C0",
+							color: "#fff",
+							width: 180,
+							letterSpacing: 3,
+							fontSize: 20,
+							borderRadius: 3,
+							mr: 5,
+							fontFamily: "Tektur, sans-serif",
+							fontWeight: 500,
+							textTransform: "none",
+						}}
+					>
+						Volver
+					</Button>
+				</Box>
 
-  // Handler: solo números y máximo 8 caracteres, guarda sin guiones
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/[^0-9]/g, "");
-    if (value.length > 8) value = value.slice(0, 8);
-    setUsuario({ ...usuario, [e.target.name]: value });
-  };
+				<Container maxWidth="lg">
+					<Box
+						sx={{
+							py: { xs: 3, md: 5 },
+							px: { xs: 1, sm: 4, md: 6 },
+							backgroundColor: "#fff",
+							borderRadius: 4,
+							boxShadow: 3,
+							mb: 6,
+						}}
+					>
+						{/* Formulario de búsqueda por DNI */}
+						<form onSubmit={handleBuscar} style={{ marginBottom: 32 }}>
+							<Typography
+								component="h2"
+								variant="h5"
+								sx={{
+									mb: 4,
+									fontFamily: "Tektur, sans-serif",
+									fontWeight: 600,
+									color: "#333",
+									textAlign: "center",
+									letterSpacing: 0.5,
+								}}
+							>
+								Buscar por DNI
+							</Typography>
+							<TextField
+								fullWidth
+								label="DNI"
+								{...register("numeroDocumento")}
+								error={!!errors.numeroDocumento}
+								helperText={errors.numeroDocumento?.message}
+								disabled={isLoading}
+								sx={{ mb: 3 }}
+							/>
+							<Button
+								type="submit"
+								variant="contained"
+								disabled={isLoading}
+								sx={{
+									py: 1.5,
+									fontFamily: "Tektur, sans-serif",
+									fontWeight: 600,
+									fontSize: "1.1rem",
+									borderRadius: 1,
+									textTransform: "none",
+									width: "100%",
+								}}
+							>
+								{isLoading ? (
+									<CircularProgress size={24} color="inherit" />
+								) : (
+									"Buscar"
+								)}
+							</Button>
+						</form>
 
-  const validarUsuario = (usuario: any) => {
-    if (!usuario.Apellido_Nombre || usuario.Apellido_Nombre.trim() === "") {
-      setError("El nombre y apellido es obligatorio");
-      return false;
-    }
-    if (!usuario.Tipo_Documento || usuario.Tipo_Documento.trim() === "") {
-      setError("El tipo de documento es obligatorio");
-      return false;
-    }
-    if (
-      !usuario.Numero_Documento ||
-      usuario.Numero_Documento.trim() === "" ||
-      !/^\d+$/.test(usuario.Numero_Documento)
-    ) {
-      setError("El número de documento es obligatorio y debe ser numérico");
-      return false;
-    }
-    if (!usuario.Fecha_Nacimiento || usuario.Fecha_Nacimiento.trim() === "") {
-      setError("La fecha de nacimiento es obligatoria");
-      return false;
-    }
-    if (
-      !usuario.Correo_Electronico ||
-      usuario.Correo_Electronico.trim() === "" ||
-      !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(usuario.Correo_Electronico)
-    ) {
-      setError("El email es obligatorio y debe tener formato válido");
-      return false;
-    }
-    if (!usuario.Telefono || usuario.Telefono.trim() === "") {
-      setError("El teléfono es obligatorio");
-      return false;
-    }
-    if (!usuario.Area || usuario.Area.trim() === "") {
-      setError("El área es obligatoria");
-      return false;
-    }
-    if (!usuario.Cargo || usuario.Cargo.trim() === "") {
-      setError("El cargo es obligatorio");
-      return false;
-    }
-    if (!usuario.Legajo || usuario.Legajo.trim() === "") {
-      setError("El legajo es obligatorio");
-      return false;
-    }
-    if (!usuario.Domicilio || usuario.Domicilio.trim() === "") {
-      setError("El domicilio es obligatorio");
-      return false;
-    }
-    if (!usuario.Estado_Civil || usuario.Estado_Civil.trim() === "") {
-      setError("El estado civil es obligatorio");
-      return false;
-    }
-    if (!usuario.Fecha_Desde || usuario.Fecha_Desde.trim() === "") {
-      setError("La fecha de contrato es obligatoria");
-      return false;
-    }
-    return true;
-  };
+						{/* Formulario de edición solo si se encontró el usuario */}
+						{usuarioDni && (
+							<form onSubmit={handleSubmit(onSubmit)}>
+								{error && (
+									<Alert severity="error" sx={{ mb: 2 }}>
+										{error}
+									</Alert>
+								)}
+								{success && (
+									<Alert severity="success" sx={{ mb: 2 }}>
+										{success}
+									</Alert>
+								)}
 
-  const handleEditar = async () => {
-    setEditando(true);
-    setError(null);
-    setMensaje(null);
+								<Typography variant="h4" textAlign="center" fontWeight={600} mb={3}>
+									Editar Usuario
+								</Typography>
 
-    // Validación antes de enviar
-    if (!validarUsuario(usuario)) {
-      setEditando(false);
-      return;
-    }
+								<Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3 }}>
+									{/* Columna Izquierda */}
+									<Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+										<TextField
+											fullWidth
+											label="Nombre y Apellido"
+											{...register("username")}
+											error={!!errors.username}
+											helperText={errors.username?.message}
+											disabled={isLoading}
+											autoComplete="off"
+										/>
+										<TextField
+											fullWidth
+											label="Email"
+											{...register("email")}
+											error={!!errors.email}
+											helperText={errors.email?.message}
+											disabled={isLoading}
+										/>
+										<TextField
+											fullWidth
+											label="Domicilio"
+											{...register("domicilio")}
+											error={!!errors.domicilio}
+											helperText={errors.domicilio?.message}
+											disabled={isLoading}
+										/>
+										<TextField
+											fullWidth
+											label="Teléfono"
+											{...register("telefono")}
+											error={!!errors.telefono}
+											helperText={errors.telefono?.message}
+											disabled={isLoading}
+										/>
+										<Controller
+											name="fechaNacimiento"
+											control={control}
+											render={({ field }) => (
+												<DatePicker
+													label="Fecha de Nacimiento"
+													format="DD-MM-YYYY"
+													maxDate={dayjs().subtract(18, "year")}
+													minDate={dayjs().subtract(70, "year")}
+													value={field.value ? dayjs(field.value) : null}
+													onChange={(date) => field.onChange(date?.format("YYYY-MM-DD") || "")}
+													slotProps={{
+														textField: {
+															fullWidth: true,
+															error: !!errors.fechaNacimiento,
+															helperText: errors.fechaNacimiento?.message,
+															disabled: isLoading,
+														},
+													}}
+												/>
+											)}
+										/>
+										<Controller
+											name="tipoDocumento"
+											control={control}
+											render={({ field }) => (
+												<TextField
+													select
+													fullWidth
+													label="Tipo de Documento"
+													{...field}
+													error={!!errors.tipoDocumento}
+													helperText={errors.tipoDocumento?.message}
+													disabled={isLoading}
+												>
+													<MenuItem value="" disabled>
+														Seleccione tipo de documento...
+													</MenuItem>
+													<MenuItem value="DNI">DNI</MenuItem>
+													<MenuItem value="Pasaporte">Pasaporte</MenuItem>
+													<MenuItem value="LC">LC</MenuItem>
+													<MenuItem value="LE">LE</MenuItem>
+												<TextField
+													fullWidth
+													label="Legajo"
+													{...register("Legajo")}
+													error={!!errors.Legajo}
+													helperText={errors.Legajo?.message}
+													disabled
+												/>
+											helperText={errors.numeroDocumento?.message}
+											inputProps={{ maxLength: numeroMaxLength }}
+											disabled={isLoading}
+										/>
+										<Controller
+											name="estadoCivil"
+											control={control}
+											render={({ field }) => (
+												<TextField
+													select
+													fullWidth
+													label="Estado Civil"
+													{...field}
+													error={!!errors.estadoCivil}
+													helperText={errors.estadoCivil?.message}
+													disabled={isLoading}
+												>
+													<MenuItem value="" disabled>
+														Seleccione estado civil...
+													</MenuItem>
+													<MenuItem value="Soltero/a">Soltero/a</MenuItem>
+													<MenuItem value="Casado/a">Casado/a</MenuItem>
+													<MenuItem value="Divorciado/a">Divorciado/a</MenuItem>
+													<MenuItem value="Viudo/a">Viudo/a</MenuItem>
+													<MenuItem value="En unión convivencial">En unión convivencial</MenuItem>
+												</TextField>
+											)}
+										/>
+									</Box>
+									{/* Columna Derecha */}
+									<Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+										<Controller
+											name="roleId"
+											control={control}
+											render={({ field }) => (
+												<TextField
+													select
+													fullWidth
+													label="Rol"
+													{...field}
+													error={!!errors.roleId}
+													helperText={errors.roleId?.message}
+													disabled={isLoading}
+												>
+													<MenuItem value="" disabled>
+														Seleccione un rol...
+													</MenuItem>
+													<MenuItem value="1">Superadmin</MenuItem>
+													<MenuItem value="2">RRHH</MenuItem>
+													<MenuItem value="3">Contador</MenuItem>
+													<MenuItem value="4">Empleado</MenuItem>
+												</TextField>
+											)}
+										/>
+										<Controller
+											name="convenioId"
+											control={control}
+											render={({ field }) => (
+												<TextField
+													select
+													fullWidth
+													label="Convenio"
+													value={field.value || ""}
+													onChange={(e) => field.onChange(String(e.target.value))}
+													disabled={isLoading}
+												>
+													<MenuItem value="" disabled>
+														Seleccione un convenio...
+													</MenuItem>
+													{convenios.map((c) => (
+														<MenuItem key={c.id} value={String(c.id)}>
+															{c.nombre}
+														</MenuItem>
+													))}
+												</TextField>
+											)}
+										/>
+										<Controller
+											name="categoriaId"
+											control={control}
+											render={({ field }) => (
+												<TextField
+													select
+													fullWidth
+													label="Categoría"
+													{...field}
+													disabled={isLoading || !convenioValue}
+												>
+													{loadingCategorias
+														? [
+																<MenuItem disabled key="loading-categoria">
+																	<CircularProgress size={20} />
+																</MenuItem>,
+															]
+														: [
+																<MenuItem value="" disabled key="empty-categoria">
+																	Seleccione categoría...
+																</MenuItem>,
+																...categorias.map((c) => (
+																	<MenuItem key={c.Id_Categoria} value={String(c.Id_Categoria)}>
+																		{c.Nombre_Categoria}
+																	</MenuItem>
+																)),
+															]}
+												</TextField>
+											)}
+										/>
+										<Controller
+											name="fechaContrato"
+											control={control}
+											render={({ field }) => (
+												<DatePicker
+													label="Fecha de Contrato"
+													format="DD-MM-YYYY"
+													maxDate={dayjs()}
+													value={field.value ? dayjs(field.value) : null}
+													onChange={(date) => field.onChange(date?.format("YYYY-MM-DD") || "")}
+													slotProps={{
+														textField: {
+															fullWidth: true,
+															error: !!errors.fechaContrato,
+															helperText: errors.fechaContrato?.message,
+															disabled: isLoading,
+														},
+													}}
+												/>
+											)}
+										/>
+										<Controller
+											name="obraSocialId"
+											control={control}
+											render={({ field }) => (
+												<TextField
+													select
+													fullWidth
+													label="Obra Social"
+													{...field}
+													error={!!errors.obraSocialId}
+													helperText={errors.obraSocialId?.message}
+													disabled={isLoading}
+												>
+													{loadingObras ? (
+														<MenuItem disabled>
+															<CircularProgress size={20} />
+														</MenuItem>
+													) : (
+														obrasSociales.map((os) => (
+															<MenuItem key={os.id} value={os.id}>
+																{os.nombre}
+															</MenuItem>
+														))
+													)}
+												</TextField>
+											)}
+										/>
+										<Controller
+											name="sindicatoId"
+											control={control}
+											render={({ field }) => (
+												<TextField
+													select
+													fullWidth
+													label="Sindicato"
+													{...field}
+													error={!!errors.sindicatoId}
+													helperText={errors.sindicatoId?.message}
+													disabled={isLoading}
+												>
+													{loadingSindicatos
+														? [
+																<MenuItem disabled key="loading-sindicato">
+																	<CircularProgress size={20} />
+																</MenuItem>,
+															]
+														: [
+																<MenuItem value="" disabled key="empty-sindicato">
+																	Seleccione sindicato...
+																</MenuItem>,
+																...sindicatos.map((s) => (
+																	<MenuItem key={s.id} value={s.id}>
+																		{s.nombre}
+																	</MenuItem>
+																)),
+															]}
+												</TextField>
+											)}
+										/>
+									</Box>
+								</Box>
 
-    // Mapea el campo antes de enviar
-    const usuarioParaEditar = {
-      ...usuario,
-      Fecha_Desde: formatDateToISO(usuario.Fecha_Desde),
-      Fecha_Nacimiento: formatDateToISO(usuario.Fecha_Nacimiento),
-    };
+								{/* Familiares */}
+								<Box mt={6} sx={{ background: "rgba(245, 247, 250, 0.85)", borderRadius: 3, px: { xs: 2, sm: 4 }, py: { xs: 3, sm: 4 } }}>
+									<Typography variant="h5" mb={3} fontWeight={600} color="#1565C0" sx={{ letterSpacing: 1 }}>
+										Grupo Familiar
+									</Typography>
+									{fields.map((item, index) => (
+										<Card key={item.id} variant="outlined" sx={{ mb: 3, p: 2 }}>
+											<CardContent sx={{ p: 0 }}>
+												<Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+													<TextField
+														label="Nombre Familiar"
+														{...register(`familiares.${index}.nombreFamiliar`)}
+														error={!!errors.familiares?.[index]?.nombreFamiliar}
+														helperText={errors.familiares?.[index]?.nombreFamiliar?.message}
+													/>
+													<TextField
+														label="Parentesco"
+														{...register(`familiares.${index}.parentesco`)}
+														error={!!errors.familiares?.[index]?.parentesco}
+														helperText={errors.familiares?.[index]?.parentesco?.message}
+													/>
+													<Controller
+														name={`familiares.${index}.fechaNacimientoFamiliar`}
+														control={control}
+														render={({ field }) => (
+															<DatePicker
+																label="Fecha de Nacimiento"
+																format="DD-MM-YYYY"
+																maxDate={dayjs()}
+																value={field.value ? dayjs(field.value) : null}
+																onChange={(date) => field.onChange(date?.format("YYYY-MM-DD") || "")}
+																slotProps={{
+																	textField: {
+																		error: !!errors.familiares?.[index]?.fechaNacimientoFamiliar,
+																		helperText: errors.familiares?.[index]?.fechaNacimientoFamiliar?.message,
+																	},
+																}}
+															/>
+														)}
+													/>
+													<TextField
+														label="Tipo Documento"
+														{...register(`familiares.${index}.tipoDocumentoFamiliar`)}
+														error={!!errors.familiares?.[index]?.tipoDocumentoFamiliar}
+														helperText={errors.familiares?.[index]?.tipoDocumentoFamiliar?.message}
+													/>
+													<TextField
+														label="Número Documento"
+														{...register(`familiares.${index}.numeroDocumentoFamiliar`)}
+														error={!!errors.familiares?.[index]?.numeroDocumentoFamiliar}
+														helperText={errors.familiares?.[index]?.numeroDocumentoFamiliar?.message}
+													/>
+													<IconButton color="error" onClick={() => remove(index)}>
+														<DeleteIcon />
+													</IconButton>
+												</Box>
+											</CardContent>
+										</Card>
+									))}
+									<Button variant="outlined" startIcon={<AddIcon />} onClick={agregarFamiliar}>
+										Agregar Familiar
+									</Button>
+								</Box>
 
-    try {
-      const response = await fetch(
-        `http://localhost:4000/api/usuario/editar-usuario-dni/${usuario.Numero_Documento}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(usuarioParaEditar),
-        }
-      );
-      if (!response.ok) throw new Error("No se pudo editar el usuario");
-      setMensaje("Usuario editado correctamente");
-      setOpen(false);
-    } catch (err: any) {
-      setError(err.message || "Error al editar usuario");
-    } finally {
-      setEditando(false);
-    }
-  };
-
-  // Funciones para manejar familiares
-  const abrirModalFamiliar = (familiar?: any) => {
-    if (familiar) {
-      setModoFamiliar("editar");
-      setFamiliarSeleccionado(familiar);
-    } else {
-      setModoFamiliar("crear");
-      setFamiliarSeleccionado({
-        nombreFamiliar: "",
-        parentesco: "",
-        fechaNacimientoFamiliar: "",
-        tipoDocumentoFamiliar: "",
-        numeroDocumentoFamiliar: "",
-      });
-    }
-    setOpenFamiliarModal(true);
-  };
-
-  const cerrarModalFamiliar = () => {
-    setOpenFamiliarModal(false);
-    setFamiliarSeleccionado(null);
-    setError(null);
-  };
-
-  const handleChangeFamiliar = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFamiliarSeleccionado((prev: any) => ({ ...prev, [name]: value }));
-  };
-
-  const handleDateChangeFamiliar = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/[^0-9]/g, "");
-    if (value.length > 8) value = value.slice(0, 8);
-    setFamiliarSeleccionado({
-      ...familiarSeleccionado,
-      [e.target.name]: value,
-    });
-  };
-
-  const validarFamiliar = (familiar: any) => {
-    if (!familiar.nombreFamiliar || familiar.nombreFamiliar.trim() === "") {
-      setError("El nombre del familiar es obligatorio");
-      return false;
-    }
-    if (!familiar.parentesco || familiar.parentesco.trim() === "") {
-      setError("El parentesco es obligatorio");
-      return false;
-    }
-    if (
-      !familiar.fechaNacimientoFamiliar ||
-      familiar.fechaNacimientoFamiliar.trim() === ""
-    ) {
-      setError("La fecha de nacimiento del familiar es obligatoria");
-      return false;
-    }
-    if (
-      !familiar.tipoDocumentoFamiliar ||
-      familiar.tipoDocumentoFamiliar.trim() === ""
-    ) {
-      setError("El tipo de documento del familiar es obligatorio");
-      return false;
-    }
-    if (
-      !familiar.numeroDocumentoFamiliar ||
-      familiar.numeroDocumentoFamiliar.trim() === "" ||
-      !/^\d+$/.test(familiar.numeroDocumentoFamiliar)
-    ) {
-      setError(
-        "El número de documento del familiar es obligatorio y debe ser numérico"
-      );
-      return false;
-    }
-    return true;
-  };
-
-  const guardarFamiliar = async () => {
-    setEditandoFamiliar(true);
-    setError(null);
-
-    if (!validarFamiliar(familiarSeleccionado)) {
-      setEditandoFamiliar(false);
-      return;
-    }
-
-    // Mapear los campos del formulario a los que espera el backend
-    const familiarParaGuardar = {
-      dni: dni,
-      nombre: familiarSeleccionado.nombreFamiliar,
-      parentesco: familiarSeleccionado.parentesco,
-      fecha_nacimiento: formatDateToISO(familiarSeleccionado.fechaNacimientoFamiliar),
-      tipo_documento: familiarSeleccionado.tipoDocumentoFamiliar,
-      numero_documento: familiarSeleccionado.numeroDocumentoFamiliar,
-    };
-
-    try {
-      if (modoFamiliar === "crear") {
-        const response = await fetch(
-          `http://localhost:4000/api/familiares/crear`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(familiarParaGuardar),
-          }
-        );
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || errorData.error || "No se pudo crear el familiar");
-        }
-        setMensaje("Familiar creado correctamente");
-      } else {
-        // ...existing code...
-        const response = await fetch(
-          `http://localhost:4000/api/familiares/${familiarSeleccionado.id}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(familiarParaGuardar),
-          }
-        );
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.message || errorData.error || "No se pudo actualizar el familiar"
-          );
-        }
-        setMensaje("Familiar actualizado correctamente");
-      }
-
-      // Recargar familiares
-      const familiariesResponse = await fetch(
-        `http://localhost:4000/api/familiares/empleado-dni/${dni}`
-      );
-      if (familiariesResponse.ok) {
-        const familiaresData = await familiariesResponse.json();
-        const familiaresConFechasFormateadas = familiaresData.map(
-          (familiar: any) => ({
-            id: familiar.Id_Familiar,
-            nombreFamiliar: familiar.Nombre,
-            parentesco: familiar.Parentesco,
-            fechaNacimientoFamiliar: familiar.Fecha_Nacimiento
-              ? isoToDDMMAAAA(familiar.Fecha_Nacimiento)
-              : "",
-            tipoDocumentoFamiliar: familiar.Tipo_Documento,
-            numeroDocumentoFamiliar: familiar.Numero_Documento,
-          })
-        );
-        setFamiliares(familiaresConFechasFormateadas);
-      }
-
-      cerrarModalFamiliar();
-    } catch (err: any) {
-      setError(err.message || "Error al guardar familiar");
-    } finally {
-      setEditandoFamiliar(false);
-    }
-  };
-
-  const eliminarFamiliar = async (familiarId: number) => {
-    if (!window.confirm("¿Está seguro de que desea eliminar este familiar?")) {
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `http://localhost:4000/api/familiares/${familiarId}`,
-        {
-          method: "DELETE",
-        }
-      );
-      if (!response.ok) throw new Error("No se pudo eliminar el familiar");
-
-      // Recargar familiares
-      const familiariesResponse = await fetch(
-        `http://localhost:4000/api/familiares/empleado-dni/${dni}`
-      );
-      if (familiariesResponse.ok) {
-        const familiaresData = await familiariesResponse.json();
-        const familiaresConFechasFormateadas = familiaresData.map(
-          (familiar: any) => ({
-            id: familiar.Id_Familiar,
-            nombreFamiliar: familiar.Nombre,
-            parentesco: familiar.Parentesco,
-            fechaNacimientoFamiliar: familiar.Fecha_Nacimiento
-              ? isoToDDMMAAAA(familiar.Fecha_Nacimiento)
-              : "",
-            tipoDocumentoFamiliar: familiar.Tipo_Documento,
-            numeroDocumentoFamiliar: familiar.Numero_Documento,
-          })
-        );
-        setFamiliares(familiaresConFechasFormateadas);
-      }
-
-      setMensaje("Familiar eliminado correctamente");
-    } catch (err: any) {
-      setError(err.message || "Error al eliminar familiar");
-    }
-  };
-
-  return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        backgroundImage: "url('/fondo.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        display: "flex",
-        flexDirection: "column",
-        overflowX: "hidden",
-      }}
-    >
-      <Header />
-
-      {/* Botón Volver */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-        <Button
-          component={RouterLink}
-          to="/superadmin"
-          variant="outlined"
-          sx={{
-            backgroundColor: "#1565C0",
-            color: "#ffffff",
-            width: 180,
-            letterSpacing: 3,
-            fontSize: 20,
-            borderRadius: 3,
-            mr: 5,
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 500,
-            textTransform: "none",
-          }}
-        >
-          Volver
-        </Button>
-      </Box>
-
-      {/* Contenido principal */}
-      <Container
-        maxWidth="sm"
-        sx={{
-          mt: 8,
-          mb: 8,
-          flexGrow: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <Typography
-          component="h1"
-          variant="h4"
-          sx={{
-            mb: 12,
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 700,
-            color: "#333",
-            textAlign: "center",
-            letterSpacing: 1,
-            whiteSpace: "nowrap",
-            maxWidth: "100%",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          Editar datos del Usuario
-        </Typography>
-        <Box
-          component="form"
-          onSubmit={handleBuscar}
-          sx={{
-            backgroundColor: "white",
-            borderRadius: 2,
-            p: 4,
-            boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            mb: 4,
-            width: "100%",
-          }}
-        >
-          <Typography
-            component="h2"
-            variant="h5"
-            sx={{
-              mb: 4,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              color: "#333",
-              textAlign: "center",
-              letterSpacing: 0.5,
-            }}
-          >
-            Buscar por DNI
-          </Typography>
-          {error && (
-            <Alert severity="error" sx={{ width: "100%", mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-          {mensaje && (
-            <Alert severity="success" sx={{ width: "100%", mb: 3 }}>
-              {mensaje}
-            </Alert>
-          )}
-          <TextField
-            fullWidth
-            id="dni"
-            label="DNI"
-            value={dni}
-            onChange={(e) => setDni(e.target.value)}
-            sx={{ mb: 3 }}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={isLoading}
-            sx={{
-              py: 1.5,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: "1.1rem",
-              borderRadius: 1,
-              textTransform: "none",
-              width: "100%",
-            }}
-          >
-            {isLoading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Buscar"
-            )}
-          </Button>
-        </Box>
-      </Container>
-
-      {/* Modal de edición */}
-      <Modal open={open} onClose={() => setOpen(false)}>
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "90%",
-            maxWidth: 800,
-            maxHeight: "90vh",
-            bgcolor: "background.paper",
-            borderRadius: 2,
-            boxShadow: 24,
-            p: 4,
-            overflowY: "auto",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <Typography variant="h6" sx={{ mb: 3, textAlign: "center" }}>
-            Editar Usuario
-          </Typography>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          {mensaje && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              {mensaje}
-            </Alert>
-          )}
-
-          {/* Datos del Usuario */}
-          <Accordion defaultExpanded sx={{ mb: 2 }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Datos del Usuario</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                  <TextField
-                    fullWidth
-                    label="Nombre"
-                    name="Apellido_Nombre"
-                    value={usuario?.Apellido_Nombre || ""}
-                    onChange={handleChange}
-                    sx={{ minWidth: 200, flex: 1 }}
-                  />
-
-                  <TextField
-                    fullWidth
-                    label="Tipo de Documento"
-                    name="Tipo_Documento"
-                    value={usuario?.Tipo_Documento || ""}
-                    onChange={handleChange}
-                    sx={{ minWidth: 200, flex: 1 }}
-                  />
-                </Box>
-
-                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                  <TextField
-                    fullWidth
-                    label="Numero de Documento"
-                    name="Numero_Documento"
-                    value={usuario?.Numero_Documento || ""}
-                    onChange={handleChange}
-                    sx={{ minWidth: 200, flex: 1 }}
-                  />
-
-                  <TextField
-                    fullWidth
-                    label="Fecha de Nacimiento"
-                    name="Fecha_Nacimiento"
-                    value={formatDateToDisplay(usuario?.Fecha_Nacimiento || "")}
-                    onChange={handleDateChange}
-                    inputProps={{ maxLength: 10 }}
-                    sx={{ minWidth: 200, flex: 1 }}
-                  />
-                </Box>
-
-                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                  <TextField
-                    fullWidth
-                    label="Teléfono"
-                    name="Telefono"
-                    value={usuario?.Telefono || ""}
-                    onChange={handleChange}
-                    sx={{ minWidth: 200, flex: 1 }}
-                  />
-
-                  <TextField
-                    fullWidth
-                    label="Área"
-                    name="Area"
-                    value={usuario?.Area || ""}
-                    onChange={handleChange}
-                    sx={{ minWidth: 200, flex: 1 }}
-                  />
-                </Box>
-
-                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                  <TextField
-                    fullWidth
-                    label="Cargo"
-                    name="Cargo"
-                    value={usuario?.Cargo || ""}
-                    onChange={handleChange}
-                    sx={{ minWidth: 200, flex: 1 }}
-                  />
-
-                  <TextField
-                    fullWidth
-                    label="Legajo"
-                    name="Legajo"
-                    value={usuario?.Legajo || ""}
-                    onChange={handleChange}
-                    sx={{ minWidth: 200, flex: 1 }}
-                  />
-                </Box>
-
-                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    name="Correo_Electronico"
-                    value={usuario?.Correo_Electronico || ""}
-                    onChange={handleChange}
-                    sx={{ minWidth: 200, flex: 1 }}
-                  />
-
-                  <TextField
-                    fullWidth
-                    label="Domicilio"
-                    name="Domicilio"
-                    value={usuario?.Domicilio || ""}
-                    onChange={handleChange}
-                    sx={{ minWidth: 200, flex: 1 }}
-                  />
-                </Box>
-
-                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                  <FormControl fullWidth sx={{ minWidth: 200, flex: 1 }}>
-                    <InputLabel id="estado-civil-label">
-                      Estado Civil
-                    </InputLabel>
-                    <Select
-                      labelId="estado-civil-label"
-                      id="estado-civil"
-                      name="Estado_Civil"
-                      value={usuario?.Estado_Civil || ""}
-                      label="Estado Civil"
-                      onChange={(e) =>
-                        setUsuario((prev: any) => ({
-                          ...(prev || {}),
-                          Estado_Civil: e.target.value,
-                        }))
-                      }
-                    >
-                      <MenuItem value="">-- Seleccionar --</MenuItem>
-                      <MenuItem value="Soltero">Soltero</MenuItem>
-                      <MenuItem value="Casado">Casado</MenuItem>
-                      <MenuItem value="Divorciado">Divorciado</MenuItem>
-                      <MenuItem value="Viudo">Viudo</MenuItem>
-                      <MenuItem value="En Unión Civil">En Unión Civil</MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  <TextField
-                    fullWidth
-                    label="Fecha de Contrato"
-                    name="Fecha_Desde"
-                    value={formatDateToDisplay(usuario?.Fecha_Desde || "")}
-                    onChange={handleDateChange}
-                    inputProps={{ maxLength: 10 }}
-                    sx={{ minWidth: 200, flex: 1 }}
-                  />
-                </Box>
-              </Box>
-            </AccordionDetails>
-          </Accordion>
-
-          {/* Familiares */}
-          <Accordion sx={{ mb: 3 }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PersonIcon />
-                <Typography variant="h6">
-                  Familiares ({familiares.length})
-                </Typography>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Box sx={{ mb: 2 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => abrirModalFamiliar()}
-                  sx={{ mb: 2 }}
-                >
-                  Agregar Familiar
-                </Button>
-              </Box>
-
-              {familiares.length === 0 ? (
-                <Typography
-                  color="text.secondary"
-                  sx={{ textAlign: "center", py: 2 }}
-                >
-                  No hay familiares registrados
-                </Typography>
-              ) : (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {familiares.map((familiar) => (
-                    <Box
-                      key={familiar.Id_Familiar || familiar.id || familiar.numeroDocumentoFamiliar}
-                      sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}
-                    >
-                      <Card variant="outlined" sx={{ flex: 1, minWidth: 300 }}>
-                        <CardContent>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                              mb: 1,
-                            }}
-                          >
-                            <Typography variant="h6" component="div">
-                              {familiar.nombreFamiliar}
-                            </Typography>
-                            <Box>
-                              <IconButton
-                                size="small"
-                                onClick={() => abrirModalFamiliar(familiar)}
-                                color="primary"
-                              >
-                                <EditIcon />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                onClick={() => eliminarFamiliar(familiar.id)}
-                                color="error"
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Box>
-                          </Box>
-                          <Chip
-                            label={familiar.parentesco}
-                            size="small"
-                            color="primary"
-                            sx={{ mb: 1 }}
-                          />
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>DNI:</strong>{" "}
-                            {familiar.numeroDocumentoFamiliar}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Nacimiento:</strong>{" "}
-                            {formatDateToDisplay(
-                              familiar.fechaNacimientoFamiliar
-                            )}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            <strong>Tipo Doc:</strong>{" "}
-                            {familiar.tipoDocumentoFamiliar}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Box>
-                  ))}
-                </Box>
-              )}
-            </AccordionDetails>
-          </Accordion>
-
-          <Button
-            variant="contained"
-            onClick={handleEditar}
-            disabled={editando}
-            sx={{ mt: 2 }}
-          >
-            {editando ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Guardar Cambios del Usuario"
-            )}
-          </Button>
-        </Box>
-      </Modal>
-
-      {/* Modal para Familiares */}
-      <Dialog
-        open={openFamiliarModal}
-        onClose={cerrarModalFamiliar}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {modoFamiliar === "crear" ? "Agregar Familiar" : "Editar Familiar"}
-        </DialogTitle>
-        <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-            <TextField
-              fullWidth
-              label="Nombre del Familiar"
-              name="nombreFamiliar"
-              value={familiarSeleccionado?.nombreFamiliar || ""}
-              onChange={handleChangeFamiliar}
-            />
-
-            <FormControl fullWidth>
-              <InputLabel id="parentesco-label">Parentesco</InputLabel>
-              <Select
-                labelId="parentesco-label"
-                id="parentesco"
-                name="parentesco"
-                value={familiarSeleccionado?.parentesco || ""}
-                label="Parentesco"
-                onChange={(e) =>
-                  setFamiliarSeleccionado((prev: any) => ({
-                    ...(prev || {}),
-                    parentesco: e.target.value,
-                  }))
-                }
-              >
-                <MenuItem value="">-- Seleccionar --</MenuItem>
-                <MenuItem value="Padre">Padre</MenuItem>
-                <MenuItem value="Madre">Madre</MenuItem>
-                <MenuItem value="Cónyuge">Cónyuge</MenuItem>
-                <MenuItem value="Hijo">Hijo</MenuItem>
-                <MenuItem value="Hija">Hija</MenuItem>
-              </Select>
-            </FormControl>
-
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DatePicker
-                label="Fecha de Nacimiento"
-                value={
-                  familiarSeleccionado?.fechaNacimientoFamiliar
-                    ? (() => {
-                        const val = familiarSeleccionado.fechaNacimientoFamiliar;
-                        if (dayjs.isDayjs(val)) return val;
-                        if (typeof val === 'string' && val.length === 8) {
-                          // DDMMAAAA
-                          const d = val.slice(0, 2);
-                          const m = val.slice(2, 4);
-                          const y = val.slice(4, 8);
-                          return dayjs(`${y}-${m}-${d}`);
-                        }
-                        return null;
-                      })()
-                    : null
-                }
-                onChange={(date: Dayjs | null, _context: any) => {
-                  let formatted = "";
-                  if (date && date.isValid()) {
-                    formatted = date.format("DDMMYYYY");
-                  }
-                  setFamiliarSeleccionado((prev: any) => ({ ...(prev || {}), fechaNacimientoFamiliar: formatted }));
-                }}
-                format="DD/MM/YYYY"
-                slotProps={{ textField: { fullWidth: true } }}
-              />
-            </LocalizationProvider>
-
-            <FormControl fullWidth>
-              <InputLabel id="tipo-doc-familiar-label">Tipo de Documento</InputLabel>
-              <Select
-                labelId="tipo-doc-familiar-label"
-                id="tipoDocumentoFamiliar"
-                name="tipoDocumentoFamiliar"
-                value={familiarSeleccionado?.tipoDocumentoFamiliar || ""}
-                label="Tipo de Documento"
-                onChange={(e) =>
-                  setFamiliarSeleccionado((prev: any) => ({ ...(prev || {}), tipoDocumentoFamiliar: e.target.value }))
-                }
-              >
-                <MenuItem value="">-- Seleccionar --</MenuItem>
-                <MenuItem value="DNI">DNI</MenuItem>
-                <MenuItem value="LE">LE</MenuItem>
-                <MenuItem value="LC">LC</MenuItem>
-                <MenuItem value="Pasaporte">Pasaporte</MenuItem>
-              </Select>
-            </FormControl>
-
-            <TextField
-              fullWidth
-              label="Número de Documento"
-              name="numeroDocumentoFamiliar"
-              value={familiarSeleccionado?.numeroDocumentoFamiliar || ""}
-              onChange={handleChangeFamiliar}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={cerrarModalFamiliar}>Cancelar</Button>
-          <Button
-            onClick={guardarFamiliar}
-            variant="contained"
-            disabled={editandoFamiliar}
-          >
-            {editandoFamiliar ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : modoFamiliar === "crear" ? (
-              "Agregar"
-            ) : (
-              "Actualizar"
-            )}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Footer />
-    </Box>
-  );
+								<Button
+									type="submit"
+									variant="contained"
+									fullWidth
+									sx={{ mt: 4 }}
+									disabled={isLoading}
+								>
+									{isLoading ? <CircularProgress size={24} color="inherit" /> : "Guardar Cambios"}
+								</Button>
+							</form>
+						)}
+					</Box>
+				</Container>
+				<Footer />
+			</Box>
+		</LocalizationProvider>
+	);
 };
 
 export default EditarUsuario;
