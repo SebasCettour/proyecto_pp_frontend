@@ -335,7 +335,6 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
   const {
     Nombre,
     Apellido,
-    Area,
     Correo_Electronico,
     Domicilio,
     Estado_Civil,
@@ -353,7 +352,6 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
       `UPDATE Empleado SET
         Nombre = ?,
         Apellido = ?,
-        Area = ?,
         Correo_Electronico = ?,
         Domicilio = ?,
         Estado_Civil = ?,
@@ -367,7 +365,6 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
       [
         Nombre,
         Apellido,
-        Area,
         Correo_Electronico,
         Domicilio,
         Estado_Civil,
@@ -391,7 +388,7 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
       [`${Nombre} ${Apellido}`, Correo_Electronico, Numero_Documento, dni]
     );
 
-    res.json({ message: "Usuario actualizado correctamente" });
+  res.json({ message: "Usuario actualizado correctamente" });
   } catch (err: unknown) {
     const error = err as Error;
     console.error("Error al actualizar usuario:", error);
