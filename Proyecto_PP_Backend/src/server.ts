@@ -25,6 +25,7 @@ import conceptosRoutes from "./routes/conceptos.js";
 
 import obrasSocialesRoutes from "./routes/obrasSociales.js";
 import sindicatosRoutes from "./routes/sindicatos.js";
+import liquidacionRoutes from "./routes/liquidacion.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -56,6 +57,7 @@ app.use("/api/conceptos", conceptosRoutes);
 // Registrar obras sociales, sindicatos y cargos
 app.use("/api/obras-sociales", obrasSocialesRoutes);
 app.use("/api/sindicatos", sindicatosRoutes);
+app.use("/api/liquidacion", liquidacionRoutes);
 
 // Registrar categorías bajo /api/empleado/categorias
 app.use("/api/empleado/categorias", categoriasRouter);

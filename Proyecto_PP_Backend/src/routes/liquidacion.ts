@@ -61,16 +61,16 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const { empleadoId, fechaLiquidacion, total } = req.body;
-      
+
       console.log("📝 Datos recibidos para liquidación:", req.body);
 
       if (!empleadoId || !fechaLiquidacion || !total) {
-        return res.status(400).json({ 
-          message: "Faltan campos obligatorios: empleadoId, fechaLiquidacion, total" 
+        return res.status(400).json({
+          message:
+            "Faltan campos obligatorios: empleadoId, fechaLiquidacion, total",
         });
       }
 
-      // ✅ INSERT CORREGIDO CON LOS CAMPOS REALES
       const [result] = await pool.execute(
         `INSERT INTO Liquidacion (
           Id_Empleado, FechaLiquidacion, Total
@@ -90,14 +90,11 @@ router.post(
 );
 
 // Obtener todas las liquidaciones (para contadores)
-router.get(
-  "/todas",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    try {
-      // ✅ CONSULTA CORREGIDA CON LOS CAMPOS REALES
-      const [liquidaciones] = await pool.execute(
-        `SELECT 
+router.get("/todas", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // ✅ CONSULTA CORREGIDA CON LOS CAMPOS REALES
+    const [liquidaciones] = await pool.execute(
+      `SELECT 
           l.Id_Liquidacion,
           l.Id_Empleado,
           l.FechaLiquidacion,
@@ -108,15 +105,14 @@ router.get(
          FROM Liquidacion l
          JOIN Empleado e ON l.Id_Empleado = e.Id_Empleado
          ORDER BY l.FechaLiquidacion DESC`
-      );
+    );
 
-      res.json(liquidaciones);
-    } catch (error) {
-      console.error("Error obteniendo liquidaciones:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
-    }
+    res.json(liquidaciones);
+  } catch (error) {
+    console.error("Error obteniendo liquidaciones:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
   }
-);
+});
 
 // Obtener liquidaciones por empleado (DNI)
 router.get(
@@ -126,7 +122,6 @@ router.get(
     try {
       const { dni } = req.params;
 
-      // ✅ CONSULTA CORREGIDA CON LOS CAMPOS REALES
       const [liquidaciones] = await pool.execute(
         `SELECT 
           l.Id_Liquidacion,
@@ -149,5 +144,149 @@ router.get(
     }
   }
 );
+
+// Calcular liquidación
+router.post("/calcular", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    console.log("🔍 Datos recibidos en /calcular:", JSON.stringify(req.body));
+    
+    const {
+      dni,
+      sueldoBasico,
+      tipoJornada,
+      periodo,
+      asistenciaActiva,
+      horasExtras50,
+      horasExtras100,
+    } = req.body;
+
+    if (!dni || !sueldoBasico || !tipoJornada) {
+      console.log("❌ Faltan campos obligatorios");
+      return res.status(400).json({
+        message: "Faltan campos obligatorios: dni, sueldoBasico, tipoJornada",
+      });
+    }
+
+    console.log("✅ Campos obligatorios OK");
+    
+    // Obtener datos del empleado
+    console.log("📋 Buscando empleado con DNI:", dni);
+    const [empleados] = await pool.execute(
+      `SELECT Id_Empleado, Nombre, Apellido, Fecha_Desde 
+       FROM Empleado 
+       WHERE Numero_Documento = ?`,
+      [dni]
+    );
+
+    console.log("📊 Empleados encontrados:", Array.isArray(empleados) ? empleados.length : 0);
+
+    if (!Array.isArray(empleados) || empleados.length === 0) {
+      return res.status(404).json({ message: "Empleado no encontrado" });
+    }
+
+    const empleado = empleados[0] as any;
+    const fechaIngreso = new Date(empleado.Fecha_Desde);
+    const hoy = new Date();
+    let antiguedad = hoy.getFullYear() - fechaIngreso.getFullYear();
+    if (
+      hoy.getMonth() < fechaIngreso.getMonth() ||
+      (hoy.getMonth() === fechaIngreso.getMonth() &&
+        hoy.getDate() < fechaIngreso.getDate())
+    ) {
+      antiguedad--;
+    }
+
+    // Obtener conceptos
+    const [conceptos] = await pool.execute(
+      `SELECT id, nombre, tipo, descripcion, porcentaje, editable 
+       FROM Conceptos_CCT130_75 
+       ORDER BY id`
+    );
+
+    console.log("📊 Conceptos obtenidos:", Array.isArray(conceptos) ? conceptos.length : 0);
+
+    if (!Array.isArray(conceptos)) {
+      console.log("❌ Error: conceptos no es un array");
+      return res.status(500).json({ message: "Error al obtener conceptos" });
+    }
+
+    // Horas mensuales por tipo de jornada
+    const horasMensuales: Record<string, number> = {
+      completa: 192,
+      dos_tercios: 128,
+      media: 96,
+    };
+
+    const horasDelMes = horasMensuales[tipoJornada] || 192;
+    const valorHoraNormal = parseFloat(sueldoBasico) / horasDelMes;
+
+    // Calcular cada concepto
+    const conceptosCalculados = conceptos.map((c: any) => {
+      let valorCalculado = 0;
+
+      // Sueldo básico
+      if (c.nombre.toLowerCase() === "sueldo básico") {
+        valorCalculado = parseFloat(sueldoBasico);
+      }
+      // Adicional por antigüedad
+      else if (
+        c.nombre.toLowerCase().includes("adicional por antigüedad") ||
+        c.nombre.toLowerCase().includes("antigüedad")
+      ) {
+        valorCalculado = parseFloat(sueldoBasico) * 0.01 * antiguedad;
+      }
+      // Adicional por asistencia
+      else if (
+        c.nombre.toLowerCase().includes("adicional por asistencia y puntualidad")
+      ) {
+        if (asistenciaActiva) {
+          valorCalculado = parseFloat(sueldoBasico) * parseFloat(c.porcentaje || 0);
+        } else {
+          valorCalculado = 0;
+        }
+      }
+      // Horas extras 50%
+      else if (c.nombre.toLowerCase().includes("horas extras 50")) {
+        const cantidadHoras = parseFloat(horasExtras50 || 0);
+        valorCalculado = cantidadHoras * valorHoraNormal * 1.5;
+      }
+      // Horas extras 100%
+      else if (c.nombre.toLowerCase().includes("horas extras 100")) {
+        const cantidadHoras = parseFloat(horasExtras100 || 0);
+        valorCalculado = cantidadHoras * valorHoraNormal * 2;
+      }
+      // Porcentaje fijo
+      else if (c.porcentaje && !c.editable) {
+        valorCalculado = parseFloat(sueldoBasico) * parseFloat(c.porcentaje);
+      }
+
+      return {
+        id: c.id,
+        nombre: c.nombre,
+        tipo: c.tipo,
+        porcentaje: c.porcentaje,
+        valorCalculado: Math.round(valorCalculado * 100) / 100,
+      };
+    });
+
+    console.log("✅ Calculando response...");
+    const response = {
+      empleado: {
+        id: empleado.Id_Empleado,
+        nombre: empleado.Nombre,
+        apellido: empleado.Apellido,
+        antiguedad,
+      },
+      valorHoraNormal: Math.round(valorHoraNormal * 100) / 100,
+      conceptos: conceptosCalculados,
+    };
+    
+    console.log("✅ Response generado, enviando...");
+    res.json(response);
+  } catch (error) {
+    console.error("❌ Error calculando liquidación:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
 
 export default router;
