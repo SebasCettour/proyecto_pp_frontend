@@ -156,6 +156,7 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
       tipoJornada,
       periodo,
       asistenciaActiva,
+      sacActivo,
       horasExtras50,
       horasExtras100,
     } = req.body;
@@ -220,6 +221,57 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
     const horasDelMes = horasMensuales[tipoJornada] || 192;
     const valorHoraNormal = parseFloat(sueldoBasico) / horasDelMes;
 
+    // PRE-CALCULAR SAC (requiere async por consulta histórica)
+    let sacCalculado: number | null = null;
+    
+    if (sacActivo && periodo) {
+      const [anio, mes] = periodo.split('-').map(Number);
+      
+      // Determinar rango de meses del semestre
+      let mesesSemestre: string[] = [];
+      if (mes === 6) {
+        // Primer semestre: enero a junio
+        mesesSemestre = ['01', '02', '03', '04', '05', '06'].map(m => `${anio}-${m.toString().padStart(2, '0')}`);
+      } else if (mes === 12) {
+        // Segundo semestre: julio a diciembre
+        mesesSemestre = ['07', '08', '09', '10', '11', '12'].map(m => `${anio}-${m}`);
+      }
+      
+      if (mesesSemestre.length > 0) {
+        try {
+          // Consultar liquidaciones del semestre
+          const [liquidacionesSemestre] = await pool.execute(
+            `SELECT TotalHaberes 
+             FROM Liquidacion 
+             WHERE Id_Empleado = ? 
+             AND Periodo IN (${mesesSemestre.map(() => '?').join(',')})
+             ORDER BY TotalHaberes DESC
+             LIMIT 1`,
+            [empleado.Id_Empleado, ...mesesSemestre]
+          );
+          
+          if (Array.isArray(liquidacionesSemestre) && liquidacionesSemestre.length > 0) {
+            // Usar la mejor remuneración histórica
+            const mejorRemuneracion = (liquidacionesSemestre[0] as any).TotalHaberes;
+            sacCalculado = parseFloat(mejorRemuneracion) * 0.5;
+            console.log(`📊 SAC calculado sobre mejor remuneración histórica: ${mejorRemuneracion} -> ${sacCalculado}`);
+          } else {
+            // No hay liquidaciones históricas, calcular sobre haberes del mes actual
+            // (se calculará después cuando tengamos todos los conceptos)
+            sacCalculado = -1; // Marcador temporal
+            console.log("⚠️ No hay liquidaciones históricas, SAC se calculará sobre haberes del mes actual");
+          }
+        } catch (error) {
+          console.error("❌ Error consultando liquidaciones para SAC:", error);
+          sacCalculado = 0;
+        }
+      } else {
+        // Mes no válido para SAC
+        sacCalculado = 0;
+        console.log("⚠️ SAC solo se calcula en junio o diciembre");
+      }
+    }
+
     // Calcular cada concepto
     const conceptosCalculados = conceptos.map((c: any) => {
       let valorCalculado = 0;
@@ -245,6 +297,14 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
           valorCalculado = 0;
         }
       }
+      // SAC (Sueldo Anual Complementario)
+      else if (
+        c.nombre.toLowerCase().includes("sac") ||
+        c.nombre.toLowerCase().includes("aguinaldo")
+      ) {
+        // Usar el valor pre-calculado
+        valorCalculado = sacCalculado !== null ? sacCalculado : 0;
+      }
       // Horas extras 50%
       else if (c.nombre.toLowerCase().includes("horas extras 50")) {
         const cantidadHoras = parseFloat(horasExtras50 || 0);
@@ -268,6 +328,22 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
         valorCalculado: Math.round(valorCalculado * 100) / 100,
       };
     });
+
+    // POST-PROCESAMIENTO SAC: Si no había liquidaciones históricas, calcular sobre haberes del mes actual
+    if (sacCalculado === -1) {
+      const totalHaberesMesActual = conceptosCalculados
+        .filter((c: any) => c.tipo === 'haber')
+        .reduce((sum: number, c: any) => sum + c.valorCalculado, 0);
+      
+      const sacIndex = conceptosCalculados.findIndex((c: any) => 
+        c.nombre.toLowerCase().includes("sac") || c.nombre.toLowerCase().includes("aguinaldo")
+      );
+      
+      if (sacIndex !== -1) {
+        conceptosCalculados[sacIndex].valorCalculado = Math.round(totalHaberesMesActual * 0.5 * 100) / 100;
+        console.log(`📊 SAC calculado sobre haberes del mes actual: ${totalHaberesMesActual} -> ${conceptosCalculados[sacIndex].valorCalculado}`);
+      }
+    }
 
     console.log("✅ Calculando response...");
     const response = {
