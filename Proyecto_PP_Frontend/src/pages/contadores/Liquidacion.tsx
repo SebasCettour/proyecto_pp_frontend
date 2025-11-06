@@ -72,6 +72,7 @@ const Liquidacion = () => {
   const [conceptos, setConceptos] = useState<any[]>([]);
   const [valores, setValores] = useState<{ [key: string]: string }>({});
   const [asistenciaActiva, setAsistenciaActiva] = useState(true);
+  const [sacActivo, setSacActivo] = useState(false);
   const [conceptosLoading, setConceptosLoading] = useState(false);
   const [valoresCalculados, setValoresCalculados] = useState<{
     [key: string]: number;
@@ -84,6 +85,13 @@ const Liquidacion = () => {
   // Estados para el input de sueldo básico
   const [sueldoDisplay, setSueldoDisplay] = useState<string>("");
   const [editingSueldo, setEditingSueldo] = useState<boolean>(false);
+
+  // Función para verificar si el periodo es válido para SAC
+  const esPeriodoSAC = (periodo: string): boolean => {
+    if (!periodo) return false;
+    const mes = parseInt(periodo.split('-')[1]);
+    return mes === 6 || mes === 12; // Junio o Diciembre
+  };
 
   const calcularLiquidacion = useCallback(async () => {
     // Buscar el concepto de sueldo básico (case-insensitive)
@@ -117,6 +125,7 @@ const Liquidacion = () => {
           tipoJornada,
           periodo,
           asistenciaActiva,
+          sacActivo,
           horasExtras50: valores["Horas extras 50%"] || "0",
           horasExtras100: valores["Horas extras 100%"] || "0",
         }),
@@ -140,7 +149,7 @@ const Liquidacion = () => {
     } catch (error) {
       console.error("Error en calcularLiquidacion:", error);
     }
-  }, [valores, employeeFound, tipoJornada, periodo, asistenciaActiva]);
+  }, [valores, employeeFound, tipoJornada, periodo, asistenciaActiva, sacActivo]);
 
   useEffect(() => {
     console.log("useEffect disparado - Ejecutando calcularLiquidacion");
@@ -519,6 +528,14 @@ const Liquidacion = () => {
                 sx={{ width: 260, background: "#f7fafd", borderRadius: 2 }}
                 InputLabelProps={{ shrink: true }}
               />
+              
+              {sacActivo && !esPeriodoSAC(periodo) && periodo && (
+                <Alert severity="warning" sx={{ maxWidth: 400 }}>
+                  ⚠️ El SAC generalmente se paga en <strong>junio</strong> y <strong>diciembre</strong>. 
+                  Has seleccionado otro mes.
+                </Alert>
+              )}
+
               {employeeFound && (
                 <Card
                   sx={{
@@ -637,6 +654,15 @@ const Liquidacion = () => {
                       .toLowerCase()
                       .includes("adicional por asistencia y puntualidad");
 
+                    const isSAC = c.nombre
+                      .toLowerCase()
+                      .includes("sac") || c.nombre.toLowerCase().includes("aguinaldo");
+
+                    // Debug SAC
+                    if (c.nombre.toLowerCase().includes("sac") || c.nombre.toLowerCase().includes("anual complementario")) {
+                      console.log("🔍 Detectado concepto SAC:", c.nombre, "isSAC:", isSAC);
+                    }
+
                     const isDescuento = c.tipo && c.tipo.toLowerCase() === 'descuento';
 
                     // Debug: ver qué valor tiene este concepto
@@ -670,6 +696,18 @@ const Liquidacion = () => {
                               }
                               size="small"
                               sx={{ ml: 1 }}
+                              title="Activar/desactivar adicional por asistencia y puntualidad"
+                            />
+                          )}
+                          {isSAC && (
+                            <Checkbox
+                              checked={sacActivo}
+                              onChange={(_, checked) =>
+                                setSacActivo(checked)
+                              }
+                              size="small"
+                              sx={{ ml: 1 }}
+                              title="Activar SAC (se paga en junio y diciembre). Corresponde al 50% de la mejor remuneración del semestre"
                             />
                           )}
                         </td>
