@@ -16,9 +16,10 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Chip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 
@@ -52,10 +53,8 @@ interface Employee {
 
 const Liquidacion = () => {
   const [jornadaAccordionOpen, setJornadaAccordionOpen] = useState(false);
-  const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
-
   const [periodo, setPeriodo] = useState<string>("");
 
   // Empresa
@@ -86,62 +85,68 @@ const Liquidacion = () => {
   const [sueldoDisplay, setSueldoDisplay] = useState<string>("");
   const [editingSueldo, setEditingSueldo] = useState<boolean>(false);
 
+  // Estados para suma fija no remunerativa
+  const [sumaFijaNoRemunerativa, setSumaFijaNoRemunerativa] =
+    useState<string>("");
+  const [sumaFijaDisplay, setSumaFijaDisplay] = useState<string>("");
+  const [editingSumaFija, setEditingSumaFija] = useState<boolean>(false);
+
+  // Estados para horas extras
+  const [horasExtras50, setHorasExtras50] = useState<string>("");
+  const [horasExtras100, setHorasExtras100] = useState<string>("");
+
   // Función para verificar si el periodo es válido para SAC
   const esPeriodoSAC = (periodo: string): boolean => {
     if (!periodo) return false;
-    const mes = parseInt(periodo.split('-')[1]);
+    const mes = parseInt(periodo.split("-")[1]);
     return mes === 6 || mes === 12; // Junio o Diciembre
   };
 
   const calcularLiquidacion = useCallback(async () => {
-    // Buscar el concepto de sueldo básico (case-insensitive)
-    const sueldoBasicoKey = Object.keys(valores).find(k => 
-      k.toLowerCase() === "sueldo básico"
+    const sueldoBasicoKey = Object.keys(valores).find(
+      (k) => k.toLowerCase() === "sueldo básico"
     );
-    const sueldoBasico = sueldoBasicoKey ? parseFloat(valores[sueldoBasicoKey]) || 0 : 0;
-    
-    console.log("Buscando sueldo básico en valores:", valores);
-    console.log("Clave encontrada:", sueldoBasicoKey, "Valor:", sueldoBasico);
-    
+    const sueldoBasico = sueldoBasicoKey
+      ? parseFloat(valores[sueldoBasicoKey]) || 0
+      : 0;
+
     if (!employeeFound || sueldoBasico <= 0) {
-      console.log("No se puede calcular - empleado o sueldo inválido");
       setValoresCalculados({});
       setValorHoraNormal(0);
       return;
     }
 
-    console.log("Calculando liquidación con sueldo:", sueldoBasico);
-
     try {
-      const response = await fetch("http://localhost:4000/api/liquidacion/calcular", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          dni: employeeFound.dni,
-          sueldoBasico: sueldoBasico.toString(),
-          tipoJornada,
-          periodo,
-          asistenciaActiva,
-          sacActivo,
-          horasExtras50: valores["Horas extras 50%"] || "0",
-          horasExtras100: valores["Horas extras 100%"] || "0",
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:4000/api/liquidacion/calcular",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            dni: employeeFound.dni,
+            sueldoBasico: sueldoBasico.toString(),
+            tipoJornada,
+            periodo,
+            asistenciaActiva,
+            sacActivo,
+            sumaFijaNoRemunerativa: sumaFijaNoRemunerativa || "0",
+            horasExtras50: horasExtras50 || "0",
+            horasExtras100: horasExtras100 || "0",
+          }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
-        console.log("Datos recibidos del backend:", data);
         setValorHoraNormal(data.valorHoraNormal || 0);
-        
-        // Convertir array de conceptos a objeto con valores calculados
+
         const nuevosValores: { [key: string]: number } = {};
         data.conceptos.forEach((c: any) => {
           nuevosValores[c.nombre] = c.valorCalculado;
         });
-        console.log("Valores calculados:", nuevosValores);
         setValoresCalculados(nuevosValores);
       } else {
         console.error("Error calculando liquidación");
@@ -149,10 +154,19 @@ const Liquidacion = () => {
     } catch (error) {
       console.error("Error en calcularLiquidacion:", error);
     }
-  }, [valores, employeeFound, tipoJornada, periodo, asistenciaActiva, sacActivo]);
+  }, [
+    valores,
+    employeeFound,
+    tipoJornada,
+    periodo,
+    asistenciaActiva,
+    sacActivo,
+    sumaFijaNoRemunerativa,
+    horasExtras50,
+    horasExtras100,
+  ]);
 
   useEffect(() => {
-    console.log("useEffect disparado - Ejecutando calcularLiquidacion");
     calcularLiquidacion();
   }, [calcularLiquidacion]);
 
@@ -178,11 +192,6 @@ const Liquidacion = () => {
       fetch("http://localhost:4000/api/conceptos/cct130_75")
         .then((res) => res.json())
         .then((data) => {
-          // Log para depuración: mostrar nombres de conceptos
-          console.log(
-            "Conceptos recibidos:",
-            data.map((c: any) => c.nombre)
-          );
           setConceptos(data);
           const inicial: { [key: string]: string } = {};
           data.forEach((c: any) => (inicial[c.nombre] = ""));
@@ -429,13 +438,20 @@ const Liquidacion = () => {
             </Typography>
           );
 
-        // Separar conceptos de horas extras y el resto
-        const horasExtras = conceptos.filter((c) =>
-          c.nombre.toLowerCase().includes("horas extras")
-        );
-        const otrosConceptos = conceptos.filter(
-          (c) => !c.nombre.toLowerCase().includes("horas extras")
-        );
+        const otrosConceptos = conceptos
+          .filter((c) => !c.nombre.toLowerCase().includes("horas extras"))
+          .sort((a, b) => {
+            const aIsSAC =
+              a.nombre.toLowerCase().includes("sac") ||
+              a.nombre.toLowerCase().includes("aguinaldo");
+            const bIsSAC =
+              b.nombre.toLowerCase().includes("sac") ||
+              b.nombre.toLowerCase().includes("aguinaldo");
+
+            if (aIsSAC && !bIsSAC) return 1;
+            if (!aIsSAC && bIsSAC) return -1;
+            return 0;
+          });
 
         return (
           <Box>
@@ -528,11 +544,11 @@ const Liquidacion = () => {
                 sx={{ width: 260, background: "#f7fafd", borderRadius: 2 }}
                 InputLabelProps={{ shrink: true }}
               />
-              
+
               {sacActivo && !esPeriodoSAC(periodo) && periodo && (
                 <Alert severity="warning" sx={{ maxWidth: 400 }}>
-                  ⚠️ El SAC generalmente se paga en <strong>junio</strong> y <strong>diciembre</strong>. 
-                  Has seleccionado otro mes.
+                  ⚠️ El SAC generalmente se paga en <strong>junio</strong> y{" "}
+                  <strong>diciembre</strong>. Has seleccionado otro mes.
                 </Alert>
               )}
 
@@ -575,292 +591,1050 @@ const Liquidacion = () => {
               )}
             </Box>
 
-            <Box sx={{ overflowX: "auto", mb: 2 }}>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "separate",
-                  borderSpacing: 0,
-                  fontSize: 15,
-                  background: "#f9f9f9",
-                  borderRadius: 12,
-                  boxShadow: "0 2px 12px #e3e3e3",
-                  marginTop: 8,
-                }}
-              >
-                <thead style={{ background: "#e3eafc" }}>
-                  <tr>
-                    <th
-                      align="left"
-                      style={{
-                        padding: 10,
-                        fontWeight: 700,
-                        fontSize: 16,
-                        color: "#1976d2",
-                      }}
-                    >
-                      Concepto
-                    </th>
-                    <th
-                      style={{
-                        padding: 10,
-                        fontWeight: 700,
-                        fontSize: 16,
-                        color: "#1976d2",
-                      }}
-                    >
-                      Tipo
-                    </th>
-                    <th
-                      style={{
-                        padding: 10,
-                        fontWeight: 700,
-                        fontSize: 16,
-                        color: "#1976d2",
-                      }}
-                    >
-                      Porcentaje
-                    </th>
-                    <th
-                      style={{
-                        padding: 10,
-                        fontWeight: 700,
-                        fontSize: 16,
-                        color: "#1976d2",
-                      }}
-                    >
-                      Valor
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {otrosConceptos.map((c) => {
-                    let porcentaje = "-";
-                    if (typeof c.porcentaje === "number") {
-                      porcentaje = (c.porcentaje * 100).toFixed(2) + "%";
-                    } else if (
-                      typeof c.porcentaje === "string" &&
-                      c.porcentaje !== ""
-                    ) {
-                      const num = Number(c.porcentaje);
-                      if (!isNaN(num))
-                        porcentaje = (num * 100).toFixed(2) + "%";
-                    }
-
-                    const isSueldoBasico =
-                      c.nombre.toLowerCase() === "sueldo básico";
-
-                    const isAsistencia = c.nombre
-                      .toLowerCase()
-                      .includes("adicional por asistencia y puntualidad");
-
-                    const isSAC = c.nombre
-                      .toLowerCase()
-                      .includes("sac") || c.nombre.toLowerCase().includes("aguinaldo");
-
-                    // Debug SAC
-                    if (c.nombre.toLowerCase().includes("sac") || c.nombre.toLowerCase().includes("anual complementario")) {
-                      console.log("🔍 Detectado concepto SAC:", c.nombre, "isSAC:", isSAC);
-                    }
-
-                    const isDescuento = c.tipo && c.tipo.toLowerCase() === 'descuento';
-
-                    // Debug: ver qué valor tiene este concepto
-                    console.log(`Concepto: ${c.nombre}, Valor calculado:`, valoresCalculados[c.nombre]);
-
-                    const rawValue = valores[c.nombre] || "";
-                    const displayValue =
-                      rawValue !== "" && !isNaN(Number(rawValue))
-                        ? Number(rawValue).toLocaleString("es-AR")
-                        : "";
+            {/* CONCEPTOS AGRUPADOS POR SECCIONES */}
+            <Box sx={{ mt: 3 }}>
+              {/* Sección: Sueldo Básico y Suma Fija */}
+              <Box sx={{ mb: 3 }}>
+                {otrosConceptos
+                  .filter((c) => c.nombre.toLowerCase() === "sueldo básico")
+                  .map((c, index) => {
                     return (
-                      <tr
-                        key={c.id}
-                        style={{ borderBottom: "1.5px solid #e0e0e0" }}
-                      >
-                        <td
-                          style={{
-                            padding: 10,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            fontWeight: 500,
+                      <React.Fragment key={index}>
+                        <Card
+                          sx={{
+                            background: "#fff",
+                            borderRadius: 2,
+                            boxShadow: 2,
+                            border: "1px solid #e0e0e0",
+                            transition: "all 0.2s ease",
+                            mb: 2,
+                            "&:hover": {
+                              boxShadow: 4,
+                              transform: "translateY(-2px)",
+                            },
                           }}
                         >
-                          {c.nombre}
-                          {isAsistencia && (
-                            <Checkbox
-                              checked={asistenciaActiva}
-                              onChange={(_, checked) =>
-                                setAsistenciaActiva(checked)
-                              }
-                              size="small"
-                              sx={{ ml: 1 }}
-                              title="Activar/desactivar adicional por asistencia y puntualidad"
-                            />
-                          )}
-                          {isSAC && (
-                            <Checkbox
-                              checked={sacActivo}
-                              onChange={(_, checked) =>
-                                setSacActivo(checked)
-                              }
-                              size="small"
-                              sx={{ ml: 1 }}
-                              title="Activar SAC (se paga en junio y diciembre). Corresponde al 50% de la mejor remuneración del semestre"
-                            />
-                          )}
-                        </td>
-                        <td style={{ padding: 10, fontWeight: 500 }}>
-                          {c.tipo}
-                        </td>
-                        <td style={{ padding: 10, fontWeight: 500 }}>
-                          {porcentaje}
-                        </td>
-                        <td
-                          style={{
-                            padding: 10,
-                            fontWeight: 600,
-                            color: isDescuento ? '#d32f2f' : (isSueldoBasico ? "#1976d2" : "#388e3c"),
-                          }}
-                        >
-                          <Box>
-                            <input
-                              type="text"
-                              value={
-                                isSueldoBasico
-                                  ? sueldoDisplay
-                                  : valoresCalculados[c.nombre] !== undefined
-                                  ? valoresCalculados[c.nombre].toLocaleString(
-                                      "es-AR"
-                                    )
-                                  : ""
-                              }
-                              inputMode="text"
-                              pattern="[0-9.,]*"
-                              maxLength={12}
-                              onChange={
-                                isSueldoBasico
-                                  ? (
-                                      e: React.ChangeEvent<HTMLInputElement>
-                                    ) => {
-                                      const typed = e.target.value;
-                                      setSueldoDisplay(typed);
-                                      let cleaned = typed
-                                        .replace(/\./g, "")
-                                        .replace(/,/g, ".")
-                                        .replace(/[^0-9.]/g, "");
-                                      const dotIndex = cleaned.indexOf(".");
-                                      let intPart =
-                                        dotIndex !== -1
-                                          ? cleaned
-                                              .substring(0, dotIndex)
-                                              .slice(0, 8)
-                                          : cleaned.slice(0, 8);
-                                      let decPart =
-                                        dotIndex !== -1
-                                          ? cleaned
-                                              .substring(dotIndex + 1)
-                                              .slice(0, 2)
-                                          : "";
-                                      let cleanVal =
-                                        intPart +
-                                        (decPart ? "." + decPart : "");
-                                      if (cleanVal === ".") cleanVal = "";
+                          <CardContent
+                            sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "flex-start",
+                                gap: 2,
+                              }}
+                            >
+                              <Box sx={{ flex: 1 }}>
+                                <Typography
+                                  variant="h6"
+                                  sx={{
+                                    fontWeight: 700,
+                                    color: "#000",
+                                    fontSize: 17,
+                                  }}
+                                >
+                                  {c.nombre}
+                                </Typography>
+                              </Box>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "flex-end",
+                                  minWidth: 150,
+                                }}
+                              >
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: "text.secondary",
+                                    fontSize: 11,
+                                    mb: 0.5,
+                                    display: "block",
+                                  }}
+                                >
+                                  Ingrese monto
+                                </Typography>
+                                <input
+                                  type="text"
+                                  value={sueldoDisplay}
+                                  inputMode="text"
+                                  pattern="[0-9.,]*"
+                                  maxLength={12}
+                                  onChange={(
+                                    e: React.ChangeEvent<HTMLInputElement>
+                                  ) => {
+                                    const typed = e.target.value;
+                                    setSueldoDisplay(typed);
+                                    let cleaned = typed
+                                      .replace(/\./g, "")
+                                      .replace(/,/g, ".")
+                                      .replace(/[^0-9.]/g, "");
+                                    const dotIndex = cleaned.indexOf(".");
+                                    let intPart =
+                                      dotIndex !== -1
+                                        ? cleaned
+                                            .substring(0, dotIndex)
+                                            .slice(0, 8)
+                                        : cleaned.slice(0, 8);
+                                    let decPart =
+                                      dotIndex !== -1
+                                        ? cleaned
+                                            .substring(dotIndex + 1)
+                                            .slice(0, 2)
+                                        : "";
+                                    let cleanVal =
+                                      intPart + (decPart ? "." + decPart : "");
+                                    if (cleanVal === ".") cleanVal = "";
+                                    setValores((prev) => ({
+                                      ...prev,
+                                      [c.nombre]: cleanVal,
+                                    }));
+                                  }}
+                                  onFocus={() => setEditingSueldo(true)}
+                                  onBlur={(
+                                    e: React.FocusEvent<HTMLInputElement>
+                                  ) => {
+                                    setEditingSueldo(false);
+                                    let raw = valores[c.nombre] || "";
+                                    let formatted = "";
+                                    let newRaw = raw;
+                                    if (raw) {
+                                      let num = Number(raw);
+                                      if (!isNaN(num)) {
+                                        if (num > 99999999.98) {
+                                          newRaw = "99999999.98";
+                                          num = 99999999.98;
+                                        }
+                                        formatted = num.toLocaleString("es-AR");
+                                      } else {
+                                        formatted = "";
+                                        newRaw = "";
+                                      }
+                                    }
+                                    if (newRaw !== raw) {
                                       setValores((prev) => ({
                                         ...prev,
-                                        [c.nombre]: cleanVal,
+                                        [c.nombre]: newRaw,
                                       }));
                                     }
-                                  : undefined
-                              }
-                              onFocus={
-                                isSueldoBasico
-                                  ? () => setEditingSueldo(true)
-                                  : undefined
-                              }
-                              onBlur={
-                                isSueldoBasico
-                                  ? (e: React.FocusEvent<HTMLInputElement>) => {
-                                      setEditingSueldo(false);
-                                      let raw = valores[c.nombre];
-                                      let formatted = "";
-                                      let newRaw = raw;
-                                      if (raw) {
-                                        let num = Number(raw);
-                                        if (!isNaN(num)) {
-                                          if (num > 99999999.98) {
-                                            newRaw = "99999999.98";
-                                            num = 99999999.98;
-                                          }
-                                          formatted =
-                                            num.toLocaleString("es-AR");
-                                        } else {
-                                          formatted = "";
-                                          newRaw = "";
-                                        }
-                                      }
-                                      if (newRaw !== raw) {
-                                        setValores((prev) => ({
-                                          ...prev,
-                                          [c.nombre]: newRaw,
-                                        }));
-                                      }
-                                      setSueldoDisplay(formatted);
-                                    }
-                                  : undefined
-                              }
-                              onWheel={
-                                isSueldoBasico
-                                  ? (e: React.WheelEvent<HTMLInputElement>) =>
-                                      e.currentTarget.blur()
-                                  : undefined
-                              }
-                              onKeyDown={
-                                isSueldoBasico
-                                  ? (
-                                      e: React.KeyboardEvent<HTMLInputElement>
-                                    ) => {
-                                      if (
-                                        e.key === "ArrowUp" ||
-                                        e.key === "ArrowDown"
-                                      )
-                                        e.preventDefault();
-                                    }
-                                  : undefined
-                              }
-                              style={{
-                                width: "100px",
-                                maxWidth: "100px",
-                                minWidth: "60px",
-                                border: "1.5px solid #bdbdbd",
-                                outline: "none",
-                                background: isSueldoBasico
-                                  ? "#f7fafd"
-                                  : "#f0f0f0",
-                                fontSize: "15px",
-                                textAlign: "right",
-                                paddingRight: "8px",
-                                borderRadius: "6px",
-                                MozAppearance: "textfield",
-                                appearance: "textfield",
-                                overflow: "hidden",
-                                whiteSpace: "nowrap",
-                                textOverflow: "ellipsis",
-                                transition: "border 0.2s",
-                                color: isSueldoBasico ? "#1976d2" : "#388e3c",
-                                fontWeight: isSueldoBasico ? 700 : 600,
+                                    setSueldoDisplay(formatted);
+                                  }}
+                                  onWheel={(
+                                    e: React.WheelEvent<HTMLInputElement>
+                                  ) => e.currentTarget.blur()}
+                                  onKeyDown={(
+                                    e: React.KeyboardEvent<HTMLInputElement>
+                                  ) => {
+                                    if (
+                                      e.key === "ArrowUp" ||
+                                      e.key === "ArrowDown"
+                                    )
+                                      e.preventDefault();
+                                  }}
+                                  style={{
+                                    width: "140px",
+                                    padding: "10px 12px",
+                                    border: "2px solid #000",
+                                    outline: "none",
+                                    background: "#fff",
+                                    fontSize: "18px",
+                                    fontWeight: 700,
+                                    textAlign: "right",
+                                    borderRadius: "8px",
+                                    color: "#000",
+                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          </CardContent>
+                        </Card>
+
+                        {/* Suma Fija No Remunerativa */}
+                        <Card
+                          sx={{
+                            background: "#fff",
+                            borderRadius: 2,
+                            boxShadow: 2,
+                            border: "1px solid #e0e0e0",
+                            transition: "all 0.2s ease",
+                            "&:hover": {
+                              boxShadow: 4,
+                              transform: "translateY(-2px)",
+                            },
+                          }}
+                        >
+                          <CardContent
+                            sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "flex-start",
+                                gap: 2,
                               }}
-                              disabled={!isSueldoBasico}
-                            />
-                          </Box>
-                        </td>
-                      </tr>
+                            >
+                              <Box sx={{ flex: 1 }}>
+                                <Typography
+                                  variant="h6"
+                                  sx={{
+                                    fontWeight: 700,
+                                    color: "#000",
+                                    fontSize: 17,
+                                  }}
+                                >
+                                  Suma Fija No Remunerativa
+                                </Typography>
+                              </Box>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "flex-end",
+                                  minWidth: 150,
+                                }}
+                              >
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: "text.secondary",
+                                    fontSize: 11,
+                                    mb: 0.5,
+                                    display: "block",
+                                  }}
+                                >
+                                  Ingrese monto
+                                </Typography>
+                                <input
+                                  type="text"
+                                  value={sumaFijaDisplay}
+                                  inputMode="text"
+                                  pattern="[0-9.,]*"
+                                  maxLength={12}
+                                  onChange={(
+                                    e: React.ChangeEvent<HTMLInputElement>
+                                  ) => {
+                                    const typed = e.target.value;
+                                    setSumaFijaDisplay(typed);
+                                    let cleaned = typed
+                                      .replace(/\./g, "")
+                                      .replace(/,/g, ".")
+                                      .replace(/[^0-9.]/g, "");
+                                    const dotIndex = cleaned.indexOf(".");
+                                    let intPart =
+                                      dotIndex !== -1
+                                        ? cleaned
+                                            .substring(0, dotIndex)
+                                            .slice(0, 8)
+                                        : cleaned.slice(0, 8);
+                                    let decPart =
+                                      dotIndex !== -1
+                                        ? cleaned
+                                            .substring(dotIndex + 1)
+                                            .slice(0, 2)
+                                        : "";
+                                    let cleanVal =
+                                      intPart + (decPart ? "." + decPart : "");
+                                    if (cleanVal === ".") cleanVal = "";
+                                    setSumaFijaNoRemunerativa(cleanVal);
+                                  }}
+                                  onFocus={() => setEditingSumaFija(true)}
+                                  onBlur={(
+                                    e: React.FocusEvent<HTMLInputElement>
+                                  ) => {
+                                    setEditingSumaFija(false);
+                                    let raw = sumaFijaNoRemunerativa;
+                                    let formatted = "";
+                                    let newRaw = raw;
+                                    if (raw) {
+                                      let num = Number(raw);
+                                      if (!isNaN(num)) {
+                                        if (num > 99999999.98) {
+                                          newRaw = "99999999.98";
+                                          num = 99999999.98;
+                                        }
+                                        formatted = num.toLocaleString("es-AR");
+                                      } else {
+                                        formatted = "";
+                                        newRaw = "";
+                                      }
+                                    }
+                                    if (newRaw !== raw) {
+                                      setSumaFijaNoRemunerativa(newRaw);
+                                    }
+                                    setSumaFijaDisplay(formatted);
+                                  }}
+                                  onWheel={(
+                                    e: React.WheelEvent<HTMLInputElement>
+                                  ) => e.currentTarget.blur()}
+                                  onKeyDown={(
+                                    e: React.KeyboardEvent<HTMLInputElement>
+                                  ) => {
+                                    if (
+                                      e.key === "ArrowUp" ||
+                                      e.key === "ArrowDown"
+                                    )
+                                      e.preventDefault();
+                                  }}
+                                  style={{
+                                    width: "140px",
+                                    padding: "10px 12px",
+                                    border: "2px solid #000",
+                                    outline: "none",
+                                    background: "#fff",
+                                    fontSize: "18px",
+                                    fontWeight: 700,
+                                    textAlign: "right",
+                                    borderRadius: "8px",
+                                    color: "#000",
+                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </React.Fragment>
                     );
                   })}
-                </tbody>
-              </table>
+              </Box>
+
+              {/* Sección: ADICIONALES */}
+              {otrosConceptos.some(
+                (c) =>
+                  c.tipo !== "descuento" &&
+                  !c.nombre.toLowerCase().includes("sac") &&
+                  c.nombre.toLowerCase() !== "sueldo básico"
+              ) && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 700,
+                      background: "#01a201ff",
+                      color: "#ffffff",
+                      border: "1px solid #015f01ff",
+                      borderRadius: 2,
+                      mb: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 4,
+                        height: 24,
+                        background: "#388e3c",
+                        borderRadius: 1,
+                      }}
+                    />
+                    Adicionales
+                  </Typography>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                  >
+                    {otrosConceptos
+                      .filter(
+                        (c) =>
+                          c.tipo !== "descuento" &&
+                          !c.nombre.toLowerCase().includes("sac") &&
+                          c.nombre.toLowerCase() !== "sueldo básico"
+                      )
+                      .map((c, index) => {
+                        let porcentaje = "-";
+                        if (typeof c.porcentaje === "number") {
+                          porcentaje = (c.porcentaje * 100).toFixed(2) + "%";
+                        } else if (
+                          typeof c.porcentaje === "string" &&
+                          c.porcentaje !== ""
+                        ) {
+                          const num = Number(c.porcentaje);
+                          if (!isNaN(num))
+                            porcentaje = (num * 100).toFixed(2) + "%";
+                        }
+
+                        const isAsistencia = c.nombre
+                          .toLowerCase()
+                          .includes("adicional por asistencia y puntualidad");
+
+                        return (
+                          <Card
+                            key={index}
+                            sx={{
+                              background: "#fff",
+                              borderRadius: 2,
+                              boxShadow: 2,
+                              border: "1px solid #e0e0e0",
+                              transition: "all 0.2s ease",
+                              "&:hover": {
+                                boxShadow: 4,
+                                transform: "translateY(-2px)",
+                              },
+                            }}
+                          >
+                            <CardContent
+                              sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}
+                            >
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "flex-start",
+                                  gap: 2,
+                                }}
+                              >
+                                <Box sx={{ flex: 1 }}>
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 1,
+                                      mb: 1,
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="h6"
+                                      sx={{
+                                        fontWeight: 700,
+                                        color: "#000",
+                                        fontSize: 17,
+                                      }}
+                                    >
+                                      {c.nombre}
+                                    </Typography>
+                                    {isAsistencia && (
+                                      <Checkbox
+                                        checked={asistenciaActiva}
+                                        onChange={(_, checked) =>
+                                          setAsistenciaActiva(checked)
+                                        }
+                                        size="small"
+                                        title="Activar/desactivar adicional por asistencia y puntualidad"
+                                      />
+                                    )}
+                                  </Box>
+                                  {porcentaje !== "-" && (
+                                    <Chip
+                                      label={porcentaje}
+                                      size="small"
+                                      variant="outlined"
+                                      sx={{
+                                        fontSize: 12,
+                                        borderColor: "#388e3c",
+                                        color: "#388e3c",
+                                      }}
+                                    />
+                                  )}
+                                </Box>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-end",
+                                    minWidth: 150,
+                                  }}
+                                >
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      color: "text.secondary",
+                                      fontSize: 11,
+                                      mb: 0.5,
+                                      display: "block",
+                                    }}
+                                  >
+                                    Valor calculado
+                                  </Typography>
+                                  <Typography
+                                    variant="h5"
+                                    sx={{
+                                      fontWeight: 700,
+                                      color: "#000",
+                                      textAlign: "right",
+                                    }}
+                                  >
+                                    {valoresCalculados[c.nombre] !== undefined
+                                      ? `$${valoresCalculados[
+                                          c.nombre
+                                        ].toLocaleString("es-AR")}`
+                                      : "-"}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Sección: SAC*/}
+              {otrosConceptos.some((c) =>
+                c.nombre.toLowerCase().includes("sac")
+              ) && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 700,
+                      background: "#0277fbff",
+                      color: "#ffffff",
+                      border: "1px solid #023ebeff",
+                      borderRadius: 2,
+                      mb: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 4,
+                        height: 24,
+                        background:
+                          "linear-gradient(135deg, #0288d1 0%, #03a9f4 100%)",
+                        borderRadius: 1,
+                      }}
+                    />
+                    SAC - Sueldo Anual Complementario
+                  </Typography>
+                  {otrosConceptos
+                    .filter((c) => c.nombre.toLowerCase().includes("sac"))
+                    .map((c, index) => {
+                      return (
+                        <Card
+                          key={index}
+                          sx={{
+                            background: "#fff",
+                            borderRadius: 2,
+                            boxShadow: 2,
+                            border: "1px solid #e0e0e0",
+                            transition: "all 0.2s ease",
+                            "&:hover": {
+                              boxShadow: 4,
+                              transform: "translateY(-2px)",
+                            },
+                          }}
+                        >
+                          <CardContent
+                            sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "flex-start",
+                                gap: 2,
+                              }}
+                            >
+                              <Box sx={{ flex: 1 }}>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    mb: 1,
+                                  }}
+                                >
+                                  <Typography
+                                    variant="h6"
+                                    sx={{
+                                      fontWeight: 700,
+                                      color: "#000",
+                                      fontSize: 17,
+                                    }}
+                                  >
+                                    {c.nombre}
+                                  </Typography>
+                                  <Checkbox
+                                    checked={sacActivo}
+                                    onChange={(_, checked) =>
+                                      setSacActivo(checked)
+                                    }
+                                    size="small"
+                                    sx={{
+                                      color: "#000",
+                                      "&.Mui-checked": {
+                                        color: "#000",
+                                      },
+                                    }}
+                                    title="Activar SAC (se paga en junio y diciembre). Corresponde al 50% de la mejor remuneración del semestre"
+                                  />
+                                </Box>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    color: "#666",
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  50% de la mejor remuneración del semestre
+                                </Typography>
+                              </Box>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "flex-end",
+                                  minWidth: 150,
+                                }}
+                              >
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: "text.secondary",
+                                    fontSize: 11,
+                                    mb: 0.5,
+                                    display: "block",
+                                  }}
+                                >
+                                  Valor calculado
+                                </Typography>
+                                <Typography
+                                  variant="h5"
+                                  sx={{
+                                    fontWeight: 700,
+                                    color: "#000",
+                                    textAlign: "right",
+                                  }}
+                                >
+                                  {valoresCalculados[c.nombre] !== undefined
+                                    ? `$${valoresCalculados[
+                                        c.nombre
+                                      ].toLocaleString("es-AR")}`
+                                    : "-"}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                </Box>
+              )}
             </Box>
+
+            {/* Sección de Horas Extras */}
+            <Box sx={{ mb: 3 }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  background: "#5e35b1",
+                  color: "#ffffff",
+                  border: "1px solid #7e57c2",
+                  borderRadius: 2,
+                  mb: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 4,
+                    height: 24,
+                    background:
+                      "linear-gradient(135deg, #5e35b1 0%, #7e57c2 100%)",
+                    borderRadius: 1,
+                  }}
+                />
+                Horas Extras
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 3,
+                  flexWrap: "wrap",
+                }}
+              >
+                {/* Horas Extras 50% */}
+                <Box sx={{ flex: "1 1 250px" }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontWeight: 600,
+                      color: "#000",
+                      mb: 1,
+                    }}
+                  >
+                    Horas Extras al 50%
+                  </Typography>
+                  <MuiTextField
+                    type="number"
+                    value={horasExtras50}
+                    onChange={(e) => setHorasExtras50(e.target.value)}
+                    placeholder="0"
+                    inputProps={{
+                      min: 0,
+                      max: 999,
+                      step: 0.5,
+                    }}
+                    sx={{
+                      width: "100%",
+                      background: "#fff",
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": {
+                          borderColor: "#bdbdbd",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "#1976d2",
+                        },
+                      },
+                    }}
+                    helperText={
+                      valorHoraNormal > 0 && horasExtras50
+                        ? `Valor: $${(
+                            parseFloat(horasExtras50) *
+                            valorHoraNormal *
+                            1.5
+                          ).toLocaleString("es-AR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`
+                        : "Ingrese cantidad de horas"
+                    }
+                  />
+                </Box>
+
+                {/* Horas Extras 100% */}
+                <Box sx={{ flex: "1 1 250px" }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontWeight: 600,
+                      color: "#000",
+                      mb: 1,
+                    }}
+                  >
+                    Horas Extras al 100%
+                  </Typography>
+                  <MuiTextField
+                    type="number"
+                    value={horasExtras100}
+                    onChange={(e) => setHorasExtras100(e.target.value)}
+                    placeholder="0"
+                    inputProps={{
+                      min: 0,
+                      max: 999,
+                      step: 0.5,
+                    }}
+                    sx={{
+                      width: "100%",
+                      background: "#fff",
+                      "& .MuiOutlinedInput-root": {
+                        "& fieldset": {
+                          borderColor: "#bdbdbd",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "#1976d2",
+                        },
+                      },
+                    }}
+                    helperText={
+                      valorHoraNormal > 0 && horasExtras100
+                        ? `Valor: $${(
+                            parseFloat(horasExtras100) *
+                            valorHoraNormal *
+                            2
+                          ).toLocaleString("es-AR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`
+                        : "Ingrese cantidad de horas"
+                    }
+                  />
+                </Box>
+
+                {/* Información del valor hora */}
+                {valorHoraNormal > 0 && (
+                  <Box
+                    sx={{
+                      flex: "1 1 100%",
+                      mt: 1,
+                      p: 2,
+                      background: "#f5f5f5",
+                      borderRadius: 2,
+                      border: "1px solid #e0e0e0",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#000",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ℹ️ Valor hora normal: $
+                      {valorHoraNormal.toLocaleString("es-AR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "#666",
+                        display: "block",
+                        mt: 0.5,
+                      }}
+                    >
+                      • Horas al 50%: $
+                      {(valorHoraNormal * 1.5).toLocaleString("es-AR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      por hora
+                      <br />• Horas al 100%: $
+                      {(valorHoraNormal * 2).toLocaleString("es-AR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      por hora
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+
+              {/* Mostrar valores calculados de horas extras */}
+              {(horasExtras50 || horasExtras100) &&
+                Object.keys(valoresCalculados).length > 0 && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        fontWeight: 600,
+                        color: "#1976d2",
+                        mb: 1,
+                      }}
+                    >
+                      Valores calculados:
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 2,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      {horasExtras50 &&
+                        valoresCalculados["Horas extras al 50%"] !==
+                          undefined && (
+                          <Box
+                            sx={{
+                              flex: "1 1 200px",
+                              p: 2,
+                              background: "#fff",
+                              borderRadius: 2,
+                              border: "1px solid #e0e0e0",
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              sx={{ color: "text.secondary" }}
+                            >
+                              Horas extras al 50%
+                            </Typography>
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                color: "#388e3c",
+                                fontWeight: 700,
+                              }}
+                            >
+                              $
+                              {valoresCalculados[
+                                "Horas extras al 50%"
+                              ].toLocaleString("es-AR", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </Typography>
+                          </Box>
+                        )}
+                      {horasExtras100 &&
+                        valoresCalculados["Horas extras al 100%"] !==
+                          undefined && (
+                          <Box
+                            sx={{
+                              flex: "1 1 200px",
+                              p: 2,
+                              background: "#fff",
+                              borderRadius: 2,
+                              border: "1px solid #e0e0e0",
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              sx={{ color: "text.secondary" }}
+                            >
+                              Horas extras al 100%
+                            </Typography>
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                color: "#388e3c",
+                                fontWeight: 700,
+                              }}
+                            >
+                              $
+                              {valoresCalculados[
+                                "Horas extras al 100%"
+                              ].toLocaleString("es-AR", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </Typography>
+                          </Box>
+                        )}
+                    </Box>
+                  </Box>
+                )}
+            </Box>
+
+            {/* Sección: DESCUENTOS */}
+            {otrosConceptos.some((c) => c.tipo === "descuento") && (
+              <Box sx={{ mb: 3 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    background: "#e53e35ff",
+                    color: "#ffffff",
+                    border: "1px solid #f62020ff",
+                    borderRadius: 2,
+                    mb: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 4,
+                      height: 24,
+                      background: "#d32f2f",
+                      borderRadius: 1,
+                    }}
+                  />
+                  Descuentos
+                </Typography>
+                <Box
+                  sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                >
+                  {otrosConceptos
+                    .filter((c) => c.tipo === "descuento")
+                    .map((c, index) => {
+                      let porcentaje = "-";
+                      if (typeof c.porcentaje === "number") {
+                        porcentaje = (c.porcentaje * 100).toFixed(2) + "%";
+                      } else if (
+                        typeof c.porcentaje === "string" &&
+                        c.porcentaje !== ""
+                      ) {
+                        const num = Number(c.porcentaje);
+                        if (!isNaN(num))
+                          porcentaje = (num * 100).toFixed(2) + "%";
+                      }
+
+                      return (
+                        <Card
+                          key={index}
+                          sx={{
+                            background: "#fff",
+                            borderRadius: 2,
+                            boxShadow: 2,
+                            border: "1px solid #e0e0e0",
+                            transition: "all 0.2s ease",
+                            "&:hover": {
+                              boxShadow: 4,
+                              transform: "translateY(-2px)",
+                            },
+                          }}
+                        >
+                          <CardContent
+                            sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "flex-start",
+                                gap: 2,
+                              }}
+                            >
+                              <Box sx={{ flex: 1 }}>
+                                <Typography
+                                  variant="h6"
+                                  sx={{
+                                    fontWeight: 700,
+                                    color: "#000",
+                                    fontSize: 17,
+                                    mb: 0.5,
+                                  }}
+                                >
+                                  {c.nombre}
+                                </Typography>
+                                {porcentaje !== "-" && (
+                                  <Chip
+                                    label={porcentaje}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{
+                                      fontSize: 12,
+                                      borderColor: "#000",
+                                      color: "#000",
+                                    }}
+                                  />
+                                )}
+                              </Box>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "flex-end",
+                                  minWidth: 150,
+                                }}
+                              >
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: "text.secondary",
+                                    fontSize: 11,
+                                    mb: 0.5,
+                                    display: "block",
+                                  }}
+                                >
+                                  Valor calculado
+                                </Typography>
+                                <Typography
+                                  variant="h5"
+                                  sx={{
+                                    fontWeight: 700,
+                                    color: "#000",
+                                    textAlign: "right",
+                                  }}
+                                >
+                                  {valoresCalculados[c.nombre] !== undefined
+                                    ? `$${valoresCalculados[
+                                        c.nombre
+                                      ].toLocaleString("es-AR")}`
+                                    : "-"}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                </Box>
+              </Box>
+            )}
           </Box>
         );
       default:
