@@ -17,6 +17,10 @@ import {
   AccordionSummary,
   AccordionDetails,
   Chip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Link } from "react-router-dom";
@@ -95,6 +99,9 @@ const Liquidacion = () => {
   const [horasExtras50, setHorasExtras50] = useState<string>("");
   const [horasExtras100, setHorasExtras100] = useState<string>("");
 
+  // Estado para adicional de traslado
+  const [adicionalTrasladoSeleccionado, setAdicionalTrasladoSeleccionado] = useState<string>("");
+
   // Función para verificar si el periodo es válido para SAC
   const esPeriodoSAC = (periodo: string): boolean => {
     if (!periodo) return false;
@@ -135,6 +142,7 @@ const Liquidacion = () => {
             sumaFijaNoRemunerativa: sumaFijaNoRemunerativa || "0",
             horasExtras50: horasExtras50 || "0",
             horasExtras100: horasExtras100 || "0",
+            adicionalTrasladoSeleccionado: adicionalTrasladoSeleccionado || "",
           }),
         }
       );
@@ -164,6 +172,7 @@ const Liquidacion = () => {
     sumaFijaNoRemunerativa,
     horasExtras50,
     horasExtras100,
+    adicionalTrasladoSeleccionado,
   ]);
 
   useEffect(() => {
@@ -937,12 +946,124 @@ const Liquidacion = () => {
                   <Box
                     sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                   >
+                    {/* Selector de Adicional de Traslado */}
+                    {otrosConceptos.some((c) =>
+                      c.nombre.toLowerCase().includes("adicional traslado")
+                    ) && (
+                      <Card
+                        sx={{
+                          background: "#fff",
+                          borderRadius: 2,
+                          boxShadow: 2,
+                          border: "1px solid #e0e0e0",
+                        }}
+                      >
+                        <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+                          <Box sx={{ mb: 2 }}>
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                fontWeight: 700,
+                                color: "#000",
+                                fontSize: 17,
+                                mb: 1,
+                              }}
+                            >
+                              Adicional por Traslado
+                            </Typography>
+                            <FormControl fullWidth size="small">
+                              <InputLabel>Seleccionar distancia</InputLabel>
+                              <Select
+                                value={adicionalTrasladoSeleccionado}
+                                label="Seleccionar distancia"
+                                onChange={(e) =>
+                                  setAdicionalTrasladoSeleccionado(e.target.value)
+                                }
+                                sx={{
+                                  background: "#fff",
+                                  "& .MuiOutlinedInput-notchedOutline": {
+                                    borderColor: "#388e3c",
+                                  },
+                                }}
+                              >
+                                <MenuItem value="">
+                                  <em>Ninguno</em>
+                                </MenuItem>
+                                {otrosConceptos
+                                  .filter((c) =>
+                                    c.nombre.toLowerCase().includes("adicional traslado")
+                                  )
+                                  .map((c) => (
+                                    <MenuItem key={c.id} value={c.nombre}>
+                                      {c.nombre} - {c.descripcion}
+                                    </MenuItem>
+                                  ))}
+                              </Select>
+                            </FormControl>
+                          </Box>
+                          {adicionalTrasladoSeleccionado && (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                p: 1.5,
+                                background: "#f1f8f4",
+                                borderRadius: 1,
+                              }}
+                            >
+                              <Box>
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontWeight: 600, color: "#000" }}
+                                >
+                                  {adicionalTrasladoSeleccionado}
+                                </Typography>
+                                {(() => {
+                                  const concepto = otrosConceptos.find(
+                                    (c) => c.nombre === adicionalTrasladoSeleccionado
+                                  );
+                                  if (concepto && concepto.porcentaje) {
+                                    return (
+                                      <Chip
+                                        label={`${(concepto.porcentaje * 100).toFixed(4)}%`}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{
+                                          fontSize: 11,
+                                          borderColor: "#388e3c",
+                                          color: "#388e3c",
+                                          mt: 0.5,
+                                        }}
+                                      />
+                                    );
+                                  }
+                                })()}
+                              </Box>
+                              <Typography
+                                variant="h6"
+                                sx={{ fontWeight: 700, color: "#2e7d32" }}
+                              >
+                                {valoresCalculados[adicionalTrasladoSeleccionado] !== undefined
+                                  ? `$${valoresCalculados[
+                                      adicionalTrasladoSeleccionado
+                                    ].toLocaleString("es-AR")}`
+                                  : "$0"}
+                              </Typography>
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Resto de adicionales (excluyendo traslado) */}
                     {otrosConceptos
                       .filter(
                         (c) =>
                           c.tipo !== "descuento" &&
                           !c.nombre.toLowerCase().includes("sac") &&
-                          c.nombre.toLowerCase() !== "sueldo básico"
+                          c.nombre.toLowerCase() !== "sueldo básico" &&
+                          !c.nombre.toLowerCase().includes("adicional traslado")
                       )
                       .map((c, index) => {
                         let porcentaje = "-";
@@ -960,6 +1081,10 @@ const Liquidacion = () => {
                         const isAsistencia = c.nombre
                           .toLowerCase()
                           .includes("adicional por asistencia y puntualidad");
+
+                        const isTraslado = c.nombre
+                          .toLowerCase()
+                          .includes("adicional traslado");
 
                         return (
                           <Card
@@ -1029,6 +1154,19 @@ const Liquidacion = () => {
                                       }}
                                     />
                                   )}
+                                  {isTraslado && (
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        color: "text.secondary",
+                                        fontSize: 11,
+                                        display: "block",
+                                        mt: 1,
+                                      }}
+                                    >
+                                      {c.descripcion}
+                                    </Typography>
+                                  )}
                                 </Box>
                                 <Box
                                   sx={{
@@ -1069,6 +1207,59 @@ const Liquidacion = () => {
                           </Card>
                         );
                       })}
+                  </Box>
+                  
+                  {/* Subtotal Adicionales */}
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      background: "#f1f8f4",
+                      borderRadius: 2,
+                      border: "2px solid #388e3c",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 700,
+                        color: "#2e7d32",
+                      }}
+                    >
+                      Subtotal Adicionales
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontWeight: 700,
+                        color: "#2e7d32",
+                      }}
+                    >
+                      ${(() => {
+                        // Sumar adicionales normales (excluyendo traslado)
+                        let total = otrosConceptos
+                          .filter(
+                            (c) =>
+                              c.tipo !== "descuento" &&
+                              !c.nombre.toLowerCase().includes("sac") &&
+                              c.nombre.toLowerCase() !== "sueldo básico" &&
+                              !c.nombre.toLowerCase().includes("adicional traslado")
+                          )
+                          .reduce((sum, c) => {
+                            return sum + (valoresCalculados[c.nombre] || 0);
+                          }, 0);
+                        
+                        // Agregar el adicional de traslado seleccionado si existe
+                        if (adicionalTrasladoSeleccionado && valoresCalculados[adicionalTrasladoSeleccionado]) {
+                          total += valoresCalculados[adicionalTrasladoSeleccionado];
+                        }
+                        
+                        return total.toLocaleString("es-AR");
+                      })()}
+                    </Typography>
                   </Box>
                 </Box>
               )}
@@ -1495,6 +1686,47 @@ const Liquidacion = () => {
                     </Box>
                   </Box>
                 )}
+              
+              {/* Subtotal Horas Extras */}
+              <Box
+                sx={{
+                  mt: 2,
+                  p: 2,
+                  background: "#f3e5f5",
+                  borderRadius: 2,
+                  border: "2px solid #7e57c2",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#5e35b1",
+                  }}
+                >
+                  Subtotal Horas Extras
+                </Typography>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#5e35b1",
+                  }}
+                >
+                  ${(() => {
+                    const total =
+                      (valoresCalculados["Horas extras al 50%"] || 0) +
+                      (valoresCalculados["Horas extras al 100%"] || 0);
+                    return total.toLocaleString("es-AR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    });
+                  })()}
+                </Typography>
+              </Box>
             </Box>
 
             {/* Sección: DESCUENTOS */}
@@ -1632,6 +1864,46 @@ const Liquidacion = () => {
                         </Card>
                       );
                     })}
+                </Box>
+                
+                {/* Subtotal Descuentos */}
+                <Box
+                  sx={{
+                    mt: 2,
+                    p: 2,
+                    background: "#ffebee",
+                    borderRadius: 2,
+                    border: "2px solid #d32f2f",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#c62828",
+                    }}
+                  >
+                    Subtotal Descuentos
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#c62828",
+                    }}
+                  >
+                    ${(() => {
+                      const total = otrosConceptos
+                        .filter((c) => c.tipo === "descuento")
+                        .reduce((sum, c) => {
+                          return sum + (valoresCalculados[c.nombre] || 0);
+                        }, 0);
+                      return total.toLocaleString("es-AR");
+                    })()}
+                  </Typography>
                 </Box>
               </Box>
             )}
