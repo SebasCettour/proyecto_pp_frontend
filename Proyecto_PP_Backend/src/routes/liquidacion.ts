@@ -160,6 +160,7 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
       sumaFijaNoRemunerativa,
       horasExtras50,
       horasExtras100,
+      adicionalTrasladoSeleccionado,
     } = req.body;
 
     if (!dni || !sueldoBasico || !tipoJornada) {
@@ -211,6 +212,18 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
       console.log("❌ Error: conceptos no es un array");
       return res.status(500).json({ message: "Error al obtener conceptos" });
     }
+
+    // Filtrar conceptos de traslado: solo incluir el seleccionado
+    const conceptosFiltrados = (conceptos as any[]).filter((c: any) => {
+      const esTraslado = c.nombre.toLowerCase().includes("adicional traslado");
+      if (esTraslado) {
+        // Solo incluir si coincide con el seleccionado
+        return adicionalTrasladoSeleccionado && c.nombre === adicionalTrasladoSeleccionado;
+      }
+      return true; // Incluir todos los demás conceptos
+    });
+
+    console.log(`📊 Conceptos filtrados: ${conceptosFiltrados.length} (traslado seleccionado: ${adicionalTrasladoSeleccionado || 'ninguno'})`);
 
     // Horas mensuales por tipo de jornada
     const horasMensuales: Record<string, number> = {
@@ -286,28 +299,32 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
     }
 
     // Calcular cada concepto
-    const conceptosCalculados = conceptos.map((c: any) => {
+    const conceptosCalculados = conceptosFiltrados.map((c: any) => {
       let valorCalculado = 0;
 
       // Sueldo básico
       if (c.nombre.toLowerCase() === "sueldo básico") {
         valorCalculado = parseFloat(sueldoBasico);
+        console.log(`💵 Sueldo básico: ${valorCalculado}`);
       }
-      // Adicional por antigüedad
+      // Adicional por antigüedad (1% por año sobre sueldo básico)
       else if (
         c.nombre.toLowerCase().includes("adicional por antigüedad") ||
         c.nombre.toLowerCase().includes("antigüedad")
       ) {
         valorCalculado = parseFloat(sueldoBasico) * 0.01 * antiguedad;
+        console.log(`📅 Antigüedad: ${sueldoBasico} × 0.01 × ${antiguedad} años = ${valorCalculado}`);
       }
-      // Adicional por asistencia
+      // Adicional por asistencia (7.5% sobre sueldo básico)
       else if (
         c.nombre.toLowerCase().includes("adicional por asistencia y puntualidad")
       ) {
         if (asistenciaActiva) {
           valorCalculado = parseFloat(sueldoBasico) * parseFloat(c.porcentaje || 0);
+          console.log(`✅ Presentismo: ${sueldoBasico} × ${c.porcentaje} = ${valorCalculado}`);
         } else {
           valorCalculado = 0;
+          console.log(`❌ Presentismo: desactivado`);
         }
       }
       // SAC (Sueldo Anual Complementario)
@@ -317,29 +334,35 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
       ) {
         // Usar el valor pre-calculado
         valorCalculado = sacCalculado !== null ? sacCalculado : 0;
+        console.log(`🎁 SAC: ${valorCalculado}`);
       }
-      // Suma fija no remunerativa (si el concepto tiene este campo definido)
+      // Suma fija no remunerativa
       else if (c.suma_fija_no_remunerativa !== null && c.suma_fija_no_remunerativa !== undefined) {
-        // Usar el valor ingresado por el usuario o 0 si no ingresó nada
         const montoIngresado = parseFloat(sumaFijaNoRemunerativa || 0);
         valorCalculado = montoIngresado > 0 ? montoIngresado : 0;
-        console.log(`💰 Suma fija no remunerativa para ${c.nombre}: ${valorCalculado}`);
+        console.log(`💰 Suma fija no remunerativa: ${valorCalculado}`);
       }
       // Horas extras 50%
       else if (c.nombre.toLowerCase().includes("horas extras al 50")) {
         const cantidadHoras = parseFloat(horasExtras50 || 0);
         valorCalculado = cantidadHoras * valorHoraNormal * 1.5;
-        console.log(`⏰ Horas extras 50%: ${cantidadHoras} hs × ${valorHoraNormal} × 1.5 = ${valorCalculado}`);
+        console.log(`⏰ Horas extras 50%: ${cantidadHoras} hs × ${valorHoraNormal.toFixed(2)} × 1.5 = ${valorCalculado}`);
       }
       // Horas extras 100%
       else if (c.nombre.toLowerCase().includes("horas extras al 100")) {
         const cantidadHoras = parseFloat(horasExtras100 || 0);
         valorCalculado = cantidadHoras * valorHoraNormal * 2;
-        console.log(`⏰ Horas extras 100%: ${cantidadHoras} hs × ${valorHoraNormal} × 2 = ${valorCalculado}`);
+        console.log(`⏰ Horas extras 100%: ${cantidadHoras} hs × ${valorHoraNormal.toFixed(2)} × 2 = ${valorCalculado}`);
       }
-      // Porcentaje fijo
-      else if (c.porcentaje && !c.editable) {
+      // Descuentos - NO se calculan aquí, se calcularán después
+      else if (c.tipo === 'descuento') {
+        valorCalculado = 0; // Temporal
+        console.log(`⏸️ Descuento ${c.nombre}: se calculará después sobre base completa`);
+      }
+      // Otros adicionales con porcentaje fijo (sobre sueldo básico)
+      else if (c.porcentaje && !c.editable && c.tipo !== 'descuento') {
         valorCalculado = parseFloat(sueldoBasico) * parseFloat(c.porcentaje);
+        console.log(`📊 ${c.nombre}: ${sueldoBasico} × ${c.porcentaje} = ${valorCalculado}`);
       }
 
       return {
@@ -366,6 +389,38 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
         console.log(`📊 SAC calculado sobre haberes del mes actual: ${totalHaberesMesActual} -> ${conceptosCalculados[sacIndex].valorCalculado}`);
       }
     }
+
+    // CALCULAR BASE PARA DESCUENTOS
+    // Base = Sueldo básico + Presentismo + Antigüedad + SAC (si corresponde)
+    const sueldoBasicoNum = parseFloat(sueldoBasico);
+    
+    const antiguedadConcepto = conceptosCalculados.find((c: any) => 
+      c.nombre.toLowerCase().includes("adicional por antigüedad") ||
+      c.nombre.toLowerCase().includes("antigüedad")
+    );
+    const antiguedadValor = antiguedadConcepto ? antiguedadConcepto.valorCalculado : 0;
+    
+    const presentismoConcepto = conceptosCalculados.find((c: any) =>
+      c.nombre.toLowerCase().includes("adicional por asistencia y puntualidad")
+    );
+    const presentismoValor = presentismoConcepto && asistenciaActiva ? presentismoConcepto.valorCalculado : 0;
+    
+    const sacConcepto = conceptosCalculados.find((c: any) =>
+      c.nombre.toLowerCase().includes("sac") || c.nombre.toLowerCase().includes("aguinaldo")
+    );
+    const sacValor = sacConcepto && sacActivo ? sacConcepto.valorCalculado : 0;
+    
+    const baseParaDescuentos = sueldoBasicoNum + antiguedadValor + presentismoValor + sacValor;
+    
+    console.log(`📊 Base para descuentos: Sueldo básico (${sueldoBasicoNum}) + Antigüedad (${antiguedadValor}) + Presentismo (${presentismoValor}) + SAC (${sacValor}) = ${baseParaDescuentos}`);
+
+    // RECALCULAR DESCUENTOS CON LA BASE CORRECTA
+    conceptosCalculados.forEach((c: any) => {
+      if (c.tipo === 'descuento' && c.porcentaje) {
+        c.valorCalculado = Math.round(baseParaDescuentos * parseFloat(c.porcentaje) * 100) / 100;
+        console.log(`💳 Descuento ${c.nombre}: ${baseParaDescuentos} × ${c.porcentaje} = ${c.valorCalculado}`);
+      }
+    });
 
     console.log("✅ Calculando response...");
     const response = {
