@@ -157,6 +157,7 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
       periodo,
       asistenciaActiva,
       sacActivo,
+      sumaFijaNoRemunerativa,
       horasExtras50,
       horasExtras100,
     } = req.body;
@@ -199,7 +200,7 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
 
     // Obtener conceptos
     const [conceptos] = await pool.execute(
-      `SELECT id, nombre, tipo, descripcion, porcentaje, editable 
+      `SELECT id, nombre, tipo, descripcion, porcentaje, editable, suma_fija_no_remunerativa 
        FROM Conceptos_CCT130_75 
        ORDER BY id`
     );
@@ -219,7 +220,19 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
     };
 
     const horasDelMes = horasMensuales[tipoJornada] || 192;
-    const valorHoraNormal = parseFloat(sueldoBasico) / horasDelMes;
+    
+    // Calcular "salario habitual" según Art. 201 LCT
+    // Debe incluir: sueldo básico + adicionales habituales remunerativos (ej: antigüedad)
+    // Primero calculamos antigüedad
+    const adicionalAntiguedad = parseFloat(sueldoBasico) * 0.01 * antiguedad;
+    
+    // Base para valor hora = Sueldo básico + Antigüedad + otros habituales
+    // (La asistencia NO se incluye porque no siempre se cobra)
+    const baseParaValorHora = parseFloat(sueldoBasico) + adicionalAntiguedad;
+    
+    const valorHoraNormal = baseParaValorHora / horasDelMes;
+    
+    console.log(`📊 Cálculo valor hora: Sueldo básico: ${sueldoBasico} + Antigüedad: ${adicionalAntiguedad} = Base: ${baseParaValorHora} / ${horasDelMes} hs = ${valorHoraNormal} por hora`);
 
     // PRE-CALCULAR SAC (requiere async por consulta histórica)
     let sacCalculado: number | null = null;
@@ -305,15 +318,24 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
         // Usar el valor pre-calculado
         valorCalculado = sacCalculado !== null ? sacCalculado : 0;
       }
+      // Suma fija no remunerativa (si el concepto tiene este campo definido)
+      else if (c.suma_fija_no_remunerativa !== null && c.suma_fija_no_remunerativa !== undefined) {
+        // Usar el valor ingresado por el usuario o 0 si no ingresó nada
+        const montoIngresado = parseFloat(sumaFijaNoRemunerativa || 0);
+        valorCalculado = montoIngresado > 0 ? montoIngresado : 0;
+        console.log(`💰 Suma fija no remunerativa para ${c.nombre}: ${valorCalculado}`);
+      }
       // Horas extras 50%
-      else if (c.nombre.toLowerCase().includes("horas extras 50")) {
+      else if (c.nombre.toLowerCase().includes("horas extras al 50")) {
         const cantidadHoras = parseFloat(horasExtras50 || 0);
         valorCalculado = cantidadHoras * valorHoraNormal * 1.5;
+        console.log(`⏰ Horas extras 50%: ${cantidadHoras} hs × ${valorHoraNormal} × 1.5 = ${valorCalculado}`);
       }
       // Horas extras 100%
-      else if (c.nombre.toLowerCase().includes("horas extras 100")) {
+      else if (c.nombre.toLowerCase().includes("horas extras al 100")) {
         const cantidadHoras = parseFloat(horasExtras100 || 0);
         valorCalculado = cantidadHoras * valorHoraNormal * 2;
+        console.log(`⏰ Horas extras 100%: ${cantidadHoras} hs × ${valorHoraNormal} × 2 = ${valorCalculado}`);
       }
       // Porcentaje fijo
       else if (c.porcentaje && !c.editable) {
