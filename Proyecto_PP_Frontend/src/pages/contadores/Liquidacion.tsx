@@ -609,6 +609,20 @@ const Liquidacion = () => {
             <Box sx={{ mt: 3 }}>
               {/* Sección: Sueldo Básico y Suma Fija */}
               <Box sx={{ mb: 3 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    background: "#1976d2",
+                    color: "#ffffff",
+                    border: "1px solid #1565c0",
+                    borderRadius: 2,
+                    mb: 2,
+                    p: 1.5,
+                  }}
+                >
+                  Conceptos Básicos
+                </Typography>
                 {otrosConceptos
                   .filter((c) => c.nombre.toLowerCase() === "sueldo básico")
                   .map((c, index) => {
@@ -933,19 +947,9 @@ const Liquidacion = () => {
                       border: "1px solid #015f01ff",
                       borderRadius: 2,
                       mb: 2,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
+                      p: 1.5,
                     }}
                   >
-                    <Box
-                      sx={{
-                        width: 4,
-                        height: 24,
-                        background: "#388e3c",
-                        borderRadius: 1,
-                      }}
-                    />
                     Adicionales
                   </Typography>
                   <Box
@@ -1283,20 +1287,9 @@ const Liquidacion = () => {
                       border: "1px solid #023ebeff",
                       borderRadius: 2,
                       mb: 2,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
+                      p: 1.5,
                     }}
                   >
-                    <Box
-                      sx={{
-                        width: 4,
-                        height: 24,
-                        background:
-                          "linear-gradient(135deg, #0288d1 0%, #03a9f4 100%)",
-                        borderRadius: 1,
-                      }}
-                    />
                     SAC - Sueldo Anual Complementario
                   </Typography>
                   {otrosConceptos
@@ -1426,20 +1419,9 @@ const Liquidacion = () => {
                   border: "1px solid #7e57c2",
                   borderRadius: 2,
                   mb: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
+                  p: 1.5,
                 }}
               >
-                <Box
-                  sx={{
-                    width: 4,
-                    height: 24,
-                    background:
-                      "linear-gradient(135deg, #5e35b1 0%, #7e57c2 100%)",
-                    borderRadius: 1,
-                  }}
-                />
                 Horas Extras
               </Typography>
               <Box
@@ -1746,19 +1728,9 @@ const Liquidacion = () => {
                     border: "1px solid #f62020ff",
                     borderRadius: 2,
                     mb: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
+                    p: 1.5,
                   }}
                 >
-                  <Box
-                    sx={{
-                      width: 4,
-                      height: 24,
-                      background: "#d32f2f",
-                      borderRadius: 1,
-                    }}
-                  />
                   Descuentos
                 </Typography>
 
@@ -1816,6 +1788,28 @@ const Liquidacion = () => {
                 >
                   {otrosConceptos
                     .filter((c) => c.tipo === "descuento")
+                    .sort((a, b) => {
+                      // Ordenar descuentos: sindicato primero
+                      const esSindicatoA = a.nombre.toLowerCase().includes("cuota sindical") || 
+                                          a.nombre.toLowerCase().includes("cuota solidaria") ||
+                                          a.nombre.toLowerCase().includes("aporte solidario");
+                      const esSindicatoB = b.nombre.toLowerCase().includes("cuota sindical") || 
+                                          b.nombre.toLowerCase().includes("cuota solidaria") ||
+                                          b.nombre.toLowerCase().includes("aporte solidario");
+                      
+                      if (esSindicatoA && !esSindicatoB) return -1;
+                      if (!esSindicatoA && esSindicatoB) return 1;
+                      
+                      // Dentro de conceptos de sindicato, orden específico
+                      if (esSindicatoA && esSindicatoB) {
+                        if (a.nombre.includes("Cuota Sindical Afiliado")) return -1;
+                        if (b.nombre.includes("Cuota Sindical Afiliado")) return 1;
+                        if (a.nombre.includes("Cuota Solidaria")) return -1;
+                        if (b.nombre.includes("Cuota Solidaria")) return 1;
+                      }
+                      
+                      return 0; // Mantener orden original para los demás
+                    })
                     .map((c, index) => {
                       let porcentaje = "-";
                       if (typeof c.porcentaje === "number") {
