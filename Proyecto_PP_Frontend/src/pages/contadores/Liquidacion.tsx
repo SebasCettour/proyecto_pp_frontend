@@ -1026,7 +1026,7 @@ const Liquidacion = () => {
                                   if (concepto && concepto.porcentaje) {
                                     return (
                                       <Chip
-                                        label={`${(concepto.porcentaje * 100).toFixed(4)}%`}
+                                        label={`${(concepto.porcentaje * 100).toFixed(2)}%`}
                                         size="small"
                                         variant="outlined"
                                         sx={{
