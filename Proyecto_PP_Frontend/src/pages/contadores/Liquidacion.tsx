@@ -102,6 +102,9 @@ const Liquidacion = () => {
   // Estado para adicional de traslado
   const [adicionalTrasladoSeleccionado, setAdicionalTrasladoSeleccionado] = useState<string>("");
 
+  // Estado para afiliación al sindicato
+  const [esAfiliadoSindicato, setEsAfiliadoSindicato] = useState(true);
+
   // Función para verificar si el periodo es válido para SAC
   const esPeriodoSAC = (periodo: string): boolean => {
     if (!periodo) return false;
@@ -143,6 +146,7 @@ const Liquidacion = () => {
             horasExtras50: horasExtras50 || "0",
             horasExtras100: horasExtras100 || "0",
             adicionalTrasladoSeleccionado: adicionalTrasladoSeleccionado || "",
+            esAfiliadoSindicato,
           }),
         }
       );
@@ -173,6 +177,7 @@ const Liquidacion = () => {
     horasExtras50,
     horasExtras100,
     adicionalTrasladoSeleccionado,
+    esAfiliadoSindicato,
   ]);
 
   useEffect(() => {
@@ -1756,6 +1761,56 @@ const Liquidacion = () => {
                   />
                   Descuentos
                 </Typography>
+
+                {/* Checkbox: ¿Es afiliado al sindicato? */}
+                <Box
+                  sx={{
+                    mb: 2,
+                    p: 2,
+                    background: "#fff3e0",
+                    borderRadius: 2,
+                    border: "2px solid #ff9800",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Checkbox
+                    checked={esAfiliadoSindicato}
+                    onChange={(_, checked) => setEsAfiliadoSindicato(checked)}
+                    sx={{
+                      color: "#f57c00",
+                      "&.Mui-checked": {
+                        color: "#f57c00",
+                      },
+                    }}
+                  />
+                  <Box>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 700,
+                        color: "#000",
+                        fontSize: 16,
+                      }}
+                    >
+                      ¿Es afiliado al sindicato?
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "#666",
+                        display: "block",
+                        mt: 0.5,
+                      }}
+                    >
+                      {esAfiliadoSindicato
+                        ? "✓ Afiliado: Se aplicará Cuota Sindical (2%)"
+                        : "✗ No afiliado: Se aplicarán Cuota Solidaria (1%) + Aporte Solidario Extraordinario (1.5%)"}
+                    </Typography>
+                  </Box>
+                </Box>
+
                 <Box
                   sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                 >
