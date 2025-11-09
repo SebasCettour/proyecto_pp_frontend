@@ -204,7 +204,13 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
     const [conceptos] = await pool.execute(
       `SELECT id, nombre, tipo, descripcion, porcentaje, editable, suma_fija_no_remunerativa 
        FROM Conceptos_CCT130_75 
-       ORDER BY id`
+       ORDER BY 
+         CASE 
+           WHEN tipo = 'descuento' AND nombre LIKE '%Cuota Sindical Afiliado%' THEN 1
+           WHEN tipo = 'descuento' AND nombre LIKE '%Cuota Solidaria%' THEN 2
+           WHEN tipo = 'descuento' AND nombre LIKE '%Aporte Solidario%' THEN 3
+           ELSE id
+         END`
     );
 
     console.log("📊 Conceptos obtenidos:", Array.isArray(conceptos) ? conceptos.length : 0);
