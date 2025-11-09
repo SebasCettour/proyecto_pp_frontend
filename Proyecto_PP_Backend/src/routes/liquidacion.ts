@@ -161,6 +161,7 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
       horasExtras50,
       horasExtras100,
       adicionalTrasladoSeleccionado,
+      esAfiliadoSindicato,
     } = req.body;
 
     if (!dni || !sueldoBasico || !tipoJornada) {
@@ -213,17 +214,31 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
       return res.status(500).json({ message: "Error al obtener conceptos" });
     }
 
-    // Filtrar conceptos de traslado: solo incluir el seleccionado
+    // Filtrar conceptos según selección
     const conceptosFiltrados = (conceptos as any[]).filter((c: any) => {
+      // Filtrar adicionales de traslado: solo incluir el seleccionado
       const esTraslado = c.nombre.toLowerCase().includes("adicional traslado");
       if (esTraslado) {
-        // Solo incluir si coincide con el seleccionado
         return adicionalTrasladoSeleccionado && c.nombre === adicionalTrasladoSeleccionado;
       }
+
+      // Filtrar conceptos de sindicato según afiliación
+      const esSindicatoAfiliado = c.nombre.toLowerCase().includes("cuota sindical afiliado");
+      const esSindicatoNoAfiliado = c.nombre.toLowerCase().includes("cuota solidaria") || 
+                                     c.nombre.toLowerCase().includes("aporte solidario extraordinario");
+
+      if (esSindicatoAfiliado) {
+        return esAfiliadoSindicato === true; // Solo si es afiliado
+      }
+
+      if (esSindicatoNoAfiliado) {
+        return esAfiliadoSindicato === false; // Solo si NO es afiliado
+      }
+
       return true; // Incluir todos los demás conceptos
     });
 
-    console.log(`📊 Conceptos filtrados: ${conceptosFiltrados.length} (traslado seleccionado: ${adicionalTrasladoSeleccionado || 'ninguno'})`);
+    console.log(`📊 Conceptos filtrados: ${conceptosFiltrados.length} (traslado: ${adicionalTrasladoSeleccionado || 'ninguno'}, afiliado sindicato: ${esAfiliadoSindicato})`);
 
     // Horas mensuales por tipo de jornada
     const horasMensuales: Record<string, number> = {
