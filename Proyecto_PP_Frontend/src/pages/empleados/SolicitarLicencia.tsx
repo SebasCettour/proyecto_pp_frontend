@@ -35,7 +35,9 @@ export default function SolicitarLicencia() {
     nombre: "",
     apellido: "",
     documento: "",
-    area: "",
+    legajo: "",
+    categoria: "",
+    tipoDocumento: "",
     motivo: "",
     observaciones: "",
     fechaInicio: "",
@@ -48,7 +50,6 @@ export default function SolicitarLicencia() {
     nombre: false,
     apellido: false,
     documento: false,
-    area: false,
     motivo: false,
     fechaInicio: false,
     fechaFin: false,
@@ -64,6 +65,7 @@ export default function SolicitarLicencia() {
   // Estados para el modal de cambiar contraseña
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingEmpleado, setLoadingEmpleado] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -81,7 +83,63 @@ export default function SolicitarLicencia() {
       localStorage.getItem("nombre") ||
       "Usuario";
     setUserName(name);
+    
+    // Cargar datos del empleado
+    cargarDatosEmpleado();
   }, []);
+
+  const cargarDatosEmpleado = async () => {
+    setLoadingEmpleado(true);
+    try {
+      const token = localStorage.getItem("token");
+      const documento = localStorage.getItem("documento");
+      
+      if (!documento) {
+        console.error("No se encontró el documento en localStorage");
+        setLoadingEmpleado(false);
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(documento)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const empleado = await response.json();
+        
+        console.log("✅ Datos del empleado recibidos:", empleado);
+        console.log("✅ DNI recibido:", empleado.dni);
+        console.log("✅ Nombre recibido:", empleado.nombre);
+        console.log("✅ Apellido recibido:", empleado.apellido);
+        console.log("✅ Legajo recibido:", empleado.legajo);
+        console.log("✅ Categoría recibida:", empleado.categoria);
+        
+        setForm((prev) => ({
+          ...prev,
+          nombre: empleado.nombre || "",
+          apellido: empleado.apellido || "",
+          documento: empleado.dni || "",
+          legajo: empleado.legajo || "",
+          categoria: empleado.categoria || "",
+          tipoDocumento: "DNI",
+        }));
+      } else {
+        console.error("❌ Error al cargar datos del empleado - Status:", response.status);
+        const errorData = await response.json().catch(() => ({}));
+        console.error("❌ Error data:", errorData);
+      }
+    } catch (error) {
+      console.error("Error al cargar datos del empleado:", error);
+    } finally {
+      setLoadingEmpleado(false);
+    }
+  };
 
   // Función para buscar diagnósticos CIE-10
   const buscarDiagnosticosCIE10 = async (query: string) => {
@@ -92,16 +150,24 @@ export default function SolicitarLicencia() {
 
     setCie10Loading(true);
     try {
-      const response = await fetch(
-        `${API_ENDPOINTS.CIE10_SEARCH}?query=${encodeURIComponent(query)}`
-      );
+      const url = `${API_ENDPOINTS.CIE10_SEARCH}?query=${encodeURIComponent(query)}`;
+      console.log("🔍 Buscando CIE10:", query);
+      console.log("🌐 URL:", url);
+      
+      const response = await fetch(url);
+      console.log("📡 Response status:", response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log("✅ Datos recibidos:", data);
         setCie10Results(data);
       } else {
+        const errorText = await response.text();
+        console.error("❌ Error en búsqueda CIE10:", response.status, errorText);
         setCie10Results([]);
       }
     } catch (error) {
+      console.error("❌ Error de red al buscar CIE10:", error);
       setCie10Results([]);
     } finally {
       setCie10Loading(false);
@@ -207,7 +273,6 @@ export default function SolicitarLicencia() {
       nombre: form.nombre.trim() === "",
       apellido: form.apellido.trim() === "",
       documento: form.documento.trim() === "",
-      area: form.area === "",
       motivo: form.motivo === "",
       fechaInicio: form.fechaInicio === "",
       fechaFin: form.fechaFin === "",
@@ -236,7 +301,6 @@ export default function SolicitarLicencia() {
         formData.append("nombre", form.nombre);
         formData.append("apellido", form.apellido);
         formData.append("documento", form.documento);
-        formData.append("area", form.area);
         formData.append("motivo", form.motivo);
         formData.append("fechaInicio", form.fechaInicio);
         formData.append("fechaFin", form.fechaFin);
@@ -274,10 +338,12 @@ export default function SolicitarLicencia() {
           alert("Solicitud enviada correctamente");
           // Limpiar formulario
           setForm({
-            nombre: "",
-            apellido: "",
-            documento: "",
-            area: "",
+            nombre: form.nombre,
+            apellido: form.apellido,
+            documento: form.documento,
+            legajo: form.legajo,
+            categoria: form.categoria,
+            tipoDocumento: form.tipoDocumento,
             motivo: "",
             observaciones: "",
             fechaInicio: "",
@@ -382,265 +448,307 @@ export default function SolicitarLicencia() {
               justifyContent: "space-between",
             }}
           >
-            <TextField
-              label="Nombre"
-              name="nombre"
-              value={form.nombre}
-              onChange={handleInputChange}
-              error={errors.nombre}
-              helperText={errors.nombre && "Campo obligatorio"}
-              sx={{ flex: "1 1 30%" }}
-            />
-            <TextField
-              label="Apellido"
-              name="apellido"
-              value={form.apellido}
-              onChange={handleInputChange}
-              error={errors.apellido}
-              helperText={errors.apellido && "Campo obligatorio"}
-              sx={{ flex: "1 1 30%" }}
-            />
-            <TextField
-              label="Documento"
-              name="documento"
-              value={form.documento}
-              onChange={handleInputChange}
-              error={errors.documento}
-              helperText={errors.documento && "Campo obligatorio"}
-              sx={{ flex: "1 1 30%" }}
-              inputProps={{ maxLength: 15 }}
-            />
-            <FormControl fullWidth error={errors.area} sx={{ flex: "1 1 45%" }}>
-              <InputLabel>Área</InputLabel>
-              <Select
-                name="area"
-                value={form.area}
-                onChange={handleSelectChange}
-              >
-                <MenuItem value="">Seleccione Área</MenuItem>
-                <MenuItem value="Administración">Administración</MenuItem>
-                <MenuItem value="Ventas">Ventas</MenuItem>
-                <MenuItem value="Producción">Producción</MenuItem>
-              </Select>
-              {errors.area && (
-                <FormHelperText>Seleccione un área</FormHelperText>
-              )}
-            </FormControl>
-
-            <FormControl
-              fullWidth
-              error={errors.motivo}
-              sx={{ flex: "1 1 45%" }}
-            >
-              <InputLabel>Motivo</InputLabel>
-              <Select
-                name="motivo"
-                value={form.motivo}
-                onChange={handleSelectChange}
-              >
-                <MenuItem value="">Seleccione Motivo</MenuItem>
-                <MenuItem value="Enfermedad">Enfermedad</MenuItem>
-                <MenuItem value="Vacaciones">Vacaciones</MenuItem>
-                <MenuItem value="Personal">Personal</MenuItem>
-              </Select>
-              {errors.motivo && (
-                <FormHelperText>Seleccione un motivo</FormHelperText>
-              )}
-            </FormControl>
-
-            <TextField
-              label="Fecha de Inicio"
-              name="fechaInicio"
-              type="date"
-              value={form.fechaInicio}
-              onChange={handleInputChange}
-              error={errors.fechaInicio}
-              helperText={errors.fechaInicio && "Campo obligatorio"}
-              sx={{ flex: "1 1 45%" }}
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
-            <TextField
-              label="Fecha de Fin"
-              name="fechaFin"
-              type="date"
-              value={form.fechaFin}
-              onChange={handleInputChange}
-              error={errors.fechaFin}
-              helperText={errors.fechaFin && "Campo obligatorio"}
-              sx={{ flex: "1 1 45%" }}
-              InputLabelProps={{
-                shrink: true,
-              }}
-            />
-
-            {/* Buscador CIE-10 - Solo visible cuando el motivo es Enfermedad */}
-            {form.motivo === "Enfermedad" && (
-              <Box sx={{ flex: "1 1 100%", mt: 2 }}>
-                <Typography
-                  variant="h6"
+            {loadingEmpleado ? (
+              <Box sx={{ width: "100%", display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <>
+                {/* Membrete con datos del empleado */}
+                <Box
                   sx={{
+                    width: "100%",
+                    backgroundColor: "#f5f5f5",
+                    borderRadius: 2,
+                    p: 3,
                     mb: 2,
-                    fontFamily: "Tektur, sans-serif",
-                    fontWeight: 600,
-                    color: "#333",
+                    border: "1px solid #e0e0e0",
                   }}
                 >
-                  Diagnóstico CIE-10
-                </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      mb: 2,
+                      fontFamily: "Tektur, sans-serif",
+                      fontWeight: 600,
+                      color: "#1976d2",
+                      borderBottom: "2px solid #1976d2",
+                      pb: 1,
+                    }}
+                  >
+                    Datos del Empleado
+                  </Typography>
+                  
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
+                      gap: 2,
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 600 }}>
+                        Nombre Completo
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {form.nombre} {form.apellido}
+                      </Typography>
+                    </Box>
+                    
+                    <Box>
+                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 600 }}>
+                        Tipo de Documento
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {form.tipoDocumento || "DNI"}
+                      </Typography>
+                    </Box>
+                    
+                    <Box>
+                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 600 }}>
+                        Número de Documento
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {form.documento}
+                      </Typography>
+                    </Box>
+                    
+                    <Box>
+                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 600 }}>
+                        Legajo
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {form.legajo || "N/A"}
+                      </Typography>
+                    </Box>
+                    
+                    <Box>
+                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 600 }}>
+                        Categoría
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {form.categoria || "N/A"}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
 
-                <Autocomplete
-                  options={cie10Results}
-                  getOptionLabel={(option) =>
-                    `${option.codigo} - ${option.descripcion}`
-                  }
-                  value={form.diagnosticoCIE10}
-                  onChange={(_, newValue) => {
-                    setForm((prev) => ({
-                      ...prev,
-                      diagnosticoCIE10: newValue,
-                    }));
-                    if (newValue) {
-                      setErrors((prev) => ({
-                        ...prev,
-                        diagnosticoCIE10: false,
-                      }));
-                    }
-                  }}
-                  onInputChange={(_, newInputValue) => {
-                    setCie10Search(newInputValue);
-                  }}
-                  loading={cie10Loading}
-                  loadingText="Buscando diagnósticos..."
-                  noOptionsText="No se encontraron diagnósticos"
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Buscar diagnóstico CIE-10"
-                      placeholder="Ej: A15 o tuberculosis"
-                      error={errors.diagnosticoCIE10}
-                      helperText={
-                        errors.diagnosticoCIE10
-                          ? "Debe seleccionar un diagnóstico CIE-10"
-                          : "Escriba al menos 3 caracteres para buscar"
-                      }
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <>
-                            {cie10Loading ? (
-                              <CircularProgress color="inherit" size={20} />
-                            ) : null}
-                            {params.InputProps.endAdornment}
-                          </>
-                        ),
-                      }}
-                    />
+                <FormControl
+                  fullWidth
+                  error={errors.motivo}
+                  sx={{ flex: "1 1 100%" }}
+                >
+                  <InputLabel>Motivo de Licencia</InputLabel>
+                  <Select
+                    name="motivo"
+                    value={form.motivo}
+                    onChange={handleSelectChange}
+                  >
+                    <MenuItem value="">Seleccione Motivo</MenuItem>
+                    <MenuItem value="Enfermedad">Enfermedad</MenuItem>
+                    <MenuItem value="Vacaciones">Vacaciones</MenuItem>
+                    <MenuItem value="Personal">Personal</MenuItem>
+                  </Select>
+                  {errors.motivo && (
+                    <FormHelperText>Seleccione un motivo</FormHelperText>
                   )}
-                  renderOption={(props, option) => {
-                    const { key, ...otherProps } = props;
-                    return (
-                      <Box key={key} component="li" {...otherProps}>
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {option.codigo}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {option.descripcion}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    );
+                </FormControl>
+
+                <TextField
+                  label="Fecha de Inicio"
+                  name="fechaInicio"
+                  type="date"
+                  value={form.fechaInicio}
+                  onChange={handleInputChange}
+                  error={errors.fechaInicio}
+                  helperText={errors.fechaInicio && "Campo obligatorio"}
+                  sx={{ flex: "1 1 45%" }}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+                <TextField
+                  label="Fecha de Fin"
+                  name="fechaFin"
+                  type="date"
+                  value={form.fechaFin}
+                  onChange={handleInputChange}
+                  error={errors.fechaFin}
+                  helperText={errors.fechaFin && "Campo obligatorio"}
+                  sx={{ flex: "1 1 45%" }}
+                  InputLabelProps={{
+                    shrink: true,
                   }}
                 />
 
-                {/* Mostrar diagnóstico seleccionado */}
-                {form.diagnosticoCIE10 && (
-                  <Box sx={{ mt: 2 }}>
-                    <Chip
-                      label={`${form.diagnosticoCIE10.codigo} - ${form.diagnosticoCIE10.descripcion}`}
-                      onDelete={() => {
+                {/* Buscador CIE-10 - Solo visible cuando el motivo es Enfermedad */}
+                {form.motivo === "Enfermedad" && (
+                  <Box sx={{ flex: "1 1 100%", mt: 2 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        mb: 2,
+                        fontFamily: "Tektur, sans-serif",
+                        fontWeight: 600,
+                        color: "#333",
+                      }}
+                    >
+                      Diagnóstico CIE-10
+                    </Typography>
+
+                    <Autocomplete
+                      options={cie10Results}
+                      getOptionLabel={(option) =>
+                        `${option.codigo} - ${option.descripcion}`
+                      }
+                      value={form.diagnosticoCIE10}
+                      onChange={(_, newValue) => {
                         setForm((prev) => ({
                           ...prev,
-                          diagnosticoCIE10: null,
+                          diagnosticoCIE10: newValue,
                         }));
+                        if (newValue) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            diagnosticoCIE10: false,
+                          }));
+                        }
                       }}
-                      color="primary"
-                      variant="outlined"
-                      sx={{
-                        fontFamily: "Tektur, sans-serif",
-                        fontWeight: 500,
+                      onInputChange={(_, newInputValue) => {
+                        setCie10Search(newInputValue);
+                      }}
+                      loading={cie10Loading}
+                      loadingText="Buscando diagnósticos..."
+                      noOptionsText="No se encontraron diagnósticos"
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Buscar diagnóstico CIE-10"
+                          placeholder="Ej: A15 o tuberculosis"
+                          error={errors.diagnosticoCIE10}
+                          helperText={
+                            errors.diagnosticoCIE10
+                              ? "Debe seleccionar un diagnóstico CIE-10"
+                              : "Escriba al menos 3 caracteres para buscar"
+                          }
+                          InputProps={{
+                            ...params.InputProps,
+                            endAdornment: (
+                              <>
+                                {cie10Loading ? (
+                                  <CircularProgress color="inherit" size={20} />
+                                ) : null}
+                                {params.InputProps.endAdornment}
+                              </>
+                            ),
+                          }}
+                        />
+                      )}
+                      renderOption={(props, option) => {
+                        const { key, ...otherProps } = props;
+                        return (
+                          <Box key={key} component="li" {...otherProps}>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                {option.codigo}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {option.descripcion}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        );
                       }}
                     />
+
+                    {/* Mostrar diagnóstico seleccionado */}
+                    {form.diagnosticoCIE10 && (
+                      <Box sx={{ mt: 2 }}>
+                        <Chip
+                          label={`${form.diagnosticoCIE10.codigo} - ${form.diagnosticoCIE10.descripcion}`}
+                          onDelete={() => {
+                            setForm((prev) => ({
+                              ...prev,
+                              diagnosticoCIE10: null,
+                            }));
+                          }}
+                          color="primary"
+                          variant="outlined"
+                          sx={{
+                            fontFamily: "Tektur, sans-serif",
+                            fontWeight: 500,
+                          }}
+                        />
+                      </Box>
+                    )}
                   </Box>
                 )}
-              </Box>
+
+                {/* Botón para subir PDF */}
+                <Button
+                  component="label"
+                  variant="outlined"
+                  sx={{
+                    mt: 1,
+                    py: 1.5,
+                    width: "fit-content",
+                    borderRadius: 2,
+                    fontFamily: "Tektur, sans-serif",
+                    fontWeight: 600,
+                    letterSpacing: 1.5,
+                    textTransform: "none",
+                    backgroundColor: "#e3f2fd",
+                    color: "#1976d2",
+                    "&:hover": { backgroundColor: "#bbdefb" },
+                  }}
+                >
+                  {form.archivo
+                    ? `Archivo: ${form.archivo.name}`
+                    : "Adjuntar Certificado Médico (PDF)"}
+                  <input
+                    type="file"
+                    hidden
+                    accept="application/pdf"
+                    onChange={handleFileChange}
+                  />
+                </Button>
+                {errors.archivo && (
+                  <FormHelperText error>
+                    Debe subir un certificado en PDF para enfermedad
+                  </FormHelperText>
+                )}
+
+                <TextField
+                  label="Observaciones"
+                  name="observaciones"
+                  value={form.observaciones}
+                  onChange={handleInputChange}
+                  fullWidth
+                  multiline
+                  rows={4}
+                  sx={{ flex: "1 1 100%" }}
+                />
+
+                <Button
+                  variant="contained"
+                  onClick={handleSubmit}
+                  sx={{
+                    mt: 3,
+                    py: 1.5,
+                    width: "100%",
+                    fontFamily: "Tektur, sans-serif",
+                    fontWeight: 600,
+                    fontSize: "1.1rem",
+                    borderRadius: 2,
+                    letterSpacing: 2,
+                    backgroundColor: "#1976d2",
+                    "&:hover": { backgroundColor: "#115293" },
+                  }}
+                >
+                  Enviar Solicitud
+                </Button>
+              </>
             )}
-
-            {/* Botón para subir PDF */}
-            <Button
-              component="label"
-              variant="outlined"
-              sx={{
-                mt: 1,
-                py: 1.5,
-                width: "fit-content",
-                borderRadius: 2,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 600,
-                letterSpacing: 1.5,
-                textTransform: "none",
-                backgroundColor: "#e3f2fd",
-                color: "#1976d2",
-                "&:hover": { backgroundColor: "#bbdefb" },
-              }}
-            >
-              {form.archivo
-                ? `Archivo: ${form.archivo.name}`
-                : "Adjuntar Certificado Médico (PDF)"}
-              <input
-                type="file"
-                hidden
-                accept="application/pdf"
-                onChange={handleFileChange}
-              />
-            </Button>
-            {errors.archivo && (
-              <FormHelperText error>
-                Debe subir un certificado en PDF para enfermedad
-              </FormHelperText>
-            )}
-
-            <TextField
-              label="Observaciones"
-              name="observaciones"
-              value={form.observaciones}
-              onChange={handleInputChange}
-              fullWidth
-              multiline
-              rows={4}
-              sx={{ flex: "1 1 100%" }}
-            />
-
-            <Button
-              variant="contained"
-              onClick={handleSubmit}
-              sx={{
-                mt: 3,
-                py: 1.5,
-                width: "100%",
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 600,
-                fontSize: "1.1rem",
-                borderRadius: 2,
-                letterSpacing: 2,
-                backgroundColor: "#1976d2",
-                "&:hover": { backgroundColor: "#115293" },
-              }}
-            >
-              Enviar Solicitud
-            </Button>
           </Box>
         </Paper>
       </Box>

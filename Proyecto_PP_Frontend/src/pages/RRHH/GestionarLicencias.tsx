@@ -33,7 +33,6 @@ interface Licencia {
   Nombre: string;
   Apellido: string;
   Documento: string;
-  Area: string;
   Motivo: string;
   Observaciones?: string;
   CertificadoMedico?: string;
@@ -278,11 +277,26 @@ export default function GestionarLicencias() {
         {/* Botón Volver */}
         <BackButton to="/rrhh-principal" />
 
+        {/* Título */}
+        <Typography
+          variant="h4"
+          sx={{
+            mt: 3,
+            mb: 2,
+            textAlign: "center",
+            fontFamily: "Tektur, sans-serif",
+            fontWeight: 600,
+            color: "#1976d2",
+          }}
+        >
+          Gestionar Licencias
+        </Typography>
+
         {/* Tabla de solicitudes */}
         <TableContainer
           component={Paper}
           sx={{
-            mt: 5,
+            mt: 2,
             mx: 4,
             mb: 5,
             maxWidth: 1400,
@@ -299,7 +313,6 @@ export default function GestionarLicencias() {
                   "Fecha",
                   "Documento",
                   "Nombre y Apellido",
-                  "Área",
                   "Motivo",
                   "Estado",
                   "Acciones",
@@ -321,13 +334,13 @@ export default function GestionarLicencias() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={6} align="center">
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : licencias.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={6} align="center">
                     <Typography variant="h6" color="text.secondary">
                       No hay solicitudes pendientes
                     </Typography>
@@ -349,7 +362,6 @@ export default function GestionarLicencias() {
                     <TableCell align="center">
                       {`${licencia.Nombre} ${licencia.Apellido}`}
                     </TableCell>
-                    <TableCell align="center">{licencia.Area}</TableCell>
                     <TableCell align="center">{licencia.Motivo}</TableCell>
                     <TableCell align="center">
                       <Chip

@@ -14,6 +14,7 @@ import {
   InputAdornment,
   TextField,
   Modal,
+  CircularProgress,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Link } from "react-router-dom";
@@ -22,32 +23,20 @@ import Header from "../../components/Header";
 import MenuUsuario from "../../components/MenuUsuario";
 import BackButton from "../../components/BackButton";
 
-// Simulación de recibos de sueldo
-const recibos = [
-  {
-    id: 1,
-    mes: "Julio",
-    anio: 2025,
-    monto: "$250.000",
-    pdfUrl: "/recibos/recibo_julio_2025.pdf",
-  },
-  {
-    id: 2,
-    mes: "Junio",
-    anio: 2025,
-    monto: "$248.000",
-    pdfUrl: "/recibos/recibo_junio_2025.pdf",
-  },
-  {
-    id: 3,
-    mes: "Mayo",
-    anio: 2025,
-    monto: "$245.000",
-    pdfUrl: "/recibos/recibo_mayo_2025.pdf",
-  },
-];
+interface Liquidacion {
+  Id_Liquidacion: number;
+  Id_Empleado: number;
+  FechaLiquidacion: string;
+  Total: number;
+  Nombre: string;
+  Apellido: string;
+}
 
 export default function RecibosSueldo() {
+  const [recibos, setRecibos] = useState<Liquidacion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   // Estados para menú y cambio de contraseña
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [userName, setUserName] = useState<string>("");
@@ -66,6 +55,88 @@ export default function RecibosSueldo() {
       "Usuario";
     setUserName(name);
   }, []);
+
+  // Cargar liquidaciones del empleado
+  useEffect(() => {
+    const fetchRecibos = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const documento = localStorage.getItem("documento");
+
+        if (!documento) {
+          setError("No se encontró el documento del empleado");
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch(
+          `http://localhost:4000/api/liquidacion/empleado/${documento}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setRecibos(data);
+        } else {
+          setError("Error al cargar los recibos");
+        }
+      } catch (err) {
+        setError("Error de conexión con el servidor");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecibos();
+  }, []);
+
+  const handleDescargarPDF = async (idLiquidacion: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:4000/api/liquidacion/${idLiquidacion}/pdf`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `recibo_${idLiquidacion}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Error al descargar el PDF");
+      }
+    } catch (error) {
+      alert("Error de conexión al descargar el PDF");
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("es-ES", { year: "numeric", month: "long" });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: "ARS",
+    }).format(amount);
+  };
 
   // Handlers para el menú
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -174,60 +245,77 @@ export default function RecibosSueldo() {
           justifyContent: "center",
         }}
       >
-        <TableContainer
-          component={Paper}
-          sx={{
-            width: "100%",
-            maxWidth: 800,
-            borderRadius: 2,
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          <Table>
-            <TableHead>
-              <TableRow sx={{ backgroundColor: "#1565C0" }}>
-                <TableCell
-                  sx={{ color: "#fff", fontWeight: 700, width: "35%" }}
-                >
-                  Mes
-                </TableCell>
-                <TableCell
-                  sx={{ color: "#fff", fontWeight: 700, width: "35%" }}
-                >
-                  Año
-                </TableCell>
-                <TableCell
-                  sx={{ color: "#fff", fontWeight: 700, width: "30%" }}
-                >
-                  Acción
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {recibos.map((recibo) => (
-                <TableRow key={recibo.id}>
-                  <TableCell>{recibo.mes}</TableCell>
-                  <TableCell>{recibo.anio}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      href={recibo.pdfUrl}
-                      download
-                      sx={{
-                        textTransform: "none",
-                        fontFamily: "Tektur, sans-serif",
-                        fontWeight: 500,
-                      }}
-                    >
-                      Descargar PDF
-                    </Button>
+        {loading ? (
+          <CircularProgress />
+        ) : error ? (
+          <Typography color="error" variant="h6">
+            {error}
+          </Typography>
+        ) : recibos.length === 0 ? (
+          <Typography variant="h6" color="text.secondary">
+            No tienes recibos de sueldo disponibles
+          </Typography>
+        ) : (
+          <TableContainer
+            component={Paper}
+            sx={{
+              width: "100%",
+              maxWidth: 900,
+              borderRadius: 2,
+              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+            }}
+          >
+            <Table>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: "#1565C0" }}>
+                  <TableCell
+                    sx={{ color: "#fff", fontWeight: 700, width: "40%" }}
+                  >
+                    Período
+                  </TableCell>
+                  <TableCell
+                    sx={{ color: "#fff", fontWeight: 700, width: "30%" }}
+                  >
+                    Total
+                  </TableCell>
+                  <TableCell
+                    sx={{ color: "#fff", fontWeight: 700, width: "30%" }}
+                  >
+                    Acción
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {recibos.map((recibo) => (
+                  <TableRow
+                    key={recibo.Id_Liquidacion}
+                    sx={{
+                      "&:nth-of-type(odd)": { backgroundColor: "#f5f5f5" },
+                      "&:hover": { backgroundColor: "#e3f2fd" },
+                    }}
+                  >
+                    <TableCell>{formatDate(recibo.FechaLiquidacion)}</TableCell>
+                    <TableCell>{formatCurrency(recibo.Total)}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleDescargarPDF(recibo.Id_Liquidacion)}
+                        sx={{
+                          textTransform: "none",
+                          fontFamily: "Tektur, sans-serif",
+                          fontWeight: 500,
+                        }}
+                      >
+                        Descargar PDF
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Box>
 
       {/* Footer */}

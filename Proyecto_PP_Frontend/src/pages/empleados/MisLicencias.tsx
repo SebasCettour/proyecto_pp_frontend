@@ -125,9 +125,6 @@ const MisLicencias: React.FC = () => {
       const token = localStorage.getItem("token");
       const formData = new FormData();
 
-      formData.append("nombre", editFields.nombre || "");
-      formData.append("apellido", editFields.apellido || "");
-      formData.append("documento", editFields.documento || "");
       formData.append("motivo", editFields.motivo || "");
       formData.append("fechaInicio", (editFields.FechaInicio || "").slice(0, 10));
       formData.append("fechaFin", (editFields.FechaFin || "").slice(0, 10));
