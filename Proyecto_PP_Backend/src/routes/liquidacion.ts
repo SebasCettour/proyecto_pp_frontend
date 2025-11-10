@@ -270,25 +270,52 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
 
     // PRE-CALCULAR SAC (requiere async por consulta histórica)
     let sacCalculado: number | null = null;
+    let diasTrabajadosSemestre = 0; // Para cálculo proporcional
+    let diasTotalesSemestre = 182.5; // Promedio de días en medio año (365/2)
     
     if (sacActivo && periodo) {
       const [anio, mes] = periodo.split('-').map(Number);
       
       // Determinar rango de meses del semestre
       let mesesSemestre: string[] = [];
+      let fechaInicioSemestre: Date | null = null;
+      let fechaFinSemestre: Date | null = null;
+      
       if (mes === 6) {
         // Primer semestre: enero a junio
         mesesSemestre = ['01', '02', '03', '04', '05', '06'].map(m => `${anio}-${m.toString().padStart(2, '0')}`);
+        fechaInicioSemestre = new Date(anio, 0, 1); // 1 de enero
+        fechaFinSemestre = new Date(anio, 5, 30); // 30 de junio
       } else if (mes === 12) {
         // Segundo semestre: julio a diciembre
         mesesSemestre = ['07', '08', '09', '10', '11', '12'].map(m => `${anio}-${m}`);
+        fechaInicioSemestre = new Date(anio, 6, 1); // 1 de julio
+        fechaFinSemestre = new Date(anio, 11, 31); // 31 de diciembre
       }
       
-      if (mesesSemestre.length > 0) {
+      if (mesesSemestre.length > 0 && fechaInicioSemestre && fechaFinSemestre) {
         try {
-          // Consultar liquidaciones del semestre
+          // Verificar cuántos días trabajó en el semestre
+          diasTotalesSemestre = Math.ceil((fechaFinSemestre.getTime() - fechaInicioSemestre.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          
+          // Calcular días efectivamente trabajados en el semestre
+          diasTrabajadosSemestre = diasTotalesSemestre;
+          
+          // Si la fecha de ingreso es posterior al inicio del semestre, calcular días proporcionales
+          if (fechaIngreso > fechaInicioSemestre) {
+            if (fechaIngreso <= fechaFinSemestre) {
+              diasTrabajadosSemestre = Math.ceil((fechaFinSemestre.getTime() - fechaIngreso.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+              console.log(`📅 Empleado ingresó el ${fechaIngreso.toISOString().split('T')[0]}, días trabajados en semestre: ${diasTrabajadosSemestre} de ${diasTotalesSemestre}`);
+            } else {
+              // El empleado ingresó después del fin del semestre
+              diasTrabajadosSemestre = 0;
+              console.log(`⚠️ Empleado ingresó después del semestre`);
+            }
+          }
+          
+          // Consultar liquidaciones del semestre para obtener la mejor remuneración
           const [liquidacionesSemestre] = await pool.execute(
-            `SELECT TotalHaberes 
+            `SELECT TotalHaberes, Periodo
              FROM Liquidacion 
              WHERE Id_Empleado = ? 
              AND Periodo IN (${mesesSemestre.map(() => '?').join(',')})
@@ -298,15 +325,26 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
           );
           
           if (Array.isArray(liquidacionesSemestre) && liquidacionesSemestre.length > 0) {
-            // Usar la mejor remuneración histórica
-            const mejorRemuneracion = (liquidacionesSemestre[0] as any).TotalHaberes;
-            sacCalculado = parseFloat(mejorRemuneracion) * 0.5;
-            console.log(`📊 SAC calculado sobre mejor remuneración histórica: ${mejorRemuneracion} -> ${sacCalculado}`);
+            // Usar la mejor remuneración histórica del semestre
+            const mejorRemuneracion = parseFloat((liquidacionesSemestre[0] as any).TotalHaberes);
+            
+            // Calcular SAC proporcional si corresponde
+            if (diasTrabajadosSemestre < diasTotalesSemestre) {
+              // SAC proporcional = (Mejor remuneración × Días trabajados) / (Días del semestre)
+              // Fórmula: (365/2) / (Mejor remuneración × Días trabajados)
+              // Simplificado: (Mejor remuneración × Días trabajados) / (365/2)
+              sacCalculado = (mejorRemuneracion * diasTrabajadosSemestre) / (365 / 2);
+              console.log(`📊 SAC PROPORCIONAL: (${mejorRemuneracion} × ${diasTrabajadosSemestre} días) / 182.5 = ${sacCalculado.toFixed(2)}`);
+            } else {
+              // SAC completo (50% de la mejor remuneración)
+              sacCalculado = mejorRemuneracion * 0.5;
+              console.log(`📊 SAC COMPLETO: ${mejorRemuneracion} × 0.5 = ${sacCalculado.toFixed(2)}`);
+            }
           } else {
             // No hay liquidaciones históricas, calcular sobre haberes del mes actual
             // (se calculará después cuando tengamos todos los conceptos)
-            sacCalculado = -1; // Marcador temporal
-            console.log("⚠️ No hay liquidaciones históricas, SAC se calculará sobre haberes del mes actual");
+            sacCalculado = -1; // Marcador temporal indicando que se debe calcular proporcionalmente sobre mes actual
+            console.log(`⚠️ No hay liquidaciones históricas. SAC se calculará sobre haberes del mes actual con ${diasTrabajadosSemestre} días trabajados de ${diasTotalesSemestre}`);
           }
         } catch (error) {
           console.error("❌ Error consultando liquidaciones para SAC:", error);
@@ -406,8 +444,16 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
       );
       
       if (sacIndex !== -1) {
-        conceptosCalculados[sacIndex].valorCalculado = Math.round(totalHaberesMesActual * 0.5 * 100) / 100;
-        console.log(`📊 SAC calculado sobre haberes del mes actual: ${totalHaberesMesActual} -> ${conceptosCalculados[sacIndex].valorCalculado}`);
+        // Calcular SAC proporcional o completo según días trabajados
+        if (diasTrabajadosSemestre < diasTotalesSemestre && diasTrabajadosSemestre > 0) {
+          // SAC proporcional = (Haberes mes actual × Días trabajados) / (365/2)
+          conceptosCalculados[sacIndex].valorCalculado = Math.round((totalHaberesMesActual * diasTrabajadosSemestre) / (365 / 2) * 100) / 100;
+          console.log(`📊 SAC PROPORCIONAL sobre mes actual: (${totalHaberesMesActual} × ${diasTrabajadosSemestre} días) / 182.5 = ${conceptosCalculados[sacIndex].valorCalculado}`);
+        } else {
+          // SAC completo (50% de haberes)
+          conceptosCalculados[sacIndex].valorCalculado = Math.round(totalHaberesMesActual * 0.5 * 100) / 100;
+          console.log(`📊 SAC COMPLETO sobre mes actual: ${totalHaberesMesActual} × 0.5 = ${conceptosCalculados[sacIndex].valorCalculado}`);
+        }
       }
     }
 
@@ -460,6 +506,124 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
   } catch (error) {
     console.error("❌ Error calculando liquidación:", error);
     res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+// Guardar liquidación completa
+router.post("/guardar", authenticateToken, async (req: Request, res: Response) => {
+  const connection = await pool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+    
+    const {
+      idEmpleado,
+      periodo,
+      totalRemunerativo,
+      totalNoRemunerativo,
+      totalHaberes,
+      totalDescuentos,
+      netoAPagar,
+      sumaFijaNoRemunerativa,
+      horasExtras50,
+      horasExtras100,
+      sacActivo,
+      asistenciaActiva,
+      esAfiliadoSindicato,
+      adicionalTrasladoSeleccionado,
+      tipoJornada,
+      conceptosDetalle, // Array de { concepto: string, monto: number }
+      estado = 'borrador'
+    } = req.body;
+
+    console.log("💾 Guardando liquidación:", { idEmpleado, periodo, netoAPagar });
+
+    // Validaciones
+    if (!idEmpleado || !periodo || !totalHaberes || !totalDescuentos || netoAPagar === undefined) {
+      await connection.rollback();
+      return res.status(400).json({
+        message: "Faltan campos obligatorios: idEmpleado, periodo, totalHaberes, totalDescuentos, netoAPagar"
+      });
+    }
+
+    // Insertar en tabla Liquidacion
+    const [result] = await connection.execute(
+      `INSERT INTO Liquidacion (
+        Id_Empleado,
+        Periodo,
+        Total,
+        TotalRemunerativo,
+        TotalNoRemunerativo,
+        TotalHaberes,
+        TotalDescuentos,
+        NetoAPagar,
+        SumaFijaNoRemunerativa,
+        HorasExtras50,
+        HorasExtras100,
+        SACActivo,
+        AsistenciaActiva,
+        EsAfiliadoSindicato,
+        AdicionalTrasladoSeleccionado,
+        TipoJornada,
+        Estado,
+        FechaLiquidacion,
+        FechaGeneracion
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        idEmpleado,
+        periodo,
+        netoAPagar, // Total (campo legacy)
+        totalRemunerativo,
+        totalNoRemunerativo,
+        totalHaberes,
+        totalDescuentos,
+        netoAPagar,
+        sumaFijaNoRemunerativa || 0,
+        horasExtras50 || 0,
+        horasExtras100 || 0,
+        sacActivo || false,
+        asistenciaActiva !== undefined ? asistenciaActiva : true,
+        esAfiliadoSindicato !== undefined ? esAfiliadoSindicato : true,
+        adicionalTrasladoSeleccionado || null,
+        tipoJornada || 'completa',
+        estado,
+        periodo + '-01' // FechaLiquidacion como primer día del periodo
+      ]
+    );
+
+    const idLiquidacion = (result as any).insertId;
+    console.log("✅ Liquidación guardada con ID:", idLiquidacion);
+
+    // Insertar detalles
+    if (conceptosDetalle && Array.isArray(conceptosDetalle) && conceptosDetalle.length > 0) {
+      const detalleValues = conceptosDetalle
+        .filter((c: any) => c.monto !== 0) // Solo guardar conceptos con monto
+        .map((c: any) => [idLiquidacion, c.concepto, c.monto]);
+
+      if (detalleValues.length > 0) {
+        await connection.query(
+          `INSERT INTO Detalle_Liquidacion (Id_Liquidacion, Concepto, Monto) VALUES ?`,
+          [detalleValues]
+        );
+        console.log(`✅ ${detalleValues.length} detalles guardados`);
+      }
+    }
+
+    await connection.commit();
+    
+    res.status(201).json({
+      message: "Liquidación guardada exitosamente",
+      idLiquidacion,
+      periodo,
+      netoAPagar
+    });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error("❌ Error guardando liquidación:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  } finally {
+    connection.release();
   }
 });
 
