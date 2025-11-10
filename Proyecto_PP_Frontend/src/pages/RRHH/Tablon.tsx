@@ -37,7 +37,7 @@ interface Novedad {
 }
 
 export default function Tablon() {
-  const [novedades, setNovedades] = useState<Novedad[]>([]);
+  const [novedades, setNovedades] = useState<Novedad[] | any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
 
@@ -63,13 +63,27 @@ export default function Tablon() {
     "Usuario";
 
   useEffect(() => {
+    console.log("🔍 Iniciando fetch de novedades...");
     fetch("http://localhost:4000/api/novedad/tablon")
       .then((res) => res.json())
       .then((data) => {
-        setNovedades(data);
+        console.log("📦 Datos recibidos:", data);
+        console.log("📊 Es array?", Array.isArray(data));
+        // Validar que data sea un array
+        if (Array.isArray(data)) {
+          setNovedades(data);
+          console.log("✅ Novedades seteadas:", data);
+        } else {
+          console.error("❌ La respuesta no es un array:", data);
+          setNovedades([]);
+        }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((error) => {
+        console.error("❌ Error cargando novedades:", error);
+        setNovedades([]);
+        setLoading(false);
+      });
   }, []);
 
   // Eliminar novedad
@@ -79,7 +93,7 @@ export default function Tablon() {
       await fetch(`http://localhost:4000/api/novedad/tablon/${id}`, {
         method: "DELETE",
       });
-      setNovedades((prev) => prev.filter((n) => n.Id_Novedad !== id));
+      setNovedades((prev) => Array.isArray(prev) ? prev.filter((n) => n.Id_Novedad !== id) : []);
     } catch {
       // Manejo de error opcional
     } finally {
@@ -108,11 +122,11 @@ export default function Tablon() {
         }
       );
       setNovedades((prev) =>
-        prev.map((n) =>
+        Array.isArray(prev) ? prev.map((n) =>
           n.Id_Novedad === editNovedad.Id_Novedad
             ? { ...n, Descripcion: editDescripcion }
             : n
-        )
+        ) : []
       );
       setEditOpen(false);
     } catch {
@@ -306,7 +320,7 @@ export default function Tablon() {
       >
         {loading ? (
           <CircularProgress sx={{ mx: "auto", mt: 6 }} />
-        ) : novedades.length === 0 ? (
+        ) : !Array.isArray(novedades) || novedades.length === 0 ? (
           <Fade in>
             <Typography
               variant="h6"

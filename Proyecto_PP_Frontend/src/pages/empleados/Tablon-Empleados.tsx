@@ -83,10 +83,20 @@ export default function Tablon() {
     fetch("http://localhost:4000/api/novedad/tablon")
       .then((res) => res.json())
       .then((data) => {
-        setNovedades(data);
+        // Validar que data sea un array
+        if (Array.isArray(data)) {
+          setNovedades(data);
+        } else {
+          console.error("La respuesta no es un array:", data);
+          setNovedades([]);
+        }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((error) => {
+        console.error("Error cargando novedades:", error);
+        setNovedades([]);
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -232,7 +242,7 @@ export default function Tablon() {
       >
         {loading ? (
           <CircularProgress sx={{ mx: "auto", mt: 6 }} />
-        ) : novedades.length === 0 ? (
+        ) : !Array.isArray(novedades) || novedades.length === 0 ? (
           <Fade in>
             <Typography
               variant="h6"
