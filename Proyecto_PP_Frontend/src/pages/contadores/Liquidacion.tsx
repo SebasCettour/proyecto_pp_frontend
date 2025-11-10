@@ -23,7 +23,7 @@ import {
   InputLabel,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import BackButton from "../../components/BackButton";
@@ -32,8 +32,7 @@ const steps = [
   "Buscar Empresa",
   "Buscar Empleado",
   "Liquidación de Haberes",
-  "Revisión y Confirmación",
-  "Generar Liquidación",
+  "Revisión Final y Confirmación",
 ];
 
 interface Empresa {
@@ -57,6 +56,7 @@ interface Employee {
 }
 
 const Liquidacion = () => {
+  const navigate = useNavigate();
   const [jornadaAccordionOpen, setJornadaAccordionOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -102,7 +102,8 @@ const Liquidacion = () => {
   const [horasExtras100, setHorasExtras100] = useState<string>("");
 
   // Estado para adicional de traslado
-  const [adicionalTrasladoSeleccionado, setAdicionalTrasladoSeleccionado] = useState<string>("");
+  const [adicionalTrasladoSeleccionado, setAdicionalTrasladoSeleccionado] =
+    useState<string>("");
 
   // Estado para afiliación al sindicato
   const [esAfiliadoSindicato, setEsAfiliadoSindicato] = useState(true);
@@ -208,49 +209,72 @@ const Liquidacion = () => {
       const sueldoBasico = sueldoBasicoKey
         ? parseFloat(valores[sueldoBasicoKey]) || 0
         : 0;
-      
-      const sumaFija = sumaFijaNoRemunerativa ? parseFloat(sumaFijaNoRemunerativa.replace(/\./g, '').replace(',', '.')) : 0;
-      
+
+      const sumaFija = sumaFijaNoRemunerativa
+        ? parseFloat(
+            sumaFijaNoRemunerativa.replace(/\./g, "").replace(",", ".")
+          )
+        : 0;
+
       // Obtener otros conceptos filtrados
-      const otrosConceptos = conceptos.filter((c) => !c.nombre.toLowerCase().includes("horas extras"));
-      
+      const otrosConceptos = conceptos.filter(
+        (c) => !c.nombre.toLowerCase().includes("horas extras")
+      );
+
       const totalOtrosConceptos = otrosConceptos
         .filter((c) => c.tipo !== "descuento")
         .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
-      
+
       const horasExtras50Val = valoresCalculados["Horas extras al 50%"] || 0;
       const horasExtras100Val = valoresCalculados["Horas extras al 100%"] || 0;
-      
-      const totalHaberes = sueldoBasico + sumaFija + totalOtrosConceptos + horasExtras50Val + horasExtras100Val;
-      
+
+      const totalHaberes =
+        sueldoBasico +
+        sumaFija +
+        totalOtrosConceptos +
+        horasExtras50Val +
+        horasExtras100Val;
+
       const totalDescuentos = otrosConceptos
         .filter((c) => c.tipo === "descuento")
         .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
-      
+
       const netoAPagar = totalHaberes - totalDescuentos;
-      
+
       // Calcular total remunerativo y no remunerativo
-      const totalRemunerativo = sueldoBasico + otrosConceptos
-        .filter((c) => c.tipo !== "descuento" && !c.suma_fija_no_remunerativa)
-        .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0) + horasExtras50Val + horasExtras100Val;
-      
-      const totalNoRemunerativo = sumaFija + otrosConceptos
-        .filter((c) => c.tipo !== "descuento" && c.suma_fija_no_remunerativa)
-        .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
+      const totalRemunerativo =
+        sueldoBasico +
+        otrosConceptos
+          .filter((c) => c.tipo !== "descuento" && !c.suma_fija_no_remunerativa)
+          .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0) +
+        horasExtras50Val +
+        horasExtras100Val;
+
+      const totalNoRemunerativo =
+        sumaFija +
+        otrosConceptos
+          .filter((c) => c.tipo !== "descuento" && c.suma_fija_no_remunerativa)
+          .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
 
       // Construir array de conceptos detalle
       const conceptosDetalle = [];
-      
+
       // Agregar sueldo básico
       if (sueldoBasico > 0) {
-        conceptosDetalle.push({ concepto: "Sueldo Básico", monto: sueldoBasico });
+        conceptosDetalle.push({
+          concepto: "Sueldo Básico",
+          monto: sueldoBasico,
+        });
       }
-      
+
       // Agregar suma fija no remunerativa
       if (sumaFija > 0) {
-        conceptosDetalle.push({ concepto: "Suma Fija No Remunerativa", monto: sumaFija });
+        conceptosDetalle.push({
+          concepto: "Suma Fija No Remunerativa",
+          monto: sumaFija,
+        });
       }
-      
+
       // Agregar otros conceptos con valor
       otrosConceptos.forEach((c) => {
         const valor = valoresCalculados[c.nombre] || 0;
@@ -258,13 +282,19 @@ const Liquidacion = () => {
           conceptosDetalle.push({ concepto: c.nombre, monto: valor });
         }
       });
-      
+
       // Agregar horas extras
       if (horasExtras50Val > 0) {
-        conceptosDetalle.push({ concepto: "Horas extras al 50%", monto: horasExtras50Val });
+        conceptosDetalle.push({
+          concepto: "Horas extras al 50%",
+          monto: horasExtras50Val,
+        });
       }
       if (horasExtras100Val > 0) {
-        conceptosDetalle.push({ concepto: "Horas extras al 100%", monto: horasExtras100Val });
+        conceptosDetalle.push({
+          concepto: "Horas extras al 100%",
+          monto: horasExtras100Val,
+        });
       }
 
       const body = {
@@ -284,22 +314,29 @@ const Liquidacion = () => {
         adicionalTrasladoSeleccionado: adicionalTrasladoSeleccionado || null,
         tipoJornada: tipoJornada,
         conceptosDetalle: conceptosDetalle,
-        estado: 'confirmada'
+        estado: "confirmada",
       };
 
-      const response = await fetch("http://localhost:4000/api/liquidacion/guardar", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(body),
-      });
+      const response = await fetch(
+        "http://localhost:4000/api/liquidacion/guardar",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(body),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
         setLiquidacionGuardada(true);
         alert(`Liquidación guardada exitosamente. ID: ${data.idLiquidacion}`);
+        
+        setTimeout(() => {
+          navigate("/contadores");
+        }, 100);
       } else {
         const error = await response.json();
         alert(`Error al guardar: ${error.message}`);
@@ -399,11 +436,13 @@ const Liquidacion = () => {
 
       if (response.ok) {
         const data = await response.json();
-        
+
         // Verificar si es un array (múltiples resultados) o un objeto (un solo resultado)
         if (Array.isArray(data)) {
           setMultipleEmployees(data);
-          setSearchError(`Se encontraron ${data.length} empleados. Seleccione uno:`);
+          setSearchError(
+            `Se encontraron ${data.length} empleados. Seleccione uno:`
+          );
         } else {
           setEmployeeFound(data);
         }
@@ -432,6 +471,22 @@ const Liquidacion = () => {
 
   const handleNext = () => setActiveStep((prev) => prev + 1);
   const handleBack = () => setActiveStep((prev) => prev - 1);
+
+  // Calcular otrosConceptos para usar en múltiples steps
+  const otrosConceptos = conceptos
+    .filter((c) => !c.nombre.toLowerCase().includes("horas extras"))
+    .sort((a, b) => {
+      const aIsSAC =
+        a.nombre.toLowerCase().includes("sac") ||
+        a.nombre.toLowerCase().includes("aguinaldo");
+      const bIsSAC =
+        b.nombre.toLowerCase().includes("sac") ||
+        b.nombre.toLowerCase().includes("aguinaldo");
+
+      if (aIsSAC && !bIsSAC) return 1;
+      if (!aIsSAC && bIsSAC) return -1;
+      return 0;
+    });
 
   const renderStepContent = (step: number) => {
     switch (step) {
@@ -546,7 +601,10 @@ const Liquidacion = () => {
               </Button>
             </Box>
             {searchError && (
-              <Alert severity={multipleEmployees.length > 0 ? "info" : "error"} sx={{ mb: 2 }}>
+              <Alert
+                severity={multipleEmployees.length > 0 ? "info" : "error"}
+                sx={{ mb: 2 }}
+              >
                 {searchError}
               </Alert>
             )}
@@ -580,16 +638,24 @@ const Liquidacion = () => {
                       >
                         {emp.apellido}, {emp.nombre}
                       </Typography>
-                      <Typography sx={{ fontSize: 15, color: "text.secondary" }}>
+                      <Typography
+                        sx={{ fontSize: 15, color: "text.secondary" }}
+                      >
                         DNI: {emp.dni}
                       </Typography>
-                      <Typography sx={{ fontSize: 15, color: "text.secondary" }}>
+                      <Typography
+                        sx={{ fontSize: 15, color: "text.secondary" }}
+                      >
                         CUIL: {emp.cuil}
                       </Typography>
-                      <Typography sx={{ fontSize: 15, color: "text.secondary" }}>
+                      <Typography
+                        sx={{ fontSize: 15, color: "text.secondary" }}
+                      >
                         Categoría: {emp.categoria}
                       </Typography>
-                      <Typography sx={{ fontSize: 15, color: "text.secondary" }}>
+                      <Typography
+                        sx={{ fontSize: 15, color: "text.secondary" }}
+                      >
                         Fecha Ingreso:{" "}
                         {new Date(emp.fechaIngreso).toLocaleDateString()}
                       </Typography>
@@ -647,21 +713,6 @@ const Liquidacion = () => {
               No hay conceptos disponibles.
             </Typography>
           );
-
-        const otrosConceptos = conceptos
-          .filter((c) => !c.nombre.toLowerCase().includes("horas extras"))
-          .sort((a, b) => {
-            const aIsSAC =
-              a.nombre.toLowerCase().includes("sac") ||
-              a.nombre.toLowerCase().includes("aguinaldo");
-            const bIsSAC =
-              b.nombre.toLowerCase().includes("sac") ||
-              b.nombre.toLowerCase().includes("aguinaldo");
-
-            if (aIsSAC && !bIsSAC) return 1;
-            if (!aIsSAC && bIsSAC) return -1;
-            return 0;
-          });
 
         return (
           <Box>
@@ -853,9 +904,9 @@ const Liquidacion = () => {
                                 <Typography
                                   variant="h6"
                                   sx={{
-                                    fontWeight: 700,
+                                    fontWeight: 600,
                                     color: "#000",
-                                    fontSize: 17,
+                                    fontSize: 19,
                                   }}
                                 >
                                   {c.nombre}
@@ -880,97 +931,128 @@ const Liquidacion = () => {
                                 >
                                   Ingrese monto
                                 </Typography>
-                                <input
-                                  type="text"
-                                  value={sueldoDisplay}
-                                  inputMode="text"
-                                  pattern="[0-9.,]*"
-                                  maxLength={12}
-                                  onChange={(
-                                    e: React.ChangeEvent<HTMLInputElement>
-                                  ) => {
-                                    const typed = e.target.value;
-                                    setSueldoDisplay(typed);
-                                    let cleaned = typed
-                                      .replace(/\./g, "")
-                                      .replace(/,/g, ".")
-                                      .replace(/[^0-9.]/g, "");
-                                    const dotIndex = cleaned.indexOf(".");
-                                    let intPart =
-                                      dotIndex !== -1
-                                        ? cleaned
-                                            .substring(0, dotIndex)
-                                            .slice(0, 8)
-                                        : cleaned.slice(0, 8);
-                                    let decPart =
-                                      dotIndex !== -1
-                                        ? cleaned
-                                            .substring(dotIndex + 1)
-                                            .slice(0, 2)
-                                        : "";
-                                    let cleanVal =
-                                      intPart + (decPart ? "." + decPart : "");
-                                    if (cleanVal === ".") cleanVal = "";
-                                    setValores((prev) => ({
-                                      ...prev,
-                                      [c.nombre]: cleanVal,
-                                    }));
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
                                   }}
-                                  onFocus={() => setEditingSueldo(true)}
-                                  onBlur={(
-                                    e: React.FocusEvent<HTMLInputElement>
-                                  ) => {
-                                    setEditingSueldo(false);
-                                    let raw = valores[c.nombre] || "";
-                                    let formatted = "";
-                                    let newRaw = raw;
-                                    if (raw) {
-                                      let num = Number(raw);
-                                      if (!isNaN(num)) {
-                                        if (num > 99999999.98) {
-                                          newRaw = "99999999.98";
-                                          num = 99999999.98;
-                                        }
-                                        formatted = num.toLocaleString("es-AR");
-                                      } else {
-                                        formatted = "";
-                                        newRaw = "";
-                                      }
+                                >
+                                  <Typography
+                                    sx={{
+                                      fontWeight: 700,
+                                      color: "#000",
+                                      fontSize: 20,
+                                    }}
+                                  >
+                                    $
+                                  </Typography>
+                                  <input
+                                    type="text"
+                                    value={
+                                      editingSueldo
+                                        ? valores[c.nombre] || ""
+                                        : sueldoDisplay
                                     }
-                                    if (newRaw !== raw) {
+                                    inputMode="decimal"
+                                    pattern="[0-9.,]*"
+                                    maxLength={14}
+                                    onChange={(
+                                      e: React.ChangeEvent<HTMLInputElement>
+                                    ) => {
+                                      const typed = e.target.value;
+                                      // Solo permitir números, punto y coma
+                                      let cleaned = typed.replace(/[^0-9.,]/g, "");
+                                      
+                                      // Contar puntos y comas
+                                      const commaCount = (cleaned.match(/,/g) || []).length;
+                                      const dotCount = (cleaned.match(/\./g) || []).length;
+                                      
+                                      // Si tiene coma, usarla como decimal y eliminar puntos (miles)
+                                      if (commaCount > 0) {
+                                        cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+                                      }
+                                      
+                                      // Validar formato: solo un punto decimal
+                                      const parts = cleaned.split(".");
+                                      if (parts.length > 2) {
+                                        return; // No permitir más de un punto decimal
+                                      }
+                                      
+                                      let intPart = parts[0] ? parts[0].slice(0, 8) : "";
+                                      let decPart = parts[1] ? parts[1].slice(0, 2) : "";
+                                      
+                                      let cleanVal = intPart + (parts.length > 1 ? "." + decPart : "");
+                                      
                                       setValores((prev) => ({
                                         ...prev,
-                                        [c.nombre]: newRaw,
+                                        [c.nombre]: cleanVal,
                                       }));
-                                    }
-                                    setSueldoDisplay(formatted);
-                                  }}
-                                  onWheel={(
-                                    e: React.WheelEvent<HTMLInputElement>
-                                  ) => e.currentTarget.blur()}
-                                  onKeyDown={(
-                                    e: React.KeyboardEvent<HTMLInputElement>
-                                  ) => {
-                                    if (
-                                      e.key === "ArrowUp" ||
-                                      e.key === "ArrowDown"
-                                    )
-                                      e.preventDefault();
-                                  }}
-                                  style={{
-                                    width: "140px",
-                                    padding: "10px 12px",
-                                    border: "2px solid #000",
-                                    outline: "none",
-                                    background: "#fff",
-                                    fontSize: "18px",
-                                    fontWeight: 700,
-                                    textAlign: "right",
-                                    borderRadius: "8px",
-                                    color: "#000",
-                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
-                                  }}
-                                />
+                                      if (editingSueldo) {
+                                        setSueldoDisplay(cleanVal);
+                                      }
+                                    }}
+                                    onFocus={() => {
+                                      setEditingSueldo(true);
+                                      setSueldoDisplay(valores[c.nombre] || "");
+                                    }}
+                                    onBlur={(
+                                      e: React.FocusEvent<HTMLInputElement>
+                                    ) => {
+                                      setEditingSueldo(false);
+                                      let raw = valores[c.nombre] || "";
+                                      let formatted = "";
+                                      let newRaw = raw;
+                                      if (raw) {
+                                        let num = Number(raw);
+                                        if (!isNaN(num)) {
+                                          if (num > 99999999.98) {
+                                            newRaw = "99999999.98";
+                                            num = 99999999.98;
+                                          }
+                                          formatted =
+                                            num.toLocaleString("es-AR");
+                                        } else {
+                                          formatted = "";
+                                          newRaw = "";
+                                        }
+                                      }
+                                      if (newRaw !== raw) {
+                                        setValores((prev) => ({
+                                          ...prev,
+                                          [c.nombre]: newRaw,
+                                        }));
+                                      }
+                                      setSueldoDisplay(formatted);
+                                    }}
+                                    onWheel={(
+                                      e: React.WheelEvent<HTMLInputElement>
+                                    ) => e.currentTarget.blur()}
+                                    onKeyDown={(
+                                      e: React.KeyboardEvent<HTMLInputElement>
+                                    ) => {
+                                      if (
+                                        e.key === "ArrowUp" ||
+                                        e.key === "ArrowDown"
+                                      )
+                                        e.preventDefault();
+                                    }}
+                                    style={{
+                                      width: "140px",
+                                      padding: "10px 12px",
+                                      border: "2px solid #000",
+                                      outline: "none",
+                                      background: "#fff",
+                                      fontSize: "18px",
+                                      fontWeight: 700,
+                                      textAlign: "right",
+                                      borderRadius: "8px",
+                                      color: "#000",
+                                      boxShadow:
+                                        "0 2px 4px rgba(0, 0, 0, 0.15)",
+                                    }}
+                                  />
+                                </Box>
                               </Box>
                             </Box>
                           </CardContent>
@@ -1005,9 +1087,9 @@ const Liquidacion = () => {
                                 <Typography
                                   variant="h6"
                                   sx={{
-                                    fontWeight: 700,
+                                    fontWeight: 600,
                                     color: "#000",
-                                    fontSize: 17,
+                                    fontSize: 19,
                                   }}
                                 >
                                   Suma Fija No Remunerativa
@@ -1032,91 +1114,124 @@ const Liquidacion = () => {
                                 >
                                   Ingrese monto
                                 </Typography>
-                                <input
-                                  type="text"
-                                  value={sumaFijaDisplay}
-                                  inputMode="text"
-                                  pattern="[0-9.,]*"
-                                  maxLength={12}
-                                  onChange={(
-                                    e: React.ChangeEvent<HTMLInputElement>
-                                  ) => {
-                                    const typed = e.target.value;
-                                    setSumaFijaDisplay(typed);
-                                    let cleaned = typed
-                                      .replace(/\./g, "")
-                                      .replace(/,/g, ".")
-                                      .replace(/[^0-9.]/g, "");
-                                    const dotIndex = cleaned.indexOf(".");
-                                    let intPart =
-                                      dotIndex !== -1
-                                        ? cleaned
-                                            .substring(0, dotIndex)
-                                            .slice(0, 8)
-                                        : cleaned.slice(0, 8);
-                                    let decPart =
-                                      dotIndex !== -1
-                                        ? cleaned
-                                            .substring(dotIndex + 1)
-                                            .slice(0, 2)
-                                        : "";
-                                    let cleanVal =
-                                      intPart + (decPart ? "." + decPart : "");
-                                    if (cleanVal === ".") cleanVal = "";
-                                    setSumaFijaNoRemunerativa(cleanVal);
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
                                   }}
-                                  onFocus={() => setEditingSumaFija(true)}
-                                  onBlur={(
-                                    e: React.FocusEvent<HTMLInputElement>
-                                  ) => {
-                                    setEditingSumaFija(false);
-                                    let raw = sumaFijaNoRemunerativa;
-                                    let formatted = "";
-                                    let newRaw = raw;
-                                    if (raw) {
-                                      let num = Number(raw);
-                                      if (!isNaN(num)) {
-                                        if (num > 99999999.98) {
-                                          newRaw = "99999999.98";
-                                          num = 99999999.98;
-                                        }
-                                        formatted = num.toLocaleString("es-AR");
-                                      } else {
-                                        formatted = "";
-                                        newRaw = "";
+                                >
+                                  <Typography
+                                    sx={{
+                                      fontWeight: 700,
+                                      color: "#000",
+                                      fontSize: 20,
+                                    }}
+                                  >
+                                    $
+                                  </Typography>
+                                  <input
+                                    type="text"
+                                    value={
+                                      editingSumaFija
+                                        ? sumaFijaNoRemunerativa
+                                        : sumaFijaDisplay
+                                    }
+                                    inputMode="decimal"
+                                    pattern="[0-9.,]*"
+                                    maxLength={14}
+                                    onChange={(
+                                      e: React.ChangeEvent<HTMLInputElement>
+                                    ) => {
+                                      const typed = e.target.value;
+                                      // Solo permitir números, punto y coma
+                                      let cleaned = typed.replace(/[^0-9.,]/g, "");
+                                      
+                                      // Contar puntos y comas
+                                      const commaCount = (cleaned.match(/,/g) || []).length;
+                                      const dotCount = (cleaned.match(/\./g) || []).length;
+                                      
+                                      // Si tiene coma, usarla como decimal y eliminar puntos (miles)
+                                      if (commaCount > 0) {
+                                        cleaned = cleaned.replace(/\./g, "").replace(",", ".");
                                       }
-                                    }
-                                    if (newRaw !== raw) {
-                                      setSumaFijaNoRemunerativa(newRaw);
-                                    }
-                                    setSumaFijaDisplay(formatted);
-                                  }}
-                                  onWheel={(
-                                    e: React.WheelEvent<HTMLInputElement>
-                                  ) => e.currentTarget.blur()}
-                                  onKeyDown={(
-                                    e: React.KeyboardEvent<HTMLInputElement>
-                                  ) => {
-                                    if (
-                                      e.key === "ArrowUp" ||
-                                      e.key === "ArrowDown"
-                                    )
-                                      e.preventDefault();
-                                  }}
-                                  style={{
-                                    width: "140px",
-                                    padding: "10px 12px",
-                                    border: "2px solid #000",
-                                    outline: "none",
-                                    background: "#fff",
-                                    fontSize: "18px",
-                                    fontWeight: 700,
-                                    textAlign: "right",
-                                    borderRadius: "8px",
-                                    color: "#000",
-                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
-                                  }}
-                                />
+                                      
+                                      // Validar formato: solo un punto decimal
+                                      const parts = cleaned.split(".");
+                                      if (parts.length > 2) {
+                                        return; // No permitir más de un punto decimal
+                                      }
+                                      
+                                      let intPart = parts[0] ? parts[0].slice(0, 8) : "";
+                                      let decPart = parts[1] ? parts[1].slice(0, 2) : "";
+                                      
+                                      let cleanVal = intPart + (parts.length > 1 ? "." + decPart : "");
+                                      
+                                      setSumaFijaNoRemunerativa(cleanVal);
+                                      if (editingSumaFija) {
+                                        setSumaFijaDisplay(cleanVal);
+                                      }
+                                    }}
+                                    onFocus={() => {
+                                      setEditingSumaFija(true);
+                                      setSumaFijaDisplay(
+                                        sumaFijaNoRemunerativa
+                                      );
+                                    }}
+                                    onBlur={(
+                                      e: React.FocusEvent<HTMLInputElement>
+                                    ) => {
+                                      setEditingSumaFija(false);
+                                      let raw = sumaFijaNoRemunerativa;
+                                      let formatted = "";
+                                      let newRaw = raw;
+                                      if (raw) {
+                                        let num = Number(raw);
+                                        if (!isNaN(num)) {
+                                          if (num > 99999999.98) {
+                                            newRaw = "99999999.98";
+                                            num = 99999999.98;
+                                          }
+                                          formatted =
+                                            num.toLocaleString("es-AR");
+                                        } else {
+                                          formatted = "";
+                                          newRaw = "";
+                                        }
+                                      }
+                                      if (newRaw !== raw) {
+                                        setSumaFijaNoRemunerativa(newRaw);
+                                      }
+                                      setSumaFijaDisplay(formatted);
+                                    }}
+                                    onWheel={(
+                                      e: React.WheelEvent<HTMLInputElement>
+                                    ) => e.currentTarget.blur()}
+                                    onKeyDown={(
+                                      e: React.KeyboardEvent<HTMLInputElement>
+                                    ) => {
+                                      if (
+                                        e.key === "ArrowUp" ||
+                                        e.key === "ArrowDown"
+                                      )
+                                        e.preventDefault();
+                                    }}
+                                    style={{
+                                      width: "140px",
+                                      padding: "10px 12px",
+                                      border: "2px solid #000",
+                                      outline: "none",
+                                      background: "#fff",
+                                      fontSize: "18px",
+                                      fontWeight: 700,
+                                      textAlign: "right",
+                                      borderRadius: "8px",
+                                      color: "#000",
+                                      boxShadow:
+                                        "0 2px 4px rgba(0, 0, 0, 0.15)",
+                                    }}
+                                  />
+                                </Box>
                               </Box>
                             </Box>
                           </CardContent>
@@ -1163,7 +1278,9 @@ const Liquidacion = () => {
                           border: "1px solid #e0e0e0",
                         }}
                       >
-                        <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+                        <CardContent
+                          sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}
+                        >
                           <Box sx={{ mb: 2 }}>
                             <Typography
                               variant="h6"
@@ -1182,7 +1299,9 @@ const Liquidacion = () => {
                                 value={adicionalTrasladoSeleccionado}
                                 label="Seleccionar distancia"
                                 onChange={(e) =>
-                                  setAdicionalTrasladoSeleccionado(e.target.value)
+                                  setAdicionalTrasladoSeleccionado(
+                                    e.target.value
+                                  )
                                 }
                                 sx={{
                                   background: "#fff",
@@ -1196,7 +1315,9 @@ const Liquidacion = () => {
                                 </MenuItem>
                                 {otrosConceptos
                                   .filter((c) =>
-                                    c.nombre.toLowerCase().includes("adicional traslado")
+                                    c.nombre
+                                      .toLowerCase()
+                                      .includes("adicional traslado")
                                   )
                                   .map((c) => (
                                     <MenuItem key={c.id} value={c.nombre}>
@@ -1226,12 +1347,15 @@ const Liquidacion = () => {
                                 </Typography>
                                 {(() => {
                                   const concepto = otrosConceptos.find(
-                                    (c) => c.nombre === adicionalTrasladoSeleccionado
+                                    (c) =>
+                                      c.nombre === adicionalTrasladoSeleccionado
                                   );
                                   if (concepto && concepto.porcentaje) {
                                     return (
                                       <Chip
-                                        label={`${(concepto.porcentaje * 100).toFixed(2)}%`}
+                                        label={`${(
+                                          concepto.porcentaje * 100
+                                        ).toFixed(2)}%`}
                                         size="small"
                                         variant="outlined"
                                         sx={{
@@ -1249,7 +1373,9 @@ const Liquidacion = () => {
                                 variant="h6"
                                 sx={{ fontWeight: 700, color: "#2e7d32" }}
                               >
-                                {valoresCalculados[adicionalTrasladoSeleccionado] !== undefined
+                                {valoresCalculados[
+                                  adicionalTrasladoSeleccionado
+                                ] !== undefined
                                   ? `$${valoresCalculados[
                                       adicionalTrasladoSeleccionado
                                     ].toLocaleString("es-AR")}`
@@ -1329,9 +1455,9 @@ const Liquidacion = () => {
                                     <Typography
                                       variant="h6"
                                       sx={{
-                                        fontWeight: 700,
+                                        fontWeight: 600,
                                         color: "#000",
-                                        fontSize: 17,
+                                        fontSize: 19,
                                       }}
                                     >
                                       {c.nombre}
@@ -1393,11 +1519,11 @@ const Liquidacion = () => {
                                     Valor calculado
                                   </Typography>
                                   <Typography
-                                    variant="h5"
                                     sx={{
                                       fontWeight: 700,
                                       color: "#000",
                                       textAlign: "right",
+                                      fontSize: 20,
                                     }}
                                   >
                                     {valoresCalculados[c.nombre] !== undefined
@@ -1413,7 +1539,7 @@ const Liquidacion = () => {
                         );
                       })}
                   </Box>
-                  
+
                   {/* Subtotal Adicionales */}
                   <Box
                     sx={{
@@ -1443,7 +1569,8 @@ const Liquidacion = () => {
                         color: "#2e7d32",
                       }}
                     >
-                      ${(() => {
+                      $
+                      {(() => {
                         // Sumar adicionales normales (excluyendo traslado)
                         let total = otrosConceptos
                           .filter(
@@ -1451,17 +1578,23 @@ const Liquidacion = () => {
                               c.tipo !== "descuento" &&
                               !c.nombre.toLowerCase().includes("sac") &&
                               c.nombre.toLowerCase() !== "sueldo básico" &&
-                              !c.nombre.toLowerCase().includes("adicional traslado")
+                              !c.nombre
+                                .toLowerCase()
+                                .includes("adicional traslado")
                           )
                           .reduce((sum, c) => {
                             return sum + (valoresCalculados[c.nombre] || 0);
                           }, 0);
-                        
+
                         // Agregar el adicional de traslado seleccionado si existe
-                        if (adicionalTrasladoSeleccionado && valoresCalculados[adicionalTrasladoSeleccionado]) {
-                          total += valoresCalculados[adicionalTrasladoSeleccionado];
+                        if (
+                          adicionalTrasladoSeleccionado &&
+                          valoresCalculados[adicionalTrasladoSeleccionado]
+                        ) {
+                          total +=
+                            valoresCalculados[adicionalTrasladoSeleccionado];
                         }
-                        
+
                         return total.toLocaleString("es-AR");
                       })()}
                     </Typography>
@@ -1529,9 +1662,9 @@ const Liquidacion = () => {
                                   <Typography
                                     variant="h6"
                                     sx={{
-                                      fontWeight: 700,
+                                      fontWeight: 600,
                                       color: "#000",
-                                      fontSize: 17,
+                                      fontSize: 19,
                                     }}
                                   >
                                     {c.nombre}
@@ -1581,11 +1714,11 @@ const Liquidacion = () => {
                                   Valor calculado
                                 </Typography>
                                 <Typography
-                                  variant="h5"
                                   sx={{
                                     fontWeight: 700,
                                     color: "#000",
                                     textAlign: "right",
+                                    fontSize: 20,
                                   }}
                                 >
                                   {valoresCalculados[c.nombre] !== undefined
@@ -1642,11 +1775,14 @@ const Liquidacion = () => {
                   <MuiTextField
                     type="number"
                     value={horasExtras50}
-                    onChange={(e) => setHorasExtras50(e.target.value)}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      setHorasExtras50(valor);
+                    }}
                     placeholder="0"
                     inputProps={{
                       min: 0,
-                      max: 999,
+                      max: 30,
                       step: 0.5,
                     }}
                     sx={{
@@ -1661,8 +1797,17 @@ const Liquidacion = () => {
                         },
                       },
                     }}
+                    error={
+                      (parseFloat(horasExtras50) || 0) +
+                        (parseFloat(horasExtras100) || 0) >
+                      30
+                    }
                     helperText={
-                      valorHoraNormal > 0 && horasExtras50
+                      (parseFloat(horasExtras50) || 0) +
+                        (parseFloat(horasExtras100) || 0) >
+                      30
+                        ? "⚠️ Total de horas extras no puede superar 30"
+                        : valorHoraNormal > 0 && horasExtras50
                         ? `Valor: $${(
                             parseFloat(horasExtras50) *
                             valorHoraNormal *
@@ -1691,11 +1836,14 @@ const Liquidacion = () => {
                   <MuiTextField
                     type="number"
                     value={horasExtras100}
-                    onChange={(e) => setHorasExtras100(e.target.value)}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      setHorasExtras100(valor);
+                    }}
                     placeholder="0"
                     inputProps={{
                       min: 0,
-                      max: 999,
+                      max: 30,
                       step: 0.5,
                     }}
                     sx={{
@@ -1710,8 +1858,17 @@ const Liquidacion = () => {
                         },
                       },
                     }}
+                    error={
+                      (parseFloat(horasExtras50) || 0) +
+                        (parseFloat(horasExtras100) || 0) >
+                      30
+                    }
                     helperText={
-                      valorHoraNormal > 0 && horasExtras100
+                      (parseFloat(horasExtras50) || 0) +
+                        (parseFloat(horasExtras100) || 0) >
+                      30
+                        ? "⚠️ Total de horas extras no puede superar 30"
+                        : valorHoraNormal > 0 && horasExtras100
                         ? `Valor: $${(
                             parseFloat(horasExtras100) *
                             valorHoraNormal *
@@ -1725,16 +1882,33 @@ const Liquidacion = () => {
                   />
                 </Box>
 
-                {/* Información del valor hora */}
-                {valorHoraNormal > 0 && (
+                {/* Información del valor hora y total de horas */}
+                <Box
+                  sx={{
+                    flex: "1 1 100%",
+                    mt: 1,
+                    p: 2,
+                    background:
+                      (parseFloat(horasExtras50) || 0) +
+                        (parseFloat(horasExtras100) || 0) >
+                      30
+                        ? "#ffebee"
+                        : "#f5f5f5",
+                    borderRadius: 2,
+                    border:
+                      (parseFloat(horasExtras50) || 0) +
+                        (parseFloat(horasExtras100) || 0) >
+                      30
+                        ? "2px solid #d32f2f"
+                        : "1px solid #e0e0e0",
+                  }}
+                >
                   <Box
                     sx={{
-                      flex: "1 1 100%",
-                      mt: 1,
-                      p: 2,
-                      background: "#f5f5f5",
-                      borderRadius: 2,
-                      border: "1px solid #e0e0e0",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 1,
                     }}
                   >
                     <Typography
@@ -1744,12 +1918,39 @@ const Liquidacion = () => {
                         fontWeight: 600,
                       }}
                     >
-                      ℹ️ Valor hora normal: $
-                      {valorHoraNormal.toLocaleString("es-AR", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {valorHoraNormal > 0 ? (
+                        <>
+                          ℹ️ Valor hora normal: $
+                          {valorHoraNormal.toLocaleString("es-AR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </>
+                      ) : (
+                        "ℹ️ Información de Horas Extras"
+                      )}
                     </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color:
+                          (parseFloat(horasExtras50) || 0) +
+                            (parseFloat(horasExtras100) || 0) >
+                          30
+                            ? "#d32f2f"
+                            : "#1976d2",
+                        fontWeight: 700,
+                      }}
+                    >
+                      Total horas:{" "}
+                      {(
+                        (parseFloat(horasExtras50) || 0) +
+                        (parseFloat(horasExtras100) || 0)
+                      ).toFixed(1)}{" "}
+                      / 30
+                    </Typography>
+                  </Box>
+                  {valorHoraNormal > 0 && (
                     <Typography
                       variant="caption"
                       sx={{
@@ -1771,8 +1972,8 @@ const Liquidacion = () => {
                       })}{" "}
                       por hora
                     </Typography>
-                  </Box>
-                )}
+                  )}
+                </Box>
               </Box>
 
               {/* Mostrar valores calculados de horas extras */}
@@ -1869,7 +2070,7 @@ const Liquidacion = () => {
                     </Box>
                   </Box>
                 )}
-              
+
               {/* Subtotal Horas Extras */}
               <Box
                 sx={{
@@ -1899,7 +2100,8 @@ const Liquidacion = () => {
                     color: "#5e35b1",
                   }}
                 >
-                  ${(() => {
+                  $
+                  {(() => {
                     const total =
                       (valoresCalculados["Horas extras al 50%"] || 0) +
                       (valoresCalculados["Horas extras al 100%"] || 0);
@@ -1979,31 +2181,33 @@ const Liquidacion = () => {
                   </Box>
                 </Box>
 
-                <Box
-                  sx={{ display: "flex", flexDirection: "column", gap: 2 }}
-                >
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {otrosConceptos
                     .filter((c) => c.tipo === "descuento")
                     .sort((a, b) => {
                       // Ordenar descuentos: sindicato primero
-                      const esSindicatoA = a.nombre.toLowerCase().includes("cuota sindical") || 
-                                          a.nombre.toLowerCase().includes("cuota solidaria") ||
-                                          a.nombre.toLowerCase().includes("aporte solidario");
-                      const esSindicatoB = b.nombre.toLowerCase().includes("cuota sindical") || 
-                                          b.nombre.toLowerCase().includes("cuota solidaria") ||
-                                          b.nombre.toLowerCase().includes("aporte solidario");
-                      
+                      const esSindicatoA =
+                        a.nombre.toLowerCase().includes("cuota sindical") ||
+                        a.nombre.toLowerCase().includes("cuota solidaria") ||
+                        a.nombre.toLowerCase().includes("aporte solidario");
+                      const esSindicatoB =
+                        b.nombre.toLowerCase().includes("cuota sindical") ||
+                        b.nombre.toLowerCase().includes("cuota solidaria") ||
+                        b.nombre.toLowerCase().includes("aporte solidario");
+
                       if (esSindicatoA && !esSindicatoB) return -1;
                       if (!esSindicatoA && esSindicatoB) return 1;
-                      
+
                       // Dentro de conceptos de sindicato, orden específico
                       if (esSindicatoA && esSindicatoB) {
-                        if (a.nombre.includes("Cuota Sindical Afiliado")) return -1;
-                        if (b.nombre.includes("Cuota Sindical Afiliado")) return 1;
+                        if (a.nombre.includes("Cuota Sindical Afiliado"))
+                          return -1;
+                        if (b.nombre.includes("Cuota Sindical Afiliado"))
+                          return 1;
                         if (a.nombre.includes("Cuota Solidaria")) return -1;
                         if (b.nombre.includes("Cuota Solidaria")) return 1;
                       }
-                      
+
                       return 0; // Mantener orden original para los demás
                     })
                     .map((c, index) => {
@@ -2049,9 +2253,9 @@ const Liquidacion = () => {
                                 <Typography
                                   variant="h6"
                                   sx={{
-                                    fontWeight: 700,
+                                    fontWeight: 600,
                                     color: "#000",
-                                    fontSize: 17,
+                                    fontSize: 19,
                                     mb: 0.5,
                                   }}
                                 >
@@ -2090,11 +2294,11 @@ const Liquidacion = () => {
                                   Valor calculado
                                 </Typography>
                                 <Typography
-                                  variant="h5"
                                   sx={{
                                     fontWeight: 700,
                                     color: "#000",
                                     textAlign: "right",
+                                    fontSize: 20,
                                   }}
                                 >
                                   {valoresCalculados[c.nombre] !== undefined
@@ -2110,7 +2314,7 @@ const Liquidacion = () => {
                       );
                     })}
                 </Box>
-                
+
                 {/* Subtotal Descuentos */}
                 <Box
                   sx={{
@@ -2140,7 +2344,8 @@ const Liquidacion = () => {
                       color: "#c62828",
                     }}
                   >
-                    ${(() => {
+                    $
+                    {(() => {
                       const total = otrosConceptos
                         .filter((c) => c.tipo === "descuento")
                         .reduce((sum, c) => {
@@ -2199,26 +2404,36 @@ const Liquidacion = () => {
                     color: "#0d47a1",
                   }}
                 >
-                  ${(() => {
+                  $
+                  {(() => {
                     const sueldoBasicoKey = Object.keys(valores).find(
                       (k) => k.toLowerCase() === "sueldo básico"
                     );
                     const sueldoBasico = sueldoBasicoKey
                       ? parseFloat(valores[sueldoBasicoKey]) || 0
                       : 0;
-                    
+
                     // Sumar todos los haberes remunerativos (sin suma_fija_no_remunerativa)
                     const totalOtrosConceptos = otrosConceptos
-                      .filter((c) => c.tipo !== "descuento" && !c.suma_fija_no_remunerativa)
+                      .filter(
+                        (c) =>
+                          c.tipo !== "descuento" && !c.suma_fija_no_remunerativa
+                      )
                       .reduce((sum, c) => {
                         return sum + (valoresCalculados[c.nombre] || 0);
                       }, 0);
-                    
+
                     // Sumar horas extras (que no están en otrosConceptos)
-                    const horasExtras50Val = valoresCalculados["Horas extras al 50%"] || 0;
-                    const horasExtras100Val = valoresCalculados["Horas extras al 100%"] || 0;
-                    
-                    const totalRemunerativo = sueldoBasico + totalOtrosConceptos + horasExtras50Val + horasExtras100Val;
+                    const horasExtras50Val =
+                      valoresCalculados["Horas extras al 50%"] || 0;
+                    const horasExtras100Val =
+                      valoresCalculados["Horas extras al 100%"] || 0;
+
+                    const totalRemunerativo =
+                      sueldoBasico +
+                      totalOtrosConceptos +
+                      horasExtras50Val +
+                      horasExtras100Val;
                     return totalRemunerativo.toLocaleString("es-AR");
                   })()}
                 </Typography>
@@ -2253,10 +2468,20 @@ const Liquidacion = () => {
                     color: "#6a1b9a",
                   }}
                 >
-                  ${(() => {
-                    const sumaFija = sumaFijaNoRemunerativa ? parseFloat(sumaFijaNoRemunerativa.replace(/\./g, '').replace(',', '.')) : 0;
+                  $
+                  {(() => {
+                    const sumaFija = sumaFijaNoRemunerativa
+                      ? parseFloat(
+                          sumaFijaNoRemunerativa
+                            .replace(/\./g, "")
+                            .replace(",", ".")
+                        )
+                      : 0;
                     const totalNoRemunerativo = otrosConceptos
-                      .filter((c) => c.tipo !== "descuento" && c.suma_fija_no_remunerativa)
+                      .filter(
+                        (c) =>
+                          c.tipo !== "descuento" && c.suma_fija_no_remunerativa
+                      )
                       .reduce((sum, c) => {
                         return sum + (valoresCalculados[c.nombre] || 0);
                       }, sumaFija);
@@ -2294,27 +2519,41 @@ const Liquidacion = () => {
                     color: "#1b5e20",
                   }}
                 >
-                  ${(() => {
+                  $
+                  {(() => {
                     const sueldoBasicoKey = Object.keys(valores).find(
                       (k) => k.toLowerCase() === "sueldo básico"
                     );
                     const sueldoBasico = sueldoBasicoKey
                       ? parseFloat(valores[sueldoBasicoKey]) || 0
                       : 0;
-                    const sumaFija = sumaFijaNoRemunerativa ? parseFloat(sumaFijaNoRemunerativa.replace(/\./g, '').replace(',', '.')) : 0;
-                    
+                    const sumaFija = sumaFijaNoRemunerativa
+                      ? parseFloat(
+                          sumaFijaNoRemunerativa
+                            .replace(/\./g, "")
+                            .replace(",", ".")
+                        )
+                      : 0;
+
                     // Sumar otros conceptos (adicionales, SAC, etc.)
                     const totalOtrosConceptos = otrosConceptos
                       .filter((c) => c.tipo !== "descuento")
                       .reduce((sum, c) => {
                         return sum + (valoresCalculados[c.nombre] || 0);
                       }, 0);
-                    
+
                     // Sumar horas extras
-                    const horasExtras50Val = valoresCalculados["Horas extras al 50%"] || 0;
-                    const horasExtras100Val = valoresCalculados["Horas extras al 100%"] || 0;
-                    
-                    const totalHaberes = sueldoBasico + sumaFija + totalOtrosConceptos + horasExtras50Val + horasExtras100Val;
+                    const horasExtras50Val =
+                      valoresCalculados["Horas extras al 50%"] || 0;
+                    const horasExtras100Val =
+                      valoresCalculados["Horas extras al 100%"] || 0;
+
+                    const totalHaberes =
+                      sueldoBasico +
+                      sumaFija +
+                      totalOtrosConceptos +
+                      horasExtras50Val +
+                      horasExtras100Val;
                     return totalHaberes.toLocaleString("es-AR");
                   })()}
                 </Typography>
@@ -2349,7 +2588,8 @@ const Liquidacion = () => {
                     color: "#c62828",
                   }}
                 >
-                  ${(() => {
+                  $
+                  {(() => {
                     const total = otrosConceptos
                       .filter((c) => c.tipo === "descuento")
                       .reduce((sum, c) => {
@@ -2365,7 +2605,8 @@ const Liquidacion = () => {
                 sx={{
                   mt: 3,
                   p: 3,
-                  background: "linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)",
+                  background:
+                    "linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)",
                   borderRadius: 2,
                   border: "3px solid #0d47a1",
                   display: "flex",
@@ -2390,73 +2631,535 @@ const Liquidacion = () => {
                     color: "#ffffff",
                   }}
                 >
-                  ${(() => {
+                  $
+                  {(() => {
                     const sueldoBasicoKey = Object.keys(valores).find(
                       (k) => k.toLowerCase() === "sueldo básico"
                     );
                     const sueldoBasico = sueldoBasicoKey
                       ? parseFloat(valores[sueldoBasicoKey]) || 0
                       : 0;
-                    const sumaFija = sumaFijaNoRemunerativa ? parseFloat(sumaFijaNoRemunerativa.replace(/\./g, '').replace(',', '.')) : 0;
-                    
+                    const sumaFija = sumaFijaNoRemunerativa
+                      ? parseFloat(
+                          sumaFijaNoRemunerativa
+                            .replace(/\./g, "")
+                            .replace(",", ".")
+                        )
+                      : 0;
+
                     // Total de otros conceptos (no descuentos)
                     const totalOtrosConceptos = otrosConceptos
                       .filter((c) => c.tipo !== "descuento")
                       .reduce((sum, c) => {
                         return sum + (valoresCalculados[c.nombre] || 0);
                       }, 0);
-                    
+
                     // Horas extras
-                    const horasExtras50Val = valoresCalculados["Horas extras al 50%"] || 0;
-                    const horasExtras100Val = valoresCalculados["Horas extras al 100%"] || 0;
-                    
+                    const horasExtras50Val =
+                      valoresCalculados["Horas extras al 50%"] || 0;
+                    const horasExtras100Val =
+                      valoresCalculados["Horas extras al 100%"] || 0;
+
                     // Total haberes
-                    const totalHaberes = sueldoBasico + sumaFija + totalOtrosConceptos + horasExtras50Val + horasExtras100Val;
-                    
+                    const totalHaberes =
+                      sueldoBasico +
+                      sumaFija +
+                      totalOtrosConceptos +
+                      horasExtras50Val +
+                      horasExtras100Val;
+
                     // Total descuentos
                     const totalDescuentos = otrosConceptos
                       .filter((c) => c.tipo === "descuento")
                       .reduce((sum, c) => {
                         return sum + (valoresCalculados[c.nombre] || 0);
                       }, 0);
-                    
+
                     const neto = totalHaberes - totalDescuentos;
                     return neto.toLocaleString("es-AR");
                   })()}
                 </Typography>
               </Box>
-
-              {/* Botón Guardar Liquidación */}
-              <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={guardarLiquidacion}
-                  disabled={guardandoLiquidacion || liquidacionGuardada}
-                  sx={{
-                    backgroundColor: liquidacionGuardada ? "#4caf50" : "#1976d2",
-                    color: "#fff",
-                    px: 6,
-                    py: 1.5,
-                    fontSize: "1.1rem",
-                    fontWeight: 700,
-                    "&:hover": {
-                      backgroundColor: liquidacionGuardada ? "#45a049" : "#1565c0",
-                    },
-                    "&:disabled": {
-                      backgroundColor: "#bdbdbd",
-                      color: "#757575",
-                    },
-                  }}
-                >
-                  {guardandoLiquidacion ? "Guardando..." : liquidacionGuardada ? "✓ Liquidación Guardada" : "Guardar Liquidación"}
-                </Button>
-              </Box>
             </Box>
           </Box>
         );
+
+      case 3:
+        // Paso 4: Revisión Final y Confirmación
+        const sueldoBasicoKey = Object.keys(valores).find(
+          (k) => k.toLowerCase() === "sueldo básico"
+        );
+        const sueldoBasico = sueldoBasicoKey
+          ? parseFloat(valores[sueldoBasicoKey]) || 0
+          : 0;
+
+        const sumaFija = sumaFijaNoRemunerativa
+          ? parseFloat(
+              sumaFijaNoRemunerativa.replace(/\./g, "").replace(",", ".")
+            )
+          : 0;
+
+        const totalOtrosConceptos = otrosConceptos
+          .filter((c) => c.tipo !== "descuento")
+          .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
+
+        const horasExtras50Val = valoresCalculados["Horas extras al 50%"] || 0;
+        const horasExtras100Val =
+          valoresCalculados["Horas extras al 100%"] || 0;
+
+        const totalHaberes =
+          sueldoBasico +
+          sumaFija +
+          totalOtrosConceptos +
+          horasExtras50Val +
+          horasExtras100Val;
+
+        const totalDescuentos = otrosConceptos
+          .filter((c) => c.tipo === "descuento")
+          .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
+
+        const netoAPagar = totalHaberes - totalDescuentos;
+
+        const totalRemunerativo =
+          sueldoBasico +
+          otrosConceptos
+            .filter(
+              (c) => c.tipo !== "descuento" && !c.suma_fija_no_remunerativa
+            )
+            .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0) +
+          horasExtras50Val +
+          horasExtras100Val;
+
+        const totalNoRemunerativo =
+          sumaFija +
+          otrosConceptos
+            .filter(
+              (c) => c.tipo !== "descuento" && c.suma_fija_no_remunerativa
+            )
+            .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
+
+        return (
+          <Box>
+            <Typography
+              variant="h5"
+              sx={{
+                mb: 3,
+                fontWeight: 700,
+                color: "primary.main",
+                letterSpacing: 1,
+                textAlign: "center",
+              }}
+            >
+              Revisión Final de la Liquidación
+            </Typography>
+
+            {/* Información del Empleado */}
+            {employeeFound && (
+              <Card
+                sx={{
+                  mb: 3,
+                  background:
+                    "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
+                  borderRadius: 3,
+                  boxShadow: 4,
+                }}
+              >
+                <CardContent>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: 700, color: "#fff", mb: 2 }}
+                  >
+                    Datos del Empleado
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 2,
+                    }}
+                  >
+                    <Box>
+                      <Typography sx={{ fontSize: 14, color: "#e3f2fd" }}>
+                        Nombre Completo
+                      </Typography>
+                      <Typography
+                        sx={{ fontSize: 16, color: "#fff", fontWeight: 600 }}
+                      >
+                        {employeeFound.apellido}, {employeeFound.nombre}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 14, color: "#e3f2fd" }}>
+                        DNI
+                      </Typography>
+                      <Typography
+                        sx={{ fontSize: 16, color: "#fff", fontWeight: 600 }}
+                      >
+                        {employeeFound.dni}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 14, color: "#e3f2fd" }}>
+                        CUIL
+                      </Typography>
+                      <Typography
+                        sx={{ fontSize: 16, color: "#fff", fontWeight: 600 }}
+                      >
+                        {employeeFound.cuil}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 14, color: "#e3f2fd" }}>
+                        Categoría
+                      </Typography>
+                      <Typography
+                        sx={{ fontSize: 16, color: "#fff", fontWeight: 600 }}
+                      >
+                        {employeeFound.categoria}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 14, color: "#e3f2fd" }}>
+                        Período
+                      </Typography>
+                      <Typography
+                        sx={{ fontSize: 16, color: "#fff", fontWeight: 600 }}
+                      >
+                        {periodo
+                          ? new Date(periodo + "-01").toLocaleDateString(
+                              "es-AR",
+                              { month: "long", year: "numeric" }
+                            )
+                          : "-"}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: 14, color: "#e3f2fd" }}>
+                        Tipo de Jornada
+                      </Typography>
+                      <Typography
+                        sx={{ fontSize: 16, color: "#fff", fontWeight: 600 }}
+                      >
+                        {tipoJornada === "completa"
+                          ? "Completa"
+                          : tipoJornada === "dos_tercios"
+                          ? "2/3 Jornada"
+                          : "Media Jornada"}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Resumen de Haberes */}
+            <Card sx={{ mb: 3, borderRadius: 3, boxShadow: 3 }}>
+              <CardContent>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 700, color: "#2e7d32", mb: 2 }}
+                >
+                  Haberes
+                </Typography>
+
+                {/* Sueldo Básico */}
+                {sueldoBasico > 0 && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      py: 1,
+                      borderBottom: "1px solid #e0e0e0",
+                    }}
+                  >
+                    <Typography sx={{ fontSize: 16 }}>Sueldo Básico</Typography>
+                    <Typography sx={{ fontSize: 16, fontWeight: 600 }}>
+                      ${sueldoBasico.toLocaleString("es-AR")}
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Suma Fija No Remunerativa */}
+                {sumaFija > 0 && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      py: 1,
+                      borderBottom: "1px solid #e0e0e0",
+                    }}
+                  >
+                    <Typography sx={{ fontSize: 16 }}>
+                      Suma Fija No Remunerativa
+                    </Typography>
+                    <Typography sx={{ fontSize: 16, fontWeight: 600 }}>
+                      ${sumaFija.toLocaleString("es-AR")}
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Otros Conceptos (Adicionales, SAC) */}
+                {otrosConceptos
+                  .filter(
+                    (c) =>
+                      c.tipo !== "descuento" &&
+                      (valoresCalculados[c.nombre] || 0) > 0
+                  )
+                  .map((c, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        py: 1,
+                        borderBottom: "1px solid #e0e0e0",
+                      }}
+                    >
+                      <Typography sx={{ fontSize: 16 }}>{c.nombre}</Typography>
+                      <Typography sx={{ fontSize: 16, fontWeight: 600 }}>
+                        ${valoresCalculados[c.nombre].toLocaleString("es-AR")}
+                      </Typography>
+                    </Box>
+                  ))}
+
+                {/* Horas Extras */}
+                {horasExtras50Val > 0 && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      py: 1,
+                      borderBottom: "1px solid #e0e0e0",
+                    }}
+                  >
+                    <Typography sx={{ fontSize: 16 }}>
+                      Horas Extras al 50% ({horasExtras50} hs)
+                    </Typography>
+                    <Typography sx={{ fontSize: 16, fontWeight: 600 }}>
+                      ${horasExtras50Val.toLocaleString("es-AR")}
+                    </Typography>
+                  </Box>
+                )}
+                {horasExtras100Val > 0 && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      py: 1,
+                      borderBottom: "1px solid #e0e0e0",
+                    }}
+                  >
+                    <Typography sx={{ fontSize: 16 }}>
+                      Horas Extras al 100% ({horasExtras100} hs)
+                    </Typography>
+                    <Typography sx={{ fontSize: 16, fontWeight: 600 }}>
+                      ${horasExtras100Val.toLocaleString("es-AR")}
+                    </Typography>
+                  </Box>
+                )}
+
+                {/* Subtotal Haberes */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    py: 2,
+                    mt: 1,
+                    background: "#e8f5e9",
+                    borderRadius: 2,
+                    px: 2,
+                  }}
+                >
+                  <Typography
+                    sx={{ fontSize: 18, fontWeight: 700, color: "#2e7d32" }}
+                  >
+                    Total Haberes
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: 18, fontWeight: 700, color: "#2e7d32" }}
+                  >
+                    ${totalHaberes.toLocaleString("es-AR")}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Resumen de Descuentos */}
+            <Card sx={{ mb: 3, borderRadius: 3, boxShadow: 3 }}>
+              <CardContent>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 700, color: "#d32f2f", mb: 2 }}
+                >
+                  Descuentos
+                </Typography>
+
+                {otrosConceptos
+                  .filter(
+                    (c) =>
+                      c.tipo === "descuento" &&
+                      (valoresCalculados[c.nombre] || 0) > 0
+                  )
+                  .map((c, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        py: 1,
+                        borderBottom: "1px solid #e0e0e0",
+                      }}
+                    >
+                      <Typography sx={{ fontSize: 16 }}>{c.nombre}</Typography>
+                      <Typography sx={{ fontSize: 16, fontWeight: 600 }}>
+                        ${valoresCalculados[c.nombre].toLocaleString("es-AR")}
+                      </Typography>
+                    </Box>
+                  ))}
+
+                {/* Subtotal Descuentos */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    py: 2,
+                    mt: 1,
+                    background: "#ffebee",
+                    borderRadius: 2,
+                    px: 2,
+                  }}
+                >
+                  <Typography
+                    sx={{ fontSize: 18, fontWeight: 700, color: "#c62828" }}
+                  >
+                    Total Descuentos
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: 18, fontWeight: 700, color: "#c62828" }}
+                  >
+                    ${totalDescuentos.toLocaleString("es-AR")}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Totales Finales */}
+            <Card
+              sx={{
+                mb: 3,
+                borderRadius: 3,
+                boxShadow: 4,
+                background: "linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)",
+              }}
+            >
+              <CardContent>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    mb: 2,
+                  }}
+                >
+                  <Typography sx={{ fontSize: 16, color: "#e3f2fd" }}>
+                    Total Remunerativo
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: 16, fontWeight: 600, color: "#fff" }}
+                  >
+                    ${totalRemunerativo.toLocaleString("es-AR")}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    mb: 3,
+                  }}
+                >
+                  <Typography sx={{ fontSize: 16, color: "#e3f2fd" }}>
+                    Total No Remunerativo
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: 16, fontWeight: 600, color: "#fff" }}
+                  >
+                    ${totalNoRemunerativo.toLocaleString("es-AR")}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    py: 2,
+                    borderTop: "2px solid #fff",
+                  }}
+                >
+                  <Typography
+                    sx={{ fontSize: 22, fontWeight: 700, color: "#fff" }}
+                  >
+                    Neto a Cobrar
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: 28, fontWeight: 700, color: "#fff" }}
+                  >
+                    ${netoAPagar.toLocaleString("es-AR")}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Botón Confirmar y Guardar */}
+            <Box
+              sx={{ mt: 4, display: "flex", justifyContent: "center", gap: 2 }}
+            >
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={handleBack}
+                sx={{
+                  px: 4,
+                  py: 1.5,
+                  fontSize: "1.1rem",
+                  fontWeight: 600,
+                }}
+              >
+                Volver a Editar
+              </Button>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={guardarLiquidacion}
+                disabled={guardandoLiquidacion || liquidacionGuardada}
+                sx={{
+                  backgroundColor: liquidacionGuardada ? "#4caf50" : "#1976d2",
+                  color: "#fff",
+                  px: 6,
+                  py: 1.5,
+                  fontSize: "1.1rem",
+                  fontWeight: 700,
+                  "&:hover": {
+                    backgroundColor: liquidacionGuardada
+                      ? "#45a049"
+                      : "#1565c0",
+                  },
+                  "&:disabled": {
+                    backgroundColor: "#bdbdbd",
+                    color: "#757575",
+                  },
+                }}
+              >
+                {guardandoLiquidacion
+                  ? "Guardando..."
+                  : liquidacionGuardada
+                  ? "✓ Liquidación Guardada"
+                  : "Confirmar y Guardar Liquidación"}
+              </Button>
+            </Box>
+          </Box>
+        );
+
       default:
-        return <Typography>Próximos pasos en desarrollo...</Typography>;
+        return <Typography>Paso no disponible</Typography>;
     }
   };
 
@@ -2475,7 +3178,7 @@ const Liquidacion = () => {
 
       <BackButton to="/contadores" />
 
-      <Container maxWidth="md" sx={{ mt: 4, mb: 6 }}>
+      <Container maxWidth="md" sx={{ mt: 4, mb: 6, flex: 1 }}>
         <Stepper activeStep={activeStep} alternativeLabel>
           {steps.map((label) => (
             <Step key={label}>
