@@ -701,13 +701,11 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
 
     // Obtener datos de la liquidación
     const [liquidaciones]: any = await pool.execute(
-      `SELECT l.*, e.Nombre, e.Apellido, e.Numero_Documento, e.CUIL, 
-              emp.RazonSocial as Empresa, emp.CUIT as CUIT_Empresa,
-              c.Nombre_Cargo as Cargo
+      `SELECT l.*, e.Nombre, e.Apellido, e.Numero_Documento,
+              emp.Nombre_Empresa, emp.CUIL_CUIT, emp.Direccion
        FROM Liquidacion l
        INNER JOIN Empleado e ON l.Id_Empleado = e.Id_Empleado
        LEFT JOIN Empresa emp ON e.Id_Empresa = emp.Id_Empresa
-       LEFT JOIN Cargos c ON e.Id_Cargo = c.Id_Cargo
        WHERE l.Id_Liquidacion = ?`,
       [id]
     );
@@ -745,13 +743,14 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
     doc.moveDown(0.5);
     doc.fontSize(10).font("Helvetica").text(`Período: ${liquidacion.Periodo}`, { align: "center" });
     doc.fontSize(9).text(`Fecha de liquidación: ${new Date(liquidacion.FechaLiquidacion).toLocaleDateString("es-AR")}`, { align: "center" });
-    doc.moveDown(1);
+    doc.moveDown(1.5);
 
-    // DATOS DE LA EMPRESA
+    // DATOS DEL EMPLEADOR
     doc.fontSize(11).font("Helvetica-Bold").text("EMPLEADOR", { underline: true });
     doc.fontSize(9).font("Helvetica");
-    doc.text(`Razón Social: ${liquidacion.Empresa || "N/A"}`);
-    doc.text(`CUIT: ${liquidacion.CUIT_Empresa || "N/A"}`);
+    doc.text(`Razón Social: ${liquidacion.Nombre_Empresa || "N/A"}`);
+    doc.text(`CUIT: ${liquidacion.CUIL_CUIT || "N/A"}`);
+    doc.text(`Domicilio: ${liquidacion.Direccion || "N/A"}`);
     doc.moveDown(1);
 
     // DATOS DEL EMPLEADO
@@ -759,8 +758,6 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
     doc.fontSize(9).font("Helvetica");
     doc.text(`Apellido y Nombre: ${liquidacion.Apellido}, ${liquidacion.Nombre}`);
     doc.text(`DNI: ${liquidacion.Numero_Documento}`);
-    doc.text(`CUIL: ${liquidacion.CUIL || "N/A"}`);
-    doc.text(`Cargo: ${liquidacion.Cargo || "N/A"}`);
     doc.text(`Tipo de Jornada: ${liquidacion.TipoJornada || "N/A"}`);
     doc.moveDown(1.5);
 
@@ -782,15 +779,34 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
     let currentY = startY + rowHeight;
     doc.font("Helvetica").fontSize(8);
 
+    // Separar haberes y descuentos por nombre del concepto
+    const conceptosHaberes = detalles.filter((d: any) => {
+      const concepto = d.Concepto.toLowerCase();
+      return !concepto.includes('descuento') && 
+             !concepto.includes('jubilación') && 
+             !concepto.includes('pami') && 
+             !concepto.includes('obra social') && 
+             !concepto.includes('sindical') && 
+             !concepto.includes('cuota');
+    });
+
+    const conceptosDescuentos = detalles.filter((d: any) => {
+      const concepto = d.Concepto.toLowerCase();
+      return concepto.includes('descuento') || 
+             concepto.includes('jubilación') || 
+             concepto.includes('pami') || 
+             concepto.includes('obra social') || 
+             concepto.includes('sindical') || 
+             concepto.includes('cuota');
+    });
+
     // HABERES
     let totalHaberes = 0;
-    detalles.forEach((detalle: any) => {
-      if (detalle.Monto >= 0) {
-        doc.text(detalle.Concepto, colConcepto, currentY);
-        doc.text(`$ ${parseFloat(detalle.Monto).toFixed(2)}`, colMonto, currentY);
-        totalHaberes += parseFloat(detalle.Monto);
-        currentY += rowHeight;
-      }
+    conceptosHaberes.forEach((detalle: any) => {
+      doc.text(detalle.Concepto, colConcepto, currentY);
+      doc.text(`$ ${parseFloat(detalle.Monto).toFixed(2)}`, colMonto, currentY);
+      totalHaberes += parseFloat(detalle.Monto);
+      currentY += rowHeight;
     });
 
     // Línea separadora
@@ -803,13 +819,11 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
     currentY += rowHeight;
     doc.font("Helvetica");
 
-    detalles.forEach((detalle: any) => {
-      if (detalle.Monto < 0) {
-        doc.text(detalle.Concepto, colConcepto, currentY);
-        doc.text(`$ ${Math.abs(parseFloat(detalle.Monto)).toFixed(2)}`, colMonto, currentY);
-        totalDescuentos += Math.abs(parseFloat(detalle.Monto));
-        currentY += rowHeight;
-      }
+    conceptosDescuentos.forEach((detalle: any) => {
+      doc.text(detalle.Concepto, colConcepto, currentY);
+      doc.text(`$ ${Math.abs(parseFloat(detalle.Monto)).toFixed(2)}`, colMonto, currentY);
+      totalDescuentos += Math.abs(parseFloat(detalle.Monto));
+      currentY += rowHeight;
     });
 
     // Línea separadora
