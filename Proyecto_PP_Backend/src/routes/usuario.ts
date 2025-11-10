@@ -438,15 +438,18 @@ router.post("/auth/cambiar-password", async (req: Request, res: Response) => {
   }
 });
 
-// ✅ BUSCAR EMPLEADO POR DNI PARA LIQUIDACIÓN
-router.get("/empleado-buscar/:dni", async (req: Request, res: Response) => {
-  const { dni } = req.params;
+// ✅ BUSCAR EMPLEADO POR DNI, NOMBRE O APELLIDO PARA LIQUIDACIÓN
+router.get("/empleado-buscar/:searchTerm", async (req: Request, res: Response) => {
+  const { searchTerm } = req.params;
 
-  console.log("🔍 Buscando empleado para liquidación - DNI:", dni);
+  console.log("🔍 Buscando empleado para liquidación - Término:", searchTerm);
 
   try {
-    const [rows]: any = await db.query(
-      `SELECT 
+    // Determinar si es un DNI (solo números) o un nombre/apellido (contiene letras)
+    const isNumeric = /^\d+$/.test(searchTerm);
+    
+    let query = `
+      SELECT 
         e.Id_Empleado as id,
         e.Nombre as nombre,
         e.Apellido as apellido,
@@ -458,31 +461,59 @@ router.get("/empleado-buscar/:dni", async (req: Request, res: Response) => {
       FROM Empleado e
       LEFT JOIN Categoria cat ON e.Categoria = cat.Id_Categoria
       LEFT JOIN ConvenioColectivo cc ON cat.Id_Convenio = cc.id_convenio
-      WHERE e.Numero_Documento = ?`,
-      [dni]
-    );
+      WHERE `;
+    
+    let queryParams: any[] = [];
+    
+    if (isNumeric) {
+      // Búsqueda por DNI
+      query += `e.Numero_Documento = ?`;
+      queryParams = [searchTerm];
+    } else {
+      // Búsqueda por nombre o apellido (búsqueda parcial con LIKE)
+      query += `(e.Nombre LIKE ? OR e.Apellido LIKE ? OR CONCAT(e.Nombre, ' ', e.Apellido) LIKE ?)`;
+      const searchPattern = `%${searchTerm}%`;
+      queryParams = [searchPattern, searchPattern, searchPattern];
+    }
+
+    const [rows]: any = await db.query(query, queryParams);
 
     if (rows.length === 0) {
       return res.status(404).json({ message: "Empleado no encontrado" });
     }
 
-    const empleado = rows[0];
-
-    // Formatear respuesta para el frontend
-    const response = {
-      id: empleado.id,
-      dni: empleado.dni,
-      nombre: empleado.nombre,
-      apellido: empleado.apellido,
-      cuil: empleado.dni, // Si no tienes CUIL, usar DNI
-      categoria: empleado.categoria || "No especificado",
-      fechaIngreso: empleado.fechaIngreso
-        ? empleado.fechaIngreso.toISOString?.().split("T")[0] : empleado.fechaIngreso || "",
-      legajo: empleado.legajo || "",
-      convenioColectivo: empleado.convenioColectivo || ""
-    };
-
-    res.json(response);
+    // Si hay múltiples resultados, devolver array; si hay uno solo, devolver objeto
+    if (rows.length === 1) {
+      const empleado = rows[0];
+      const response = {
+        id: empleado.id,
+        dni: empleado.dni,
+        nombre: empleado.nombre,
+        apellido: empleado.apellido,
+        cuil: empleado.dni, // Si no tienes CUIL, usar DNI
+        categoria: empleado.categoria || "No especificado",
+        fechaIngreso: empleado.fechaIngreso
+          ? empleado.fechaIngreso.toISOString?.().split("T")[0] : empleado.fechaIngreso || "",
+        legajo: empleado.legajo || "",
+        convenioColectivo: empleado.convenioColectivo || ""
+      };
+      res.json(response);
+    } else {
+      // Múltiples resultados - devolver array
+      const response = rows.map((empleado: any) => ({
+        id: empleado.id,
+        dni: empleado.dni,
+        nombre: empleado.nombre,
+        apellido: empleado.apellido,
+        cuil: empleado.dni,
+        categoria: empleado.categoria || "No especificado",
+        fechaIngreso: empleado.fechaIngreso
+          ? empleado.fechaIngreso.toISOString?.().split("T")[0] : empleado.fechaIngreso || "",
+        legajo: empleado.legajo || "",
+        convenioColectivo: empleado.convenioColectivo || ""
+      }));
+      res.json(response);
+    }
   } catch (err: unknown) {
     const error = err as Error;
     console.error("❌ Error al buscar empleado:", error);
