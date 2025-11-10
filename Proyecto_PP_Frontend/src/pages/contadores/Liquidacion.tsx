@@ -105,6 +105,10 @@ const Liquidacion = () => {
   // Estado para afiliación al sindicato
   const [esAfiliadoSindicato, setEsAfiliadoSindicato] = useState(true);
 
+  // Estados para guardar liquidación
+  const [guardandoLiquidacion, setGuardandoLiquidacion] = useState(false);
+  const [liquidacionGuardada, setLiquidacionGuardada] = useState(false);
+
   // Función para verificar si el periodo es válido para SAC
   const esPeriodoSAC = (periodo: string): boolean => {
     if (!periodo) return false;
@@ -183,6 +187,128 @@ const Liquidacion = () => {
   useEffect(() => {
     calcularLiquidacion();
   }, [calcularLiquidacion]);
+
+  // Función para guardar la liquidación
+  const guardarLiquidacion = async () => {
+    if (!employeeFound || !periodo) {
+      alert("Faltan datos del empleado o periodo");
+      return;
+    }
+
+    setGuardandoLiquidacion(true);
+    setLiquidacionGuardada(false);
+
+    try {
+      // Calcular totales
+      const sueldoBasicoKey = Object.keys(valores).find(
+        (k) => k.toLowerCase() === "sueldo básico"
+      );
+      const sueldoBasico = sueldoBasicoKey
+        ? parseFloat(valores[sueldoBasicoKey]) || 0
+        : 0;
+      
+      const sumaFija = sumaFijaNoRemunerativa ? parseFloat(sumaFijaNoRemunerativa.replace(/\./g, '').replace(',', '.')) : 0;
+      
+      // Obtener otros conceptos filtrados
+      const otrosConceptos = conceptos.filter((c) => !c.nombre.toLowerCase().includes("horas extras"));
+      
+      const totalOtrosConceptos = otrosConceptos
+        .filter((c) => c.tipo !== "descuento")
+        .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
+      
+      const horasExtras50Val = valoresCalculados["Horas extras al 50%"] || 0;
+      const horasExtras100Val = valoresCalculados["Horas extras al 100%"] || 0;
+      
+      const totalHaberes = sueldoBasico + sumaFija + totalOtrosConceptos + horasExtras50Val + horasExtras100Val;
+      
+      const totalDescuentos = otrosConceptos
+        .filter((c) => c.tipo === "descuento")
+        .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
+      
+      const netoAPagar = totalHaberes - totalDescuentos;
+      
+      // Calcular total remunerativo y no remunerativo
+      const totalRemunerativo = sueldoBasico + otrosConceptos
+        .filter((c) => c.tipo !== "descuento" && !c.suma_fija_no_remunerativa)
+        .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0) + horasExtras50Val + horasExtras100Val;
+      
+      const totalNoRemunerativo = sumaFija + otrosConceptos
+        .filter((c) => c.tipo !== "descuento" && c.suma_fija_no_remunerativa)
+        .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
+
+      // Construir array de conceptos detalle
+      const conceptosDetalle = [];
+      
+      // Agregar sueldo básico
+      if (sueldoBasico > 0) {
+        conceptosDetalle.push({ concepto: "Sueldo Básico", monto: sueldoBasico });
+      }
+      
+      // Agregar suma fija no remunerativa
+      if (sumaFija > 0) {
+        conceptosDetalle.push({ concepto: "Suma Fija No Remunerativa", monto: sumaFija });
+      }
+      
+      // Agregar otros conceptos con valor
+      otrosConceptos.forEach((c) => {
+        const valor = valoresCalculados[c.nombre] || 0;
+        if (valor !== 0) {
+          conceptosDetalle.push({ concepto: c.nombre, monto: valor });
+        }
+      });
+      
+      // Agregar horas extras
+      if (horasExtras50Val > 0) {
+        conceptosDetalle.push({ concepto: "Horas extras al 50%", monto: horasExtras50Val });
+      }
+      if (horasExtras100Val > 0) {
+        conceptosDetalle.push({ concepto: "Horas extras al 100%", monto: horasExtras100Val });
+      }
+
+      const body = {
+        idEmpleado: employeeFound.id,
+        periodo: periodo,
+        totalRemunerativo: Math.round(totalRemunerativo * 100) / 100,
+        totalNoRemunerativo: Math.round(totalNoRemunerativo * 100) / 100,
+        totalHaberes: Math.round(totalHaberes * 100) / 100,
+        totalDescuentos: Math.round(totalDescuentos * 100) / 100,
+        netoAPagar: Math.round(netoAPagar * 100) / 100,
+        sumaFijaNoRemunerativa: Math.round(sumaFija * 100) / 100,
+        horasExtras50: parseFloat(horasExtras50 || "0"),
+        horasExtras100: parseFloat(horasExtras100 || "0"),
+        sacActivo: sacActivo,
+        asistenciaActiva: asistenciaActiva,
+        esAfiliadoSindicato: esAfiliadoSindicato,
+        adicionalTrasladoSeleccionado: adicionalTrasladoSeleccionado || null,
+        tipoJornada: tipoJornada,
+        conceptosDetalle: conceptosDetalle,
+        estado: 'confirmada'
+      };
+
+      const response = await fetch("http://localhost:4000/api/liquidacion/guardar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setLiquidacionGuardada(true);
+        alert(`Liquidación guardada exitosamente. ID: ${data.idLiquidacion}`);
+      } else {
+        const error = await response.json();
+        alert(`Error al guardar: ${error.message}`);
+      }
+    } catch (error) {
+      console.error("Error guardando liquidación:", error);
+      alert("Error al guardar la liquidación");
+    } finally {
+      setGuardandoLiquidacion(false);
+    }
+  };
 
   useEffect(() => {
     if (!editingSueldo) {
@@ -1956,6 +2082,307 @@ const Liquidacion = () => {
                 </Box>
               </Box>
             )}
+
+            {/* TOTALES FINALES */}
+            <Box sx={{ mt: 4 }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  background: "#424242",
+                  color: "#ffffff",
+                  border: "1px solid #616161",
+                  borderRadius: 2,
+                  mb: 3,
+                  p: 1.5,
+                }}
+              >
+                Resumen de Liquidación
+              </Typography>
+
+              {/* Total Remunerativo Bruto */}
+              <Box
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  background: "#e3f2fd",
+                  borderRadius: 2,
+                  border: "2px solid #1976d2",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#0d47a1",
+                  }}
+                >
+                  Total Remunerativo Bruto
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#0d47a1",
+                  }}
+                >
+                  ${(() => {
+                    const sueldoBasicoKey = Object.keys(valores).find(
+                      (k) => k.toLowerCase() === "sueldo básico"
+                    );
+                    const sueldoBasico = sueldoBasicoKey
+                      ? parseFloat(valores[sueldoBasicoKey]) || 0
+                      : 0;
+                    
+                    // Sumar todos los haberes remunerativos (sin suma_fija_no_remunerativa)
+                    const totalOtrosConceptos = otrosConceptos
+                      .filter((c) => c.tipo !== "descuento" && !c.suma_fija_no_remunerativa)
+                      .reduce((sum, c) => {
+                        return sum + (valoresCalculados[c.nombre] || 0);
+                      }, 0);
+                    
+                    // Sumar horas extras (que no están en otrosConceptos)
+                    const horasExtras50Val = valoresCalculados["Horas extras al 50%"] || 0;
+                    const horasExtras100Val = valoresCalculados["Horas extras al 100%"] || 0;
+                    
+                    const totalRemunerativo = sueldoBasico + totalOtrosConceptos + horasExtras50Val + horasExtras100Val;
+                    return totalRemunerativo.toLocaleString("es-AR");
+                  })()}
+                </Typography>
+              </Box>
+
+              {/* Total No Remunerativo */}
+              <Box
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  background: "#f3e5f5",
+                  borderRadius: 2,
+                  border: "2px solid #9c27b0",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#6a1b9a",
+                  }}
+                >
+                  Total No Remunerativo
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#6a1b9a",
+                  }}
+                >
+                  ${(() => {
+                    const sumaFija = sumaFijaNoRemunerativa ? parseFloat(sumaFijaNoRemunerativa.replace(/\./g, '').replace(',', '.')) : 0;
+                    const totalNoRemunerativo = otrosConceptos
+                      .filter((c) => c.tipo !== "descuento" && c.suma_fija_no_remunerativa)
+                      .reduce((sum, c) => {
+                        return sum + (valoresCalculados[c.nombre] || 0);
+                      }, sumaFija);
+                    return totalNoRemunerativo.toLocaleString("es-AR");
+                  })()}
+                </Typography>
+              </Box>
+
+              {/* Total Haberes Brutos */}
+              <Box
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  background: "#e8f5e9",
+                  borderRadius: 2,
+                  border: "2px solid #388e3c",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#1b5e20",
+                  }}
+                >
+                  Total Haberes Brutos (Rem + No Rem)
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#1b5e20",
+                  }}
+                >
+                  ${(() => {
+                    const sueldoBasicoKey = Object.keys(valores).find(
+                      (k) => k.toLowerCase() === "sueldo básico"
+                    );
+                    const sueldoBasico = sueldoBasicoKey
+                      ? parseFloat(valores[sueldoBasicoKey]) || 0
+                      : 0;
+                    const sumaFija = sumaFijaNoRemunerativa ? parseFloat(sumaFijaNoRemunerativa.replace(/\./g, '').replace(',', '.')) : 0;
+                    
+                    // Sumar otros conceptos (adicionales, SAC, etc.)
+                    const totalOtrosConceptos = otrosConceptos
+                      .filter((c) => c.tipo !== "descuento")
+                      .reduce((sum, c) => {
+                        return sum + (valoresCalculados[c.nombre] || 0);
+                      }, 0);
+                    
+                    // Sumar horas extras
+                    const horasExtras50Val = valoresCalculados["Horas extras al 50%"] || 0;
+                    const horasExtras100Val = valoresCalculados["Horas extras al 100%"] || 0;
+                    
+                    const totalHaberes = sueldoBasico + sumaFija + totalOtrosConceptos + horasExtras50Val + horasExtras100Val;
+                    return totalHaberes.toLocaleString("es-AR");
+                  })()}
+                </Typography>
+              </Box>
+
+              {/* Total Descuentos */}
+              <Box
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  background: "#ffebee",
+                  borderRadius: 2,
+                  border: "2px solid #d32f2f",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#c62828",
+                  }}
+                >
+                  Total Descuentos
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#c62828",
+                  }}
+                >
+                  ${(() => {
+                    const total = otrosConceptos
+                      .filter((c) => c.tipo === "descuento")
+                      .reduce((sum, c) => {
+                        return sum + (valoresCalculados[c.nombre] || 0);
+                      }, 0);
+                    return total.toLocaleString("es-AR");
+                  })()}
+                </Typography>
+              </Box>
+
+              {/* Neto a Cobrar */}
+              <Box
+                sx={{
+                  mt: 3,
+                  p: 3,
+                  background: "linear-gradient(135deg, #1e88e5 0%, #1565c0 100%)",
+                  borderRadius: 2,
+                  border: "3px solid #0d47a1",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                }}
+              >
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#ffffff",
+                  }}
+                >
+                  Neto a Cobrar
+                </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#ffffff",
+                  }}
+                >
+                  ${(() => {
+                    const sueldoBasicoKey = Object.keys(valores).find(
+                      (k) => k.toLowerCase() === "sueldo básico"
+                    );
+                    const sueldoBasico = sueldoBasicoKey
+                      ? parseFloat(valores[sueldoBasicoKey]) || 0
+                      : 0;
+                    const sumaFija = sumaFijaNoRemunerativa ? parseFloat(sumaFijaNoRemunerativa.replace(/\./g, '').replace(',', '.')) : 0;
+                    
+                    // Total de otros conceptos (no descuentos)
+                    const totalOtrosConceptos = otrosConceptos
+                      .filter((c) => c.tipo !== "descuento")
+                      .reduce((sum, c) => {
+                        return sum + (valoresCalculados[c.nombre] || 0);
+                      }, 0);
+                    
+                    // Horas extras
+                    const horasExtras50Val = valoresCalculados["Horas extras al 50%"] || 0;
+                    const horasExtras100Val = valoresCalculados["Horas extras al 100%"] || 0;
+                    
+                    // Total haberes
+                    const totalHaberes = sueldoBasico + sumaFija + totalOtrosConceptos + horasExtras50Val + horasExtras100Val;
+                    
+                    // Total descuentos
+                    const totalDescuentos = otrosConceptos
+                      .filter((c) => c.tipo === "descuento")
+                      .reduce((sum, c) => {
+                        return sum + (valoresCalculados[c.nombre] || 0);
+                      }, 0);
+                    
+                    const neto = totalHaberes - totalDescuentos;
+                    return neto.toLocaleString("es-AR");
+                  })()}
+                </Typography>
+              </Box>
+
+              {/* Botón Guardar Liquidación */}
+              <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={guardarLiquidacion}
+                  disabled={guardandoLiquidacion || liquidacionGuardada}
+                  sx={{
+                    backgroundColor: liquidacionGuardada ? "#4caf50" : "#1976d2",
+                    color: "#fff",
+                    px: 6,
+                    py: 1.5,
+                    fontSize: "1.1rem",
+                    fontWeight: 700,
+                    "&:hover": {
+                      backgroundColor: liquidacionGuardada ? "#45a049" : "#1565c0",
+                    },
+                    "&:disabled": {
+                      backgroundColor: "#bdbdbd",
+                      color: "#757575",
+                    },
+                  }}
+                >
+                  {guardandoLiquidacion ? "Guardando..." : liquidacionGuardada ? "✓ Liquidación Guardada" : "Guardar Liquidación"}
+                </Button>
+              </Box>
+            </Box>
           </Box>
         );
       default:
