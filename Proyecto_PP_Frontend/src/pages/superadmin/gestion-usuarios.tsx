@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 import { Edit, PersonAdd, PersonRemove } from "@mui/icons-material";
 import Header from "../../components/Header";
+import BackButton from "../../components/BackButton";
 import { Link as RouterLink } from "react-router-dom";
 
 const GestionUsuarios: React.FC = () => {
@@ -27,27 +28,7 @@ const GestionUsuarios: React.FC = () => {
          <Header />
    
          {/* Botón Volver */}
-         <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-           <Button
-             component={RouterLink}
-             to="/superadmin"
-             variant="outlined"
-             sx={{
-               backgroundColor: "#1565C0",
-               color: "#ffffff",
-               width: 180,
-               letterSpacing: 3,
-               fontSize: 20,
-               borderRadius: 3,
-               mr: 5,
-               fontFamily: "Tektur, sans-serif",
-               fontWeight: 500,
-               textTransform: "none",
-             }}
-           >
-             Volver
-           </Button>
-         </Box>
+         <BackButton to="/superadmin" />
 
       {/* Contenido principal */}
       <Container

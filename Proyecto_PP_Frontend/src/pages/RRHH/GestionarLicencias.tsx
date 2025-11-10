@@ -26,6 +26,7 @@ import { Settings, Visibility, VisibilityOff } from "@mui/icons-material";
 import { Link as RouterLink } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
+import BackButton from "../../components/BackButton";
 
 interface Licencia {
   Id_Licencia: number;
@@ -275,27 +276,7 @@ export default function GestionarLicencias() {
       {/* Contenido principal */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
         {/* Botón Volver */}
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-          <Button
-            component={RouterLink}
-            to="/rrhh-principal"
-            variant="outlined"
-            sx={{
-              backgroundColor: "#1565C0",
-              color: "#ffffff",
-              width: 180,
-              letterSpacing: 3,
-              fontSize: 20,
-              borderRadius: 3,
-              mr: 5,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 500,
-              textTransform: "none",
-            }}
-          >
-            Volver
-          </Button>
-        </Box>
+        <BackButton to="/rrhh-principal" />
 
         {/* Tabla de solicitudes */}
         <TableContainer

@@ -14,6 +14,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
+import BackButton from "../../components/BackButton";
 import { Settings, Visibility, VisibilityOff } from "@mui/icons-material";
 
 export const Contadores = () => {
@@ -161,31 +162,7 @@ export const Contadores = () => {
       </Box>
 
       {/* Botón Volver solo para superadmin */}
-      {userRole === "superadmin" && (
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-          <Button
-            onClick={handleIrAtras}
-            component={Link}
-            to="/superadmin"
-            variant="contained"
-            sx={{
-              backgroundColor: "#1565C0",
-              color: "#ffffff",
-              width: 180,
-              letterSpacing: 3,
-              fontSize: 20,
-              borderRadius: 3,
-              mr: 5,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 500,
-              textTransform: "none",
-              "&:hover": { backgroundColor: "#4f7db2ff" },
-            }}
-          >
-            Volver
-          </Button>
-        </Box>
-      )}
+      {userRole === "superadmin" && <BackButton to="/superadmin" />}
 
       {/* Contenido principal */}
       <Container

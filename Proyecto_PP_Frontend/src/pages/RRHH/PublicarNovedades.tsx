@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
+import BackButton from "../../components/BackButton";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import { Settings, Visibility, VisibilityOff } from "@mui/icons-material";
@@ -238,27 +239,8 @@ const PublicarNovedad: React.FC = () => {
       </Box>
 
       {/* Botón Volver */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-        <Button
-          component={Link}
-          to="/rrhh-principal"
-          variant="outlined"
-          sx={{
-            backgroundColor: "#1565C0",
-            color: "#ffffff",
-            width: 180,
-            letterSpacing: 3,
-            fontSize: 20,
-            borderRadius: 3,
-            mr: 5,
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 500,
-            textTransform: "none",
-          }}
-        >
-          Volver
-        </Button>
-      </Box>
+      <BackButton to="/rrhh-principal" />
+
       {/* Contenedor principal */}
       <Box
         component="main"

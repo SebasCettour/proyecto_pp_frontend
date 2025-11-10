@@ -25,6 +25,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import BackButton from "../../components/BackButton";
 import { Link } from "react-router-dom";
 
 interface Liquidacion {
@@ -220,23 +221,7 @@ const Historial: React.FC = () => {
     >
       <Header />
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4, px: 4 }}>
-        <Button
-          component={Link}
-          to="/contadores"
-          variant="outlined"
-          sx={{
-            backgroundColor: "#1565C0",
-            color: "#fff",
-            width: 180,
-            letterSpacing: 2,
-            borderRadius: 3,
-            mr: 5,
-          }}
-        >
-          Volver
-        </Button>
-      </Box>
+      <BackButton to="/contadores" />
 
       <Container maxWidth="xl" sx={{ mt: 4, mb: 6, flexGrow: 1 }}>
         <Paper elevation={3} sx={{ p: 4, borderRadius: 3 }}>

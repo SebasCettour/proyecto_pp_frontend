@@ -20,6 +20,7 @@ import { Link } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import MenuUsuario from "../../components/MenuUsuario";
+import BackButton from "../../components/BackButton";
 
 // Simulación de recibos de sueldo
 const recibos = [
@@ -148,27 +149,7 @@ export default function RecibosSueldo() {
       />
 
       {/* Botón Volver */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-        <Button
-          component={Link}
-          to="/empleados"
-          variant="outlined"
-          sx={{
-            backgroundColor: "#1565C0",
-            color: "#ffffff",
-            width: 180,
-            letterSpacing: 3,
-            fontSize: 20,
-            borderRadius: 3,
-            mr: 5,
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 500,
-            textTransform: "none",
-          }}
-        >
-          Volver
-        </Button>
-      </Box>
+      <BackButton to="/empleados" />
 
       <Typography
         component="h1"

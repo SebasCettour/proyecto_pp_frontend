@@ -21,6 +21,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import MenuUsuario from "../../components/MenuUsuario";
+import BackButton from "../../components/BackButton";
 
 interface Novedad {
   Id_Novedad: number;
@@ -199,32 +200,7 @@ export default function Tablon() {
       />
 
       {/* Botón Volver */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-        <Button
-          component={RouterLink}
-          to="/empleados"
-          variant="contained"
-          sx={{
-            background: "#1877f2",
-            color: "#fff",
-            width: 180,
-            letterSpacing: 2,
-            fontSize: 18,
-            borderRadius: 8,
-            mr: 5,
-            fontFamily: "Segoe UI, Arial, sans-serif",
-            fontWeight: 600,
-            textTransform: "none",
-            boxShadow: "0 2px 8px rgba(24,119,242,0.10)",
-            transition: "background 0.2s",
-            "&:hover": {
-              background: "#165cbb",
-            },
-          }}
-        >
-          Volver
-        </Button>
-      </Box>
+      <BackButton to="/empleados" />
 
       {/* Feed */}
       <Box

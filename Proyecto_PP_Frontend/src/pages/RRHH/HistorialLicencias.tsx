@@ -15,10 +15,12 @@ import {
   TextField,
   Container,
   Link as MuiLink,
+  Alert,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
+import BackButton from "../../components/BackButton";
 
 interface Licencia {
   Id_Licencia: number;
@@ -38,17 +40,18 @@ interface Licencia {
 }
 
 export default function GestionarLicencias() {
-  // estado para búsqueda por DNI y resultado de historial
-  const [dniSearch, setDniSearch] = useState("");
+  // estado para búsqueda por DNI/nombre y resultado de historial
+  const [searchTerm, setSearchTerm] = useState("");
   const [historial, setHistorial] = useState<Licencia[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
-  const [searched, setSearched] = useState(false); // <- nuevo
+  const [searched, setSearched] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   // mostrar nombre del empleado si el historial contiene datos
   const empleadoNombre =
     historial.length > 0
       ? `${historial[0].Nombre} ${historial[0].Apellido}`
-      : dniSearch;
+      : searchTerm;
 
   const userName =
     localStorage.getItem("nombre") ||
@@ -71,16 +74,18 @@ export default function GestionarLicencias() {
     }
   };
 
-  const fetchHistorial = async (dni: string) => {
-    if (!dni) return;
-    setSearched(true); // marcar que se inició una búsqueda
+  const fetchHistorial = async (search: string) => {
+    if (!search.trim()) return;
+    setSearched(true);
     setLoadingHistorial(true);
+    setSearchError(null);
+    
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `http://localhost:4000/api/licencias/historial/${encodeURIComponent(
-          dni
-        )}`,
+      
+      // Primero buscar el empleado por DNI o nombre
+      const searchRes = await fetch(
+        `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(search)}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -88,13 +93,54 @@ export default function GestionarLicencias() {
           },
         }
       );
+      
+      if (!searchRes.ok) {
+        setSearchError("Empleado no encontrado");
+        setHistorial([]);
+        setLoadingHistorial(false);
+        return;
+      }
+      
+      const empleadoData = await searchRes.json();
+      
+      // Si es un array, verificar cantidad de resultados
+      let dni: string;
+      if (Array.isArray(empleadoData)) {
+        if (empleadoData.length === 0) {
+          setSearchError("No se encontraron empleados");
+          setHistorial([]);
+          setLoadingHistorial(false);
+          return;
+        } else if (empleadoData.length > 1) {
+          setSearchError(`Se encontraron ${empleadoData.length} empleados. Por favor, sea más específico.`);
+          setHistorial([]);
+          setLoadingHistorial(false);
+          return;
+        }
+        dni = empleadoData[0].dni;
+      } else {
+        dni = empleadoData.dni;
+      }
+      
+      // Ahora buscar el historial con el DNI
+      const res = await fetch(
+        `http://localhost:4000/api/licencias/historial/${encodeURIComponent(dni)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      
       if (res.ok) {
         const data = await res.json();
         setHistorial(data);
       } else {
         setHistorial([]);
       }
-    } catch {
+    } catch (error) {
+      setSearchError("Error al buscar el historial");
       setHistorial([]);
     } finally {
       setLoadingHistorial(false);
@@ -144,32 +190,27 @@ export default function GestionarLicencias() {
       </Box>
 
             {/* Botón Volver */}
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-              <Button
-                component={RouterLink}
-                to="/rrhh-principal"
-                variant="outlined"
-                sx={{
-                  backgroundColor: "#1565C0",
-                  color: "#ffffff",
-                  width: 180,
-                  letterSpacing: 3,
-                  fontSize: 20,
-                  borderRadius: 3,
-                  mr: 5,
-                  fontFamily: "Tektur, sans-serif",
-                  fontWeight: 500,
-                  textTransform: "none",
-                }}
-              >
-                Volver
-              </Button>
-            </Box>
+            <BackButton to="/rrhh-principal" />
 
 
       {/* Contenido principal: buscador + listado (sin botones de acción) */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", pt: 10 }}>
-        <Container maxWidth="sm" sx={{ alignSelf: "center", mt: 4, mb: 2 }}>
+        <Container maxWidth="lg" sx={{ alignSelf: "center", mt: 4, mb: 2 }}>
+          <Typography
+            component="h1"
+            variant="h4"
+            sx={{
+              mb: 6,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 700,
+              color: "#333",
+              textAlign: "center",
+              letterSpacing: 1,
+            }}
+          >
+            Historial de Licencias
+          </Typography>
+          
           <Box
             sx={{
               backgroundColor: "white",
@@ -182,27 +223,19 @@ export default function GestionarLicencias() {
               gap: 2,
             }}
           >
-            <Typography
-              component="h2"
-              variant="h5"
-              sx={{
-                mb: 0,
-                fontFamily: "Tektur, sans-serif",
-                fontWeight: 600,
-                color: "#333",
-                textAlign: "center",
-                letterSpacing: 0.5,
-              }}
-            >
-              Buscar por DNI
-            </Typography>
+            {searchError && (
+              <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
+                {searchError}
+              </Alert>
+            )}
 
             <TextField
               fullWidth
-              label="DNI"
-              value={dniSearch}
+              label="DNI, Nombre o Apellido"
+              placeholder="Ej: 12345678, Juan, Pérez"
+              value={searchTerm}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setDniSearch(e.target.value)
+                setSearchTerm(e.target.value)
               }
               disabled={loadingHistorial}
               sx={{
@@ -215,8 +248,8 @@ export default function GestionarLicencias() {
 
             <Button
               variant="contained"
-              onClick={() => fetchHistorial(dniSearch.trim())}
-              disabled={!dniSearch.trim() || loadingHistorial}
+              onClick={() => fetchHistorial(searchTerm.trim())}
+              disabled={!searchTerm.trim() || loadingHistorial}
               sx={{
                 py: 1.5,
                 fontFamily: "Tektur, sans-serif",
@@ -237,9 +270,10 @@ export default function GestionarLicencias() {
             <Button
               variant="outlined"
               onClick={() => {
-                setDniSearch("");
+                setSearchTerm("");
                 setHistorial([]);
-                setSearched(false); // limpiar flag al resetear
+                setSearched(false);
+                setSearchError(null);
               }}
               sx={{
                 mt: 1,

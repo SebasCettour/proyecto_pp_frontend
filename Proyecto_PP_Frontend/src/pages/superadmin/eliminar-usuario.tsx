@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link as RouterLink } from "react-router-dom";
 import Header from "../../components/Header";
+import BackButton from "../../components/BackButton";
 import {
   Box,
   TextField,
@@ -17,7 +18,7 @@ import { useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer";
 
 const buscarSchema = z.object({
-  dni: z.string().min(7, "Ingrese un DNI válido"),
+  searchTerm: z.string().min(3, "Ingrese al menos 3 caracteres"),
 });
 
 type BuscarFormData = z.infer<typeof buscarSchema>;
@@ -54,17 +55,38 @@ const EliminarUsuario: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:4000/api/usuario/usuario-dni/${data.dni}`
+        `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(data.searchTerm)}`
       );
       if (!response.ok) throw new Error("Usuario no encontrado");
-      const user = await response.json();
-      setUsuario({
-        id: user.Id_Empleado,
-        username: user.Apellido_Nombre,
-        email: user.Correo_Electronico,
-        dni: user.Numero_Documento,
-        role: user.Cargo,
-      });
+      const result = await response.json();
+      
+      // Si es un array, tomar el primero o mostrar error
+      if (Array.isArray(result)) {
+        if (result.length === 0) {
+          throw new Error("No se encontraron usuarios");
+        } else if (result.length > 1) {
+          setError(`Se encontraron ${result.length} usuarios. Por favor, sea más específico.`);
+          setIsLoading(false);
+          return;
+        }
+        const user = result[0];
+        setUsuario({
+          id: user.id,
+          username: `${user.apellido}, ${user.nombre}`,
+          email: user.email || "No especificado",
+          dni: user.dni,
+          role: user.categoria || "No especificado",
+        });
+      } else {
+        // Es un objeto único
+        setUsuario({
+          id: result.id,
+          username: `${result.apellido}, ${result.nombre}`,
+          email: result.email || "No especificado",
+          dni: result.dni,
+          role: result.categoria || "No especificado",
+        });
+      }
     } catch (err: any) {
       setError(err.message || "Error al buscar usuario");
     } finally {
@@ -110,31 +132,11 @@ const EliminarUsuario: React.FC = () => {
       <Header />
 
       {/* Botón Volver */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-        <Button
-          component={RouterLink}
-          to="/superadmin"
-          variant="outlined"
-          sx={{
-            backgroundColor: "#1565C0",
-            color: "#ffffff",
-            width: 180,
-            letterSpacing: 3,
-            fontSize: 20,
-            borderRadius: 3,
-            mr: 5,
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 500,
-            textTransform: "none",
-          }}
-        >
-          Volver
-        </Button>
-      </Box>
+      <BackButton to="/gestion-usuarios" />
 
       {/* Contenido principal */}
       <Container
-        maxWidth="sm"
+        maxWidth="lg"
         sx={{
           mt: 8,
           mb: 8,
@@ -188,7 +190,7 @@ const EliminarUsuario: React.FC = () => {
               letterSpacing: 0.5,
             }}
           >
-            Buscar por DNI
+            Buscar por DNI, Nombre o Apellido
           </Typography>
           {error && (
             <Alert severity="error" sx={{ width: "100%", mb: 3 }}>
@@ -203,11 +205,12 @@ const EliminarUsuario: React.FC = () => {
 
           <TextField
             fullWidth
-            id="dni"
-            label="DNI"
-            {...register("dni")}
-            error={!!errors.dni}
-            helperText={errors.dni?.message}
+            id="searchTerm"
+            label="DNI, Nombre o Apellido"
+            placeholder="Ej: 12345678, Juan, Pérez"
+            {...register("searchTerm")}
+            error={!!errors.searchTerm}
+            helperText={errors.searchTerm?.message}
             disabled={isLoading}
             sx={{
               mb: 3,

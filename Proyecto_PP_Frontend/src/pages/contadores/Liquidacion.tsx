@@ -26,6 +26,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Link } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
+import BackButton from "../../components/BackButton";
 
 const steps = [
   "Buscar Empresa",
@@ -70,6 +71,7 @@ const Liquidacion = () => {
   const [searchDni, setSearchDni] = useState("");
   const [employeeFound, setEmployeeFound] = useState<Employee | null>(null);
   const [searchError, setSearchError] = useState("");
+  const [multipleEmployees, setMultipleEmployees] = useState<Employee[]>([]);
 
   // Conceptos
   const [conceptos, setConceptos] = useState<any[]>([]);
@@ -379,24 +381,36 @@ const Liquidacion = () => {
   // --- Buscar empleado ---
   const handleSearchEmployee = async () => {
     if (!searchDni) {
-      setSearchError("Por favor ingrese un DNI");
+      setSearchError("Por favor ingrese un DNI, nombre o apellido");
       return;
     }
 
     setLoading(true);
     setSearchError("");
+    setMultipleEmployees([]);
+    setEmployeeFound(null);
 
     try {
       const response = await fetch(
-        `http://localhost:4000/api/usuario/empleado-buscar/${searchDni}`
+        `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(
+          searchDni
+        )}`
       );
 
       if (response.ok) {
-        const employee = await response.json();
-        setEmployeeFound(employee);
+        const data = await response.json();
+        
+        // Verificar si es un array (múltiples resultados) o un objeto (un solo resultado)
+        if (Array.isArray(data)) {
+          setMultipleEmployees(data);
+          setSearchError(`Se encontraron ${data.length} empleados. Seleccione uno:`);
+        } else {
+          setEmployeeFound(data);
+        }
       } else if (response.status === 404) {
         setEmployeeFound(null);
-        setSearchError("No se encontró un empleado con ese DNI");
+        setMultipleEmployees([]);
+        setSearchError("No se encontró un empleado con ese criterio");
       } else {
         throw new Error("Error en la búsqueda");
       }
@@ -404,9 +418,16 @@ const Liquidacion = () => {
       console.error("Error buscando empleado:", error);
       setSearchError("Error al buscar el empleado. Intente nuevamente.");
       setEmployeeFound(null);
+      setMultipleEmployees([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSelectEmployee = (employee: Employee) => {
+    setEmployeeFound(employee);
+    setMultipleEmployees([]);
+    setSearchError("");
   };
 
   const handleNext = () => setActiveStep((prev) => prev + 1);
@@ -499,14 +520,15 @@ const Liquidacion = () => {
                 letterSpacing: 1,
               }}
             >
-              Buscar Empleado por DNI
+              Buscar Empleado por DNI, Nombre o Apellido
             </Typography>
             <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
               <MuiTextField
                 fullWidth
-                label="DNI"
+                label="DNI, Nombre o Apellido"
                 value={searchDni}
                 onChange={(e) => setSearchDni(e.target.value)}
+                placeholder="Ej: 12345678, Juan, Pérez"
                 sx={{ background: "#f7fafd", borderRadius: 2 }}
               />
               <Button
@@ -524,9 +546,57 @@ const Liquidacion = () => {
               </Button>
             </Box>
             {searchError && (
-              <Alert severity="error" sx={{ mb: 2 }}>
+              <Alert severity={multipleEmployees.length > 0 ? "info" : "error"} sx={{ mb: 2 }}>
                 {searchError}
               </Alert>
+            )}
+            {multipleEmployees.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  Seleccione un empleado:
+                </Typography>
+                {multipleEmployees.map((emp) => (
+                  <Card
+                    key={emp.id}
+                    sx={{
+                      mb: 2,
+                      background: "#f5faff",
+                      borderRadius: 3,
+                      boxShadow: 2,
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      "&:hover": {
+                        boxShadow: 4,
+                        transform: "translateY(-2px)",
+                      },
+                    }}
+                    onClick={() => handleSelectEmployee(emp)}
+                  >
+                    <CardContent>
+                      <Typography
+                        variant="h6"
+                        color="primary"
+                        sx={{ fontWeight: 700, mb: 1 }}
+                      >
+                        {emp.apellido}, {emp.nombre}
+                      </Typography>
+                      <Typography sx={{ fontSize: 15, color: "text.secondary" }}>
+                        DNI: {emp.dni}
+                      </Typography>
+                      <Typography sx={{ fontSize: 15, color: "text.secondary" }}>
+                        CUIL: {emp.cuil}
+                      </Typography>
+                      <Typography sx={{ fontSize: 15, color: "text.secondary" }}>
+                        Categoría: {emp.categoria}
+                      </Typography>
+                      <Typography sx={{ fontSize: 15, color: "text.secondary" }}>
+                        Fecha Ingreso:{" "}
+                        {new Date(emp.fechaIngreso).toLocaleDateString()}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
             )}
             {employeeFound && (
               <Card
@@ -2403,23 +2473,7 @@ const Liquidacion = () => {
     >
       <Header />
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4, px: 4 }}>
-        <Button
-          component={Link}
-          to="/contadores"
-          variant="outlined"
-          sx={{
-            backgroundColor: "#1565C0",
-            color: "#fff",
-            width: 180,
-            letterSpacing: 2,
-            borderRadius: 3,
-            mr: 5,
-          }}
-        >
-          Volver
-        </Button>
-      </Box>
+      <BackButton to="/contadores" />
 
       <Container maxWidth="md" sx={{ mt: 4, mb: 6 }}>
         <Stepper activeStep={activeStep} alternativeLabel>

@@ -24,6 +24,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/es";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
+import BackButton from "../../components/BackButton";
 import { Link as RouterLink } from "react-router-dom";
 
 type ObraSocial = { id: string; nombre: string };
@@ -128,7 +129,11 @@ const EditarUsuario = () => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loadingCategorias, setLoadingCategorias] = useState(false);
   const [usuarioDni, setUsuarioDni] = useState<string | null>(null);
-  // useForm debe ir primero
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  
+
   const {
     register,
     handleSubmit,
@@ -226,21 +231,64 @@ const EditarUsuario = () => {
       .finally(() => setLoadingCategorias(false));
   }, [convenioValue]);
 
-  // Buscar usuario por DNI
+  // Buscar usuario por DNI o nombre
   const handleBuscar = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    setSearchError(null);
+    setSearchLoading(true);
+    
+    try {
+      if (!searchTerm.trim()) {
+        setSearchError("Ingrese un DNI, nombre o apellido");
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(searchTerm)}`
+      );
+      
+      if (!response.ok) {
+        setSearchError("Usuario no encontrado");
+        return;
+      }
+
+      const result = await response.json();
+      
+      // Si es un array, verificar cantidad de resultados
+      if (Array.isArray(result)) {
+        if (result.length === 0) {
+          setSearchError("No se encontraron usuarios");
+          return;
+        } else if (result.length > 1) {
+          setSearchError(`Se encontraron ${result.length} usuarios. Por favor, sea más específico.`);
+          return;
+        }
+        // Usar el primer (y único) resultado
+        await cargarDatosUsuario(result[0].dni);
+      } else {
+        // Es un objeto único
+        await cargarDatosUsuario(result.dni);
+      }
+    } catch (err: any) {
+      setSearchError(err.message || "Error al buscar usuario");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Función separada para cargar datos del usuario
+  const cargarDatosUsuario = async (dni: string) => {
     setIsLoading(true);
     try {
-      const dni = watch("Numero_Documento");
       const response = await fetch(
         `http://localhost:4000/api/usuario/usuario-dni/${dni}`
       );
       const result = await response.json();
       console.log("Respuesta backend usuario-dni:", result);
       if (!response.ok || !result) {
-        setError(result?.error || "Usuario no encontrado");
+        setError(result?.error || "Error al cargar datos del usuario");
         return;
       }
 
@@ -314,11 +362,11 @@ const EditarUsuario = () => {
             : "",
         familiares: Array.isArray(user.familiares) ? user.familiares : [],
       });
-      setUsuarioDni(dni);
+      setUsuarioDni(user.Numero_Documento);
       setSuccess("Usuario cargado correctamente");
       setTimeout(() => setSuccess(null), 2000);
     } catch (err: any) {
-      setError(err.message || "Error al buscar usuario");
+      setError(err.message || "Error al cargar datos del usuario");
     } finally {
       setIsLoading(false);
     }
@@ -441,29 +489,36 @@ const EditarUsuario = () => {
         }}
       >
         <Header />
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-          <Button
-            component={RouterLink}
-            to="/superadmin"
-            variant="outlined"
-            sx={{
-              backgroundColor: "#1565C0",
-              color: "#fff",
-              width: 180,
-              letterSpacing: 3,
-              fontSize: 20,
-              borderRadius: 3,
-              mr: 5,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 500,
-              textTransform: "none",
-            }}
-          >
-            Volver
-          </Button>
-        </Box>
+        <BackButton to="/gestion-usuarios" />
 
-        <Container maxWidth="lg">
+        <Container 
+          maxWidth="lg"
+          sx={{
+            mt: 8,
+            mb: 8,
+            flexGrow: 1,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Título principal - solo si no se ha encontrado usuario */}
+          {!usuarioDni && (
+            <Typography
+              component="h1"
+              variant="h4"
+              sx={{
+                mb: 6,
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 700,
+                color: "#333",
+                textAlign: "center",
+                letterSpacing: 1,
+              }}
+            >
+              Edición de Usuario
+            </Typography>
+          )}
+
           <Box
             sx={{
               py: { xs: 3, md: 5 },
@@ -474,7 +529,7 @@ const EditarUsuario = () => {
               mb: 6,
             }}
           >
-            {/* Formulario de búsqueda por DNI */}
+            {/* Formulario de búsqueda por DNI, nombre o apellido */}
             {!usuarioDni && (
               <form onSubmit={handleBuscar} style={{ marginBottom: 32 }}>
                 <Typography
@@ -489,21 +544,28 @@ const EditarUsuario = () => {
                     letterSpacing: 0.5,
                   }}
                 >
-                  Buscar por DNI
+                  Buscar por DNI, Nombre o Apellido
                 </Typography>
+                
+                {searchError && (
+                  <Alert severity="error" sx={{ mb: 3 }}>
+                    {searchError}
+                  </Alert>
+                )}
+                
                 <TextField
                   fullWidth
-                  label="DNI"
-                  {...register("Numero_Documento")}
-                  error={!!errors.Numero_Documento}
-                  helperText={errors.Numero_Documento?.message}
-                  disabled={isLoading}
+                  label="DNI, Nombre o Apellido"
+                  placeholder="Ej: 12345678, Juan, Pérez"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  disabled={searchLoading}
                   sx={{ mb: 3 }}
                 />
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={isLoading}
+                  disabled={searchLoading}
                   sx={{
                     py: 1.5,
                     fontFamily: "Tektur, sans-serif",
@@ -514,7 +576,7 @@ const EditarUsuario = () => {
                     width: "100%",
                   }}
                 >
-                  {isLoading ? (
+                  {searchLoading ? (
                     <CircularProgress size={24} color="inherit" />
                   ) : (
                     "Buscar"
