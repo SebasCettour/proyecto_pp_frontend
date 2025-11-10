@@ -59,7 +59,10 @@ export const Contadores = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            username: localStorage.getItem("username") || localStorage.getItem("nombre") || "",
+            username:
+              localStorage.getItem("username") ||
+              localStorage.getItem("nombre") ||
+              "",
             oldPassword,
             newPassword,
           }),
@@ -84,6 +87,7 @@ export const Contadores = () => {
     navigate("/");
   };
   const handleIrALiquidacion = () => navigate("/liquidacion");
+  const handleIrAHistorial = () => navigate("/historial");
   const handleIrAtras = () => navigate("/superadmin");
 
   return (
@@ -110,7 +114,14 @@ export const Contadores = () => {
           zIndex: 10,
         }}
       >
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", mr: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            mr: 1,
+          }}
+        >
           <Typography
             sx={{
               fontWeight: 400,
@@ -234,6 +245,26 @@ export const Contadores = () => {
             }}
           >
             Ir a Liquidación
+          </Button>
+
+          <Button
+            onClick={handleIrAHistorial}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Ir a Historial de liquidaciones
           </Button>
         </Box>
       </Container>
