@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import PDFDocument from "pdfkit";
 import { pool } from "../models/db.js";
 import { authenticateToken } from "../middleware/auth.js";
 
@@ -624,6 +625,303 @@ router.post("/guardar", authenticateToken, async (req: Request, res: Response) =
     res.status(500).json({ message: "Error interno del servidor" });
   } finally {
     connection.release();
+  }
+});
+
+// Buscar liquidaciones por DNI o Nombre/Apellido
+router.get("/buscar", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { search } = req.query;
+
+    if (!search || typeof search !== 'string') {
+      return res.status(400).json({ message: "Parámetro de búsqueda requerido" });
+    }
+
+    console.log("🔍 Buscando liquidaciones con:", search);
+
+    // Buscar por DNI o Nombre/Apellido
+    const [liquidaciones] = await pool.execute(
+      `SELECT 
+        l.*,
+        e.Nombre as EmpleadoNombre,
+        e.Apellido as EmpleadoApellido,
+        e.Numero_Documento as EmpleadoDNI
+      FROM Liquidacion l
+      INNER JOIN Empleado e ON l.Id_Empleado = e.Id_Empleado
+      WHERE 
+        e.Numero_Documento LIKE ? OR
+        CONCAT(e.Nombre, ' ', e.Apellido) LIKE ? OR
+        CONCAT(e.Apellido, ' ', e.Nombre) LIKE ? OR
+        e.Nombre LIKE ? OR
+        e.Apellido LIKE ?
+      ORDER BY l.Periodo DESC, l.FechaGeneracion DESC`,
+      [
+        `%${search}%`,
+        `%${search}%`,
+        `%${search}%`,
+        `%${search}%`,
+        `%${search}%`
+      ]
+    );
+
+    console.log(`✅ ${Array.isArray(liquidaciones) ? liquidaciones.length : 0} liquidaciones encontradas`);
+    res.json(liquidaciones);
+
+  } catch (error) {
+    console.error("❌ Error buscando liquidaciones:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+// Obtener detalle de una liquidación específica
+router.get("/:id/detalle", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    console.log("📋 Obteniendo detalle de liquidación:", id);
+
+    const [detalles] = await pool.execute(
+      `SELECT * FROM Detalle_Liquidacion WHERE Id_Liquidacion = ? ORDER BY Id_DetalleLiquidacion`,
+      [id]
+    );
+
+    res.json(detalles);
+
+  } catch (error) {
+    console.error("❌ Error obteniendo detalle:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+// ==================== GENERAR PDF ====================
+router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    console.log("📄 Generando PDF para liquidación:", id);
+
+    // Obtener datos de la liquidación
+    const [liquidaciones]: any = await pool.execute(
+      `SELECT l.*, e.Nombre, e.Apellido, e.Numero_Documento, e.CUIL, 
+              emp.RazonSocial as Empresa, emp.CUIT as CUIT_Empresa,
+              c.Nombre_Cargo as Cargo
+       FROM Liquidacion l
+       INNER JOIN Empleado e ON l.Id_Empleado = e.Id_Empleado
+       LEFT JOIN Empresa emp ON e.Id_Empresa = emp.Id_Empresa
+       LEFT JOIN Cargos c ON e.Id_Cargo = c.Id_Cargo
+       WHERE l.Id_Liquidacion = ?`,
+      [id]
+    );
+
+    if (!liquidaciones || liquidaciones.length === 0) {
+      return res.status(404).json({ message: "Liquidación no encontrada" });
+    }
+
+    const liquidacion = liquidaciones[0];
+
+    // Obtener detalle de conceptos
+    const [detalles]: any = await pool.execute(
+      `SELECT * FROM Detalle_Liquidacion WHERE Id_Liquidacion = ? ORDER BY Id_DetalleLiquidacion`,
+      [id]
+    );
+
+    // Crear directorio si no existe
+    const uploadsDir = path.join(process.cwd(), "uploads", "recibos");
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Nombre del archivo
+    const fileName = `recibo_${liquidacion.Numero_Documento}_${liquidacion.Periodo.replace(/\//g, "-")}_${Date.now()}.pdf`;
+    const filePath = path.join(uploadsDir, fileName);
+    const relativePath = `uploads/recibos/${fileName}`;
+
+    // Crear PDF
+    const doc = new PDFDocument({ size: "A4", margin: 50 });
+    const writeStream = fs.createWriteStream(filePath);
+    doc.pipe(writeStream);
+
+    // ENCABEZADO
+    doc.fontSize(18).font("Helvetica-Bold").text("RECIBO DE SUELDO", { align: "center" });
+    doc.moveDown(0.5);
+    doc.fontSize(10).font("Helvetica").text(`Período: ${liquidacion.Periodo}`, { align: "center" });
+    doc.fontSize(9).text(`Fecha de liquidación: ${new Date(liquidacion.FechaLiquidacion).toLocaleDateString("es-AR")}`, { align: "center" });
+    doc.moveDown(1);
+
+    // DATOS DE LA EMPRESA
+    doc.fontSize(11).font("Helvetica-Bold").text("EMPLEADOR", { underline: true });
+    doc.fontSize(9).font("Helvetica");
+    doc.text(`Razón Social: ${liquidacion.Empresa || "N/A"}`);
+    doc.text(`CUIT: ${liquidacion.CUIT_Empresa || "N/A"}`);
+    doc.moveDown(1);
+
+    // DATOS DEL EMPLEADO
+    doc.fontSize(11).font("Helvetica-Bold").text("EMPLEADO", { underline: true });
+    doc.fontSize(9).font("Helvetica");
+    doc.text(`Apellido y Nombre: ${liquidacion.Apellido}, ${liquidacion.Nombre}`);
+    doc.text(`DNI: ${liquidacion.Numero_Documento}`);
+    doc.text(`CUIL: ${liquidacion.CUIL || "N/A"}`);
+    doc.text(`Cargo: ${liquidacion.Cargo || "N/A"}`);
+    doc.text(`Tipo de Jornada: ${liquidacion.TipoJornada || "N/A"}`);
+    doc.moveDown(1.5);
+
+    // TABLA DE CONCEPTOS
+    doc.fontSize(11).font("Helvetica-Bold").text("DETALLE DE LIQUIDACIÓN", { underline: true });
+    doc.moveDown(0.5);
+
+    const startY = doc.y;
+    const colConcepto = 50;
+    const colMonto = 450;
+    const rowHeight = 20;
+
+    // Cabecera de tabla
+    doc.fontSize(9).font("Helvetica-Bold");
+    doc.text("CONCEPTO", colConcepto, startY);
+    doc.text("MONTO", colMonto, startY);
+    doc.moveTo(colConcepto, startY + 15).lineTo(550, startY + 15).stroke();
+
+    let currentY = startY + rowHeight;
+    doc.font("Helvetica").fontSize(8);
+
+    // HABERES
+    let totalHaberes = 0;
+    detalles.forEach((detalle: any) => {
+      if (detalle.Monto >= 0) {
+        doc.text(detalle.Concepto, colConcepto, currentY);
+        doc.text(`$ ${parseFloat(detalle.Monto).toFixed(2)}`, colMonto, currentY);
+        totalHaberes += parseFloat(detalle.Monto);
+        currentY += rowHeight;
+      }
+    });
+
+    // Línea separadora
+    doc.moveTo(colConcepto, currentY).lineTo(550, currentY).stroke();
+    currentY += 10;
+
+    // DESCUENTOS
+    let totalDescuentos = 0;
+    doc.font("Helvetica-Bold").text("DESCUENTOS", colConcepto, currentY);
+    currentY += rowHeight;
+    doc.font("Helvetica");
+
+    detalles.forEach((detalle: any) => {
+      if (detalle.Monto < 0) {
+        doc.text(detalle.Concepto, colConcepto, currentY);
+        doc.text(`$ ${Math.abs(parseFloat(detalle.Monto)).toFixed(2)}`, colMonto, currentY);
+        totalDescuentos += Math.abs(parseFloat(detalle.Monto));
+        currentY += rowHeight;
+      }
+    });
+
+    // Línea separadora
+    doc.moveTo(colConcepto, currentY).lineTo(550, currentY).stroke();
+    currentY += 15;
+
+    // TOTALES
+    doc.fontSize(10).font("Helvetica-Bold");
+    doc.text("Total Remunerativo:", colConcepto, currentY);
+    doc.text(`$ ${parseFloat(liquidacion.TotalRemunerativo || 0).toFixed(2)}`, colMonto, currentY);
+    currentY += rowHeight;
+
+    doc.text("Total No Remunerativo:", colConcepto, currentY);
+    doc.text(`$ ${parseFloat(liquidacion.TotalNoRemunerativo || 0).toFixed(2)}`, colMonto, currentY);
+    currentY += rowHeight;
+
+    doc.text("Total Haberes:", colConcepto, currentY);
+    doc.text(`$ ${parseFloat(liquidacion.TotalHaberes || 0).toFixed(2)}`, colMonto, currentY);
+    currentY += rowHeight;
+
+    doc.text("Total Descuentos:", colConcepto, currentY);
+    doc.text(`$ ${parseFloat(liquidacion.TotalDescuentos || 0).toFixed(2)}`, colMonto, currentY);
+    currentY += rowHeight + 5;
+
+    // NETO A COBRAR (destacado)
+    doc.fontSize(12).fillColor("#1976d2");
+    doc.rect(colConcepto - 10, currentY - 5, 500, 30).fill("#e3f2fd");
+    doc.fillColor("#000000");
+    doc.text("NETO A COBRAR:", colConcepto, currentY);
+    doc.text(`$ ${parseFloat(liquidacion.NetoAPagar || 0).toFixed(2)}`, colMonto, currentY);
+
+    // FOOTER
+    doc.fontSize(7).font("Helvetica").fillColor("#666666");
+    doc.text(
+      `Generado el ${new Date().toLocaleString("es-AR")} | Estado: ${liquidacion.Estado}`,
+      50,
+      doc.page.height - 50,
+      { align: "center" }
+    );
+
+    doc.end();
+
+    // Esperar a que termine de escribirse
+    writeStream.on("finish", async () => {
+      try {
+        // Guardar en la BD
+        await pool.execute(
+          `INSERT INTO PDF_Liquidacion (Id_Liquidacion, Nombre_Archivo, Ruta_Archivo) 
+           VALUES (?, ?, ?)`,
+          [id, fileName, relativePath]
+        );
+
+        res.json({
+          message: "PDF generado exitosamente",
+          fileName,
+          filePath: relativePath
+        });
+      } catch (dbError) {
+        console.error("❌ Error guardando en BD:", dbError);
+        res.status(500).json({ message: "PDF generado pero no se pudo registrar en BD" });
+      }
+    });
+
+    writeStream.on("error", (err) => {
+      console.error("❌ Error escribiendo PDF:", err);
+      res.status(500).json({ message: "Error generando PDF" });
+    });
+
+  } catch (error) {
+    console.error("❌ Error generando PDF:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+// ==================== DESCARGAR PDF ====================
+router.get("/:id/pdf", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    console.log("📥 Descargando PDF de liquidación:", id);
+
+    // Buscar el PDF más reciente de esta liquidación
+    const [pdfs]: any = await pool.execute(
+      `SELECT * FROM PDF_Liquidacion 
+       WHERE Id_Liquidacion = ? 
+       ORDER BY Fecha_Generacion DESC 
+       LIMIT 1`,
+      [id]
+    );
+
+    if (!pdfs || pdfs.length === 0) {
+      return res.status(404).json({ message: "PDF no encontrado. Debe generarlo primero." });
+    }
+
+    const pdf = pdfs[0];
+    const filePath = path.join(process.cwd(), pdf.Ruta_Archivo);
+
+    // Verificar que existe el archivo
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "Archivo PDF no encontrado en el servidor" });
+    }
+
+    // Enviar el archivo
+    res.download(filePath, pdf.Nombre_Archivo, (err) => {
+      if (err) {
+        console.error("❌ Error descargando PDF:", err);
+        res.status(500).json({ message: "Error al descargar el PDF" });
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ Error descargando PDF:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
   }
 });
 
