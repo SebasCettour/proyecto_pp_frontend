@@ -57,7 +57,6 @@ router.post(
         nombre,
         apellido,
         documento,
-        area,
         motivo,
         observaciones,
         diagnosticoCIE10_codigo,
@@ -73,7 +72,6 @@ router.post(
         !nombre ||
         !apellido ||
         !documento ||
-        !area ||
         !motivo ||
         !fechaInicio ||
         !fechaFin
@@ -158,23 +156,19 @@ router.post(
 
       const [result] = await pool.execute(
         `INSERT INTO Licencia (
-          Id_Empleado, Nombre, Apellido, Documento, Area, Motivo, 
+          Id_Empleado, FechaInicio, FechaFin, Motivo, 
           Observaciones, CertificadoMedico, DiagnosticoCIE10_Codigo, 
-          DiagnosticoCIE10_Descripcion, FechaInicio, FechaFin, Estado
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          DiagnosticoCIE10_Descripcion, Estado
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           idEmpleado,
-          nombre,
-          apellido,
-          documento,
-          area,
+          fechaInicio,
+          fechaFin,
           motivo,
           observaciones || null,
           certificadoMedico,
           diagnosticoCIE10_codigo || null,
           diagnosticoCIE10_descripcion || null,
-          fechaInicio,
-          fechaFin,
           "Pendiente",
         ]
       );
@@ -200,7 +194,15 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const [licencias] = await pool.execute(
-        "SELECT * FROM Licencia WHERE Estado = 'Pendiente' ORDER BY FechaSolicitud DESC"
+        `SELECT 
+          l.*, 
+          e.Nombre, 
+          e.Apellido, 
+          e.Numero_Documento as Documento
+        FROM Licencia l
+        INNER JOIN Empleado e ON l.Id_Empleado = e.Id_Empleado
+        WHERE l.Estado = 'Pendiente' 
+        ORDER BY l.FechaSolicitud DESC`
       );
       res.json(licencias);
     } catch (error) {
@@ -240,7 +242,15 @@ router.get(
     try {
       const { documento } = req.params;
       const [licencias] = await pool.execute(
-        "SELECT * FROM Licencia WHERE Documento = ? ORDER BY FechaSolicitud DESC",
+        `SELECT 
+          l.*, 
+          e.Nombre, 
+          e.Apellido, 
+          e.Numero_Documento as Documento
+        FROM Licencia l
+        INNER JOIN Empleado e ON l.Id_Empleado = e.Id_Empleado
+        WHERE e.Numero_Documento = ? 
+        ORDER BY l.FechaSolicitud DESC`,
         [documento]
       );
       res.json(licencias);
@@ -260,9 +270,6 @@ router.put(
     try {
       const { id } = req.params;
       const {
-        nombre,
-        apellido,
-        documento,
         motivo,
         observaciones,
         diagnosticoCIE10_codigo,
@@ -280,9 +287,6 @@ router.put(
       // Construir la consulta dinámica según si hay archivo nuevo o no
       let query = `
         UPDATE Licencia SET
-          Nombre = ?,
-          Apellido = ?,
-          Documento = ?,
           Motivo = ?,
           Observaciones = ?,
           DiagnosticoCIE10_Codigo = ?,
@@ -291,9 +295,6 @@ router.put(
           FechaFin = ?
       `;
       const params: any[] = [
-        nombre,
-        apellido,
-        documento,
         motivo,
         observaciones || null,
         diagnosticoCIE10_codigo || null,
@@ -311,9 +312,6 @@ router.put(
       params.push(id);
 
       console.log("EDIT LICENCIA PARAMS:", {
-        nombre,
-        apellido,
-        documento,
         motivo,
         observaciones,
         diagnosticoCIE10_codigo,
