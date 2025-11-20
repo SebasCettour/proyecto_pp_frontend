@@ -443,16 +443,16 @@ const Historial: React.FC = () => {
 
                               {/* Información adicional */}
                               <Box sx={{ mt: 3, display: "flex", gap: 1, flexWrap: "wrap" }}>
-                                {liq.SACActivo && <Chip label="SAC Activo" color="primary" size="small" />}
-                                {liq.AsistenciaActiva && (
+                                {!!liq.SACActivo && <Chip label="SAC Activo" color="primary" size="small" />}
+                                {!!liq.AsistenciaActiva && (
                                   <Chip label="Con Presentismo" color="success" size="small" />
                                 )}
-                                {liq.EsAfiliadoSindicato && (
+                                {!!liq.EsAfiliadoSindicato && (
                                   <Chip label="Afiliado Sindicato" color="info" size="small" />
                                 )}
-                                {(liq.HorasExtras50 > 0 || liq.HorasExtras100 > 0) && (
+                                {(Number(liq.HorasExtras50) > 0 || Number(liq.HorasExtras100) > 0) && (
                                   <Chip
-                                    label={`Horas Extras: ${liq.HorasExtras50 + liq.HorasExtras100}`}
+                                    label={`Horas Extras: ${Number(liq.HorasExtras50) + Number(liq.HorasExtras100)}`}
                                     color="warning"
                                     size="small"
                                   />

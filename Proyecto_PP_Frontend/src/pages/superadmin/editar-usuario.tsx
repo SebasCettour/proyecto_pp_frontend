@@ -336,21 +336,13 @@ const EditarUsuario = () => {
         convenios.find((c) => String(c.id) === String(user.id_convenio))?.id ||
         "";
 
-      // Categoria depende del convenio, puede no estar cargada aún
-      let categoriaNombre = "";
-      if (categorias.length > 0) {
-        categoriaNombre =
-          categorias.find(
-            (c) => String(c.Id_Categoria) === String(user.Categoria)
-          )?.Nombre_Categoria || "";
-      }
-
+      // Primero establecer el formulario sin categoría
       reset({
         ...user,
-        Categoria: categoriaNombre,
+        Categoria: "", // Temporalmente vacío
         Id_Sindicato: sindicatoNombre,
         Id_ObraSocial: obraSocialNombre,
-        id_convenio: convenioId,
+        id_convenio: convenioId ? String(convenioId) : "",
         Estado_Civil:
           validEstadoCivil.includes(user.Estado_Civil) && user.Estado_Civil
             ? user.Estado_Civil
@@ -362,6 +354,46 @@ const EditarUsuario = () => {
             : "",
         familiares: Array.isArray(user.familiares) ? user.familiares : [],
       });
+
+      // Cargar categorías del convenio y luego establecer la categoría correcta
+      if (convenioId) {
+        try {
+          const catResponse = await fetch(
+            `http://localhost:4000/api/empleado/categorias/${convenioId}`
+          );
+          const catData = await catResponse.json();
+          const categoriasDelConvenio = Array.isArray(catData) ? catData : [];
+          setCategorias(categoriasDelConvenio);
+          
+          // Ahora buscar y establecer la categoría correcta
+          const categoriaCorrecta = categoriasDelConvenio.find(
+            (c: Categoria) => String(c.Id_Categoria) === String(user.Categoria)
+          );
+          
+          if (categoriaCorrecta) {
+            // Actualizar solo el campo Categoria
+            reset({
+              ...user,
+              Categoria: String(categoriaCorrecta.Id_Categoria),
+              Id_Sindicato: sindicatoNombre,
+              Id_ObraSocial: obraSocialNombre,
+              id_convenio: String(convenioId),
+              Estado_Civil:
+                validEstadoCivil.includes(user.Estado_Civil) && user.Estado_Civil
+                  ? user.Estado_Civil
+                  : "",
+              Tipo_Documento:
+                validTipoDocumento.includes(user.Tipo_Documento) &&
+                user.Tipo_Documento
+                  ? user.Tipo_Documento
+                  : "",
+              familiares: Array.isArray(user.familiares) ? user.familiares : [],
+            });
+          }
+        } catch (err) {
+          console.error("Error cargando categorías:", err);
+        }
+      }
       setUsuarioDni(user.Numero_Documento);
       setSuccess("Usuario cargado correctamente");
       setTimeout(() => setSuccess(null), 2000);

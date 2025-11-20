@@ -54,7 +54,7 @@ const schema = z.object({
         dayjs().diff(parsed, "year") <= 70
       );
     }),
-  telefono: z.string().min(8).max(20).regex(/^[0-9+\-\s()]+$/),
+  telefono: z.string().length(10, "El teléfono debe tener exactamente 10 dígitos").regex(/^[0-9]+$/, "El teléfono solo debe contener números"),
   tipoDocumento: z.string().min(1),
   numeroDocumento: z.string().min(7).max(50).regex(/^[0-9]+$/),
   sindicatoId: z.string().min(1),
@@ -215,7 +215,6 @@ const AltaNuevo: React.FC = () => {
         ...data,
         convenioId: Number(data.convenioId),
         categoriaId: Number(data.categoriaId),
-        area: "",
         legajo: "",
       };
 
@@ -323,6 +322,7 @@ const AltaNuevo: React.FC = () => {
                     error={!!errors.telefono}
                     helperText={errors.telefono?.message}
                     disabled={isLoading}
+                    inputProps={{ maxLength: 10 }}
                   />
                   <Controller
                     name="fechaNacimiento"

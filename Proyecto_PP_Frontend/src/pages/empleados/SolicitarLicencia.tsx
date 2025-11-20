@@ -16,6 +16,8 @@ import {
   Modal,
   InputAdornment,
   IconButton,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { SelectChangeEvent } from "@mui/material/Select";
@@ -75,6 +77,15 @@ export default function SolicitarLicencia() {
   // Estados para el menú de usuario
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [userName, setUserName] = useState<string>("");
+
+  // Estados para Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("info");
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
 
   useEffect(() => {
     // Obtener el nombre del usuario desde localStorage
@@ -287,7 +298,9 @@ export default function SolicitarLicencia() {
       form.fechaFin &&
       form.fechaFin <= form.fechaInicio
     ) {
-      alert("La fecha de fin debe ser posterior a la fecha de inicio");
+      setSnackbarMessage("La fecha de fin debe ser posterior a la fecha de inicio");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
       return;
     }
 
@@ -335,7 +348,9 @@ export default function SolicitarLicencia() {
         );
 
         if (response.ok) {
-          alert("Solicitud enviada correctamente");
+          setSnackbarMessage("Solicitud enviada correctamente");
+          setSnackbarSeverity("success");
+          setSnackbarOpen(true);
           // Limpiar formulario
           setForm({
             nombre: form.nombre,
@@ -353,10 +368,14 @@ export default function SolicitarLicencia() {
           });
         } else {
           const errorData = await response.json();
-          alert(`Error: ${errorData.message}`);
+          setSnackbarMessage(`Error: ${errorData.message}`);
+          setSnackbarSeverity("error");
+          setSnackbarOpen(true);
         }
       } catch (error) {
-        alert("Error enviando la solicitud");
+        setSnackbarMessage("Error enviando la solicitud");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
       }
     }
   };
@@ -832,6 +851,18 @@ export default function SolicitarLicencia() {
           </Box>
         </Box>
       </Modal>
+
+      {/* Snackbar para notificaciones */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
 
       <Footer />
     </Box>

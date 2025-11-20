@@ -21,6 +21,8 @@ import {
   Menu,
   IconButton,
   InputAdornment,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Settings, Visibility, VisibilityOff } from "@mui/icons-material";
 import { Link as RouterLink } from "react-router-dom";
@@ -49,6 +51,11 @@ export default function GestionarLicencias() {
   const [loading, setLoading] = useState(true);
   const [selectedLicencia, setSelectedLicencia] = useState<Licencia | null>(null);
   const [modalRespuestaOpen, setModalRespuestaOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error" | "info" | "warning";
+  }>({ open: false, message: "", severity: "info" });
   const [respuesta, setRespuesta] = useState("");
   const [accion, setAccion] = useState<"Aprobada" | "Rechazada">("Aprobada");
 
@@ -122,12 +129,27 @@ export default function GestionarLicencias() {
         }
       );
       if (response.ok) {
+        setSnackbar({
+          open: true,
+          message: `Licencia ${accion.toLowerCase()} exitosamente`,
+          severity: "success",
+        });
         fetchLicencias();
         setModalRespuestaOpen(false);
         setSelectedLicencia(null);
+      } else {
+        setSnackbar({
+          open: true,
+          message: "Error al responder la licencia",
+          severity: "error",
+        });
       }
     } catch (error) {
-      // Manejo de error
+      setSnackbar({
+        open: true,
+        message: "Error de conexión al responder la licencia",
+        severity: "error",
+      });
     }
   };
 
@@ -566,6 +588,23 @@ export default function GestionarLicencias() {
           </Box>
         </Box>
       </Modal>
+
+      {/* Snackbar para notificaciones */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: \"bottom\", horizontal: \"center\" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          variant=\"filled\"
+          sx={{ width: \"100%\" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
       {/* Footer */}
       <Footer />
