@@ -14,7 +14,7 @@ interface MySQLError extends Error {
 
 //Alta Empleado
 router.post("/auth/register", async (req, res) => {
-  console.log("📝 Datos recibidos:", req.body);
+  console.log("📝 Datos recibidos:", JSON.stringify(req.body, null, 2));
 
   // Permitir tanto 'rolId' como 'roleId' (compatibilidad frontend)
   const {
@@ -29,10 +29,11 @@ router.post("/auth/register", async (req, res) => {
     numeroDocumento,
     password,
     familiares = [],
-    area = "",
   } = req.body;
   // Soporte para ambos nombres
   let rolId = req.body.rolId ?? req.body.roleId;
+  
+  console.log("📝 rolId extraído:", rolId, "tipo:", typeof rolId);
 
   // ✅ SEPARAR NOMBRE Y APELLIDO CORRECTAMENTE
   const nombreCompleto = username || "";
@@ -70,12 +71,12 @@ router.post("/auth/register", async (req, res) => {
   const legajo = generateLegajo();
   console.log("🔢 Legajo generado automáticamente:", legajo);
 
-  // ✅ SQL CORRECTO - RESPETA EL ORDEN DE LA TABLA
+  // ✅ SQL CORRECTO - RESPETA EL ORDEN DE LA TABLA (SIN AREA)
   const sqlEmpleado = `
     INSERT INTO Empleado (
-      Nombre, Apellido, Area, Correo_Electronico, Domicilio, Estado_Civil,
+      Nombre, Apellido, Correo_Electronico, Domicilio, Estado_Civil,
       Fecha_Desde, Fecha_Nacimiento, Legajo, Telefono, Tipo_Documento, Numero_Documento
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const sqlUsuario = `
@@ -93,7 +94,6 @@ router.post("/auth/register", async (req, res) => {
     const empleadoData = [
       nombre,
       apellido,
-      area,
       email,
       domicilio,
       estadoCivil,
@@ -156,6 +156,11 @@ router.post("/auth/register", async (req, res) => {
     }
     const error = err as MySQLError;
     console.error("❌ Error detallado:", error);
+    console.error("❌ Error message:", error.message);
+    console.error("❌ Error code:", error.code);
+    console.error("❌ SQL State:", error.sqlState);
+    console.error("❌ SQL Message:", error.sqlMessage);
+    
     if (error.code === "ER_DUP_ENTRY") {
       return res.status(409).json({
         error: "El número de documento o email ya existe en el sistema",
@@ -167,12 +172,14 @@ router.post("/auth/register", async (req, res) => {
     if (error.code === "ER_BAD_NULL_ERROR") {
       return res.status(400).json({
         error: "Faltan campos obligatorios en la base de datos",
+        sqlMessage: error.sqlMessage,
       });
     }
     res.status(500).json({
       error: "Error interno del servidor",
       details: error.message,
       code: error.code,
+      sqlMessage: error.sqlMessage,
     });
   } finally {
     if (connection) {

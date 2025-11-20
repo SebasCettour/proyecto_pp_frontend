@@ -7,7 +7,7 @@ const router = Router();
 
 // Crear carpetas si no existen
 const createUploadDirs = () => {
-  const dirs = ["uploads/tablon_imgs", "uploads/tablon_files"];
+  const dirs = ["uploads/tablon_imgs"];
   dirs.forEach((dir) => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
@@ -19,12 +19,8 @@ createUploadDirs();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Determinar carpeta según el tipo de archivo
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, "uploads/tablon_imgs/");
-    } else {
-      cb(null, "uploads/tablon_files/");
-    }
+    // Solo imágenes
+    cb(null, "uploads/tablon_imgs/");
   },
   filename: (req, file, cb) => {
     const uniqueName =
@@ -39,7 +35,6 @@ router.post(
   "/tablon",
   upload.fields([
     { name: "imagen", maxCount: 1 },
-    { name: "archivo", maxCount: 1 },
   ]),
   async (req: Request, res: Response) => {
     const { idEmpleado, descripcion } = req.body;
@@ -53,15 +48,6 @@ router.post(
       imagen = (req.files as any).imagen[0].filename;
     }
 
-    let archivoAdjunto = null;
-    if (
-      req.files &&
-      (req.files as any).archivo &&
-      (req.files as any).archivo[0]
-    ) {
-      archivoAdjunto = (req.files as any).archivo[0].filename;
-    }
-
     if (idEmpleado === undefined || descripcion === undefined) {
       return res.status(400).json({ error: "Faltan datos" });
     }
@@ -69,8 +55,8 @@ router.post(
     try {
       const fecha = new Date();
       const [result]: any = await pool.query(
-        "INSERT INTO Novedad (Id_Empleado, Descripcion, Fecha, Imagen, ArchivoAdjunto) VALUES (?, ?, ?, ?, ?)",
-        [idEmpleado, descripcion, fecha, imagen, archivoAdjunto]
+        "INSERT INTO Novedad (Id_Empleado, Descripcion, Fecha, Imagen) VALUES (?, ?, ?, ?)",
+        [idEmpleado, descripcion, fecha, imagen]
       );
       res.status(201).json({
         idNovedad: result.insertId,
@@ -78,7 +64,6 @@ router.post(
         descripcion,
         fecha,
         imagen,
-        archivoAdjunto,
       });
     } catch (err) {
       console.error("Error al publicar la novedad:", err);
@@ -96,17 +81,24 @@ router.get("/tablon", async (_req: Request, res: Response) => {
         n.Id_Empleado, 
         n.Descripcion, 
         n.Fecha, 
-        n.Imagen, 
-        n.ArchivoAdjunto,
+        n.Imagen,
         e.Nombre AS Nombre_Empleado,
         e.Apellido AS Apellido_Empleado
       FROM Novedad n
       JOIN Empleado e ON n.Id_Empleado = e.Id_Empleado
       ORDER BY n.Fecha DESC`
     );
+    
+    // Ensure we always return an array
+    if (!Array.isArray(novedades)) {
+      console.error("❌ Query result is not an array:", novedades);
+      return res.json([]);
+    }
+    
     res.json(novedades);
   } catch (err) {
-    res.status(500).json({ error: "Error al obtener novedades" });
+    console.error("❌ Error al obtener novedades:", err);
+    res.status(500).json({ error: "Error al obtener novedades", details: err instanceof Error ? err.message : String(err) });
   }
 });
 
