@@ -15,6 +15,8 @@ import {
   TextField,
   Modal,
   CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Link } from "react-router-dom";
@@ -47,6 +49,15 @@ export default function RecibosSueldo() {
   const [showNew, setShowNew] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [loadingPassword, setLoadingPassword] = useState(false);
+
+  // Estados para Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("info");
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
 
   useEffect(() => {
     const name =
@@ -119,10 +130,14 @@ export default function RecibosSueldo() {
         window.URL.revokeObjectURL(url);
       } else {
         const errorData = await response.json();
-        alert(errorData.message || "Error al descargar el PDF");
+        setSnackbarMessage(errorData.message || "Error al descargar el PDF");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
       }
     } catch (error) {
-      alert("Error de conexión al descargar el PDF");
+      setSnackbarMessage("Error de conexión al descargar el PDF");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
@@ -411,6 +426,32 @@ export default function RecibosSueldo() {
             </Box>
           </Box>
         </Modal>
+
+        {/* Snackbar para notificaciones */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={5000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={handleCloseSnackbar} 
+            severity={snackbarSeverity} 
+            sx={{ 
+              width: '100%',
+              minWidth: '400px',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              boxShadow: 6,
+              '& .MuiAlert-message': {
+                fontSize: '1.1rem'
+              }
+            }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+
         <Footer />
       </Box>
     </Box>

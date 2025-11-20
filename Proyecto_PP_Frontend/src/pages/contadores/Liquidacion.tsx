@@ -21,6 +21,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Snackbar,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Link, useNavigate } from "react-router-dom";
@@ -78,6 +79,15 @@ const Liquidacion = () => {
   const [valores, setValores] = useState<{ [key: string]: string }>({});
   const [asistenciaActiva, setAsistenciaActiva] = useState(true);
   const [sacActivo, setSacActivo] = useState(false);
+
+  // Estados para Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("info");
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
   const [conceptosLoading, setConceptosLoading] = useState(false);
   const [valoresCalculados, setValoresCalculados] = useState<{
     [key: string]: number;
@@ -194,7 +204,9 @@ const Liquidacion = () => {
   // Función para guardar la liquidación
   const guardarLiquidacion = async () => {
     if (!employeeFound || !periodo) {
-      alert("Faltan datos del empleado o periodo");
+      setSnackbarMessage("Faltan datos del empleado o periodo");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
       return;
     }
 
@@ -332,18 +344,24 @@ const Liquidacion = () => {
       if (response.ok) {
         const data = await response.json();
         setLiquidacionGuardada(true);
-        alert(`Liquidación guardada exitosamente. ID: ${data.idLiquidacion}`);
+        setSnackbarMessage(`Liquidación guardada exitosamente. ID: ${data.idLiquidacion}`);
+        setSnackbarSeverity("success");
+        setSnackbarOpen(true);
         
         setTimeout(() => {
           navigate("/contadores");
         }, 100);
       } else {
         const error = await response.json();
-        alert(`Error al guardar: ${error.message}`);
+        setSnackbarMessage(`Error al guardar: ${error.message}`);
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
       }
     } catch (error) {
       console.error("Error guardando liquidación:", error);
-      alert("Error al guardar la liquidación");
+      setSnackbarMessage("Error al guardar la liquidación");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     } finally {
       setGuardandoLiquidacion(false);
     }
@@ -3222,6 +3240,31 @@ const Liquidacion = () => {
           </Box>
         </Box>
       </Container>
+
+      {/* Snackbar para notificaciones */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={5000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbarSeverity} 
+          sx={{ 
+            width: '100%',
+            minWidth: '400px',
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            boxShadow: 6,
+            '& .MuiAlert-message': {
+              fontSize: '1.1rem'
+            }
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
 
       <Footer />
     </Box>

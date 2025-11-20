@@ -592,15 +592,24 @@ export default function GestionarLicencias() {
       {/* Snackbar para notificaciones */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={4000}
+        autoHideDuration={5000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: \"bottom\", horizontal: \"center\" }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert
           onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
-          variant=\"filled\"
-          sx={{ width: \"100%\" }}
+          variant="filled"
+          sx={{ 
+            width: '100%',
+            minWidth: '400px',
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            boxShadow: 6,
+            '& .MuiAlert-message': {
+              fontSize: '1.1rem'
+            }
+          }}
         >
           {snackbar.message}
         </Alert>

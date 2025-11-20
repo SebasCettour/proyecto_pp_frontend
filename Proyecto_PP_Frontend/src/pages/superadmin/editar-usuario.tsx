@@ -14,6 +14,7 @@ import {
   IconButton,
   Card,
   CardContent,
+  Snackbar,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -96,6 +97,15 @@ const EditarUsuario = () => {
     numeroDocumentoFamiliar: "",
   });
   const [errorFamiliar, setErrorFamiliar] = useState<string | null>(null);
+
+  // Estados para Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("info");
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
 
   // Handler para agregar familiar
   const handleAgregarFamiliar = () => {
@@ -434,9 +444,11 @@ const EditarUsuario = () => {
 
       // Validar que todos los IDs requeridos existen
       if (!categoriaObj || !sindicatoObj || !obraSocialObj || !convenioObj) {
-        setError(
+        setSnackbarMessage(
           "Faltan datos obligatorios para guardar. Verifique que todos los selects tengan un valor válido."
         );
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
         setIsLoading(false);
         return;
       }
@@ -468,10 +480,14 @@ const EditarUsuario = () => {
       );
       const result = await response.json();
       if (!response.ok) {
-        setError(result.error || "Error al editar usuario");
+        setSnackbarMessage(result.error || "Error al editar usuario");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
         return;
       }
-      setSuccess("Usuario editado exitosamente");
+      setSnackbarMessage("Usuario editado exitosamente");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
       reset({
         Nombre: "",
         Apellido: "",
@@ -492,7 +508,9 @@ const EditarUsuario = () => {
       });
       setUsuarioDni(null);
     } catch (err) {
-      setError("Error de conexión. Verifique el servidor.");
+      setSnackbarMessage("Error de conexión. Verifique el servidor.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     } finally {
       setIsLoading(false);
     }
@@ -1082,6 +1100,32 @@ const EditarUsuario = () => {
             )}
           </Box>
         </Container>
+
+        {/* Snackbar para notificaciones */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={5000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={handleCloseSnackbar} 
+            severity={snackbarSeverity} 
+            sx={{ 
+              width: '100%',
+              minWidth: '400px',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              boxShadow: 6,
+              '& .MuiAlert-message': {
+                fontSize: '1.1rem'
+              }
+            }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+
         <Footer />
       </Box>
     </LocalizationProvider>

@@ -855,11 +855,24 @@ export default function SolicitarLicencia() {
       {/* Snackbar para notificaciones */}
       <Snackbar
         open={snackbarOpen}
-        autoHideDuration={6000}
+        autoHideDuration={5000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbarSeverity} 
+          sx={{ 
+            width: '100%',
+            minWidth: '400px',
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            boxShadow: 6,
+            '& .MuiAlert-message': {
+              fontSize: '1.1rem'
+            }
+          }}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>

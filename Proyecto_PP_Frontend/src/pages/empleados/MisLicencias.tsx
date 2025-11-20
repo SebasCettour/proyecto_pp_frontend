@@ -20,6 +20,8 @@ import {
   MenuItem,
   InputAdornment,
   IconButton,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Link } from "react-router-dom";
@@ -53,6 +55,15 @@ const MisLicencias: React.FC = () => {
   const [cie10Results, setCie10Results] = useState<any[]>([]);
   const [cie10Loading, setCie10Loading] = useState(false);
   const [cie10Search, setCie10Search] = useState("");
+
+  // Estados para Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("info");
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
 
   const documento = localStorage.getItem("documento") || "";
 
@@ -179,10 +190,14 @@ const MisLicencias: React.FC = () => {
         setEditModalOpen(false);
         setLicenciaAEditar(null);
       } else {
-        alert("Error al guardar los cambios");
+        setSnackbarMessage("Error al guardar los cambios");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
       }
     } catch (error) {
-      alert("Error al guardar los cambios");
+      setSnackbarMessage("Error al guardar los cambios");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
@@ -764,6 +779,32 @@ const MisLicencias: React.FC = () => {
             </Box>
           </Box>
         </Modal>
+
+        {/* Snackbar para notificaciones */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={5000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert 
+            onClose={handleCloseSnackbar} 
+            severity={snackbarSeverity} 
+            sx={{ 
+              width: '100%',
+              minWidth: '400px',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              boxShadow: 6,
+              '& .MuiAlert-message': {
+                fontSize: '1.1rem'
+              }
+            }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+
         <Footer />
       </Box>
     </Box>

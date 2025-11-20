@@ -17,6 +17,7 @@ import {
   Chip,
   IconButton,
   Collapse,
+  Snackbar,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -68,6 +69,15 @@ const Historial: React.FC = () => {
   const [detalles, setDetalles] = useState<{ [key: number]: DetalleConcepto[] }>({});
   const [loadingDetalles, setLoadingDetalles] = useState<{ [key: number]: boolean }>({});
   const [generandoPDF, setGenerandoPDF] = useState<{ [key: number]: boolean }>({});
+
+  // Estados para Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("info");
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -189,7 +199,9 @@ const Historial: React.FC = () => {
 
     } catch (err) {
       console.error("Error con PDF:", err);
-      alert("Error al generar/descargar el PDF");
+      setSnackbarMessage("Error al generar/descargar el PDF");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     } finally {
       setGenerandoPDF({ ...generandoPDF, [idLiquidacion]: false });
     }
@@ -470,6 +482,31 @@ const Historial: React.FC = () => {
           )}
         </Paper>
       </Container>
+
+      {/* Snackbar para notificaciones */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={5000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbarSeverity} 
+          sx={{ 
+            width: '100%',
+            minWidth: '400px',
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            boxShadow: 6,
+            '& .MuiAlert-message': {
+              fontSize: '1.1rem'
+            }
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
 
       <Footer />
     </Box>
