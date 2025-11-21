@@ -44,6 +44,7 @@ export default function SolicitarLicencia() {
     observaciones: "",
     fechaInicio: "",
     fechaFin: "",
+    fechaReincorporacion: "",
     archivo: null as File | null,
     diagnosticoCIE10: null as DiagnosticoCIE10 | null,
   });
@@ -55,6 +56,7 @@ export default function SolicitarLicencia() {
     motivo: false,
     fechaInicio: false,
     fechaFin: false,
+    fechaReincorporacion: false,
     archivo: false,
     diagnosticoCIE10: false,
   });
@@ -287,6 +289,7 @@ export default function SolicitarLicencia() {
       motivo: form.motivo === "",
       fechaInicio: form.fechaInicio === "",
       fechaFin: form.fechaFin === "",
+      fechaReincorporacion: form.fechaReincorporacion === "",
       archivo: form.motivo === "Enfermedad" && !form.archivo,
       diagnosticoCIE10: form.motivo === "Enfermedad" && !form.diagnosticoCIE10,
     };
@@ -304,6 +307,19 @@ export default function SolicitarLicencia() {
       return;
     }
 
+    // Validar que fechaReincorporacion sea igual o posterior a fechaFin
+    if (
+      form.fechaFin &&
+      form.fechaReincorporacion &&
+      form.fechaReincorporacion < form.fechaFin
+    ) {
+      setSnackbarMessage("La fecha de reincorporación debe ser igual o posterior a la fecha de fin de licencia");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+      setErrors((prev) => ({ ...prev, fechaReincorporacion: true }));
+      return;
+    }
+
     const hasErrors = Object.values(newErrors).some((error) => error);
     if (!hasErrors) {
       try {
@@ -317,6 +333,7 @@ export default function SolicitarLicencia() {
         formData.append("motivo", form.motivo);
         formData.append("fechaInicio", form.fechaInicio);
         formData.append("fechaFin", form.fechaFin);
+        formData.append("fechaReincorporacion", form.fechaReincorporacion);
         formData.append("observaciones", form.observaciones);
 
         // Agregar archivo si existe
@@ -363,6 +380,7 @@ export default function SolicitarLicencia() {
             observaciones: "",
             fechaInicio: "",
             fechaFin: "",
+            fechaReincorporacion: "",
             archivo: null,
             diagnosticoCIE10: null,
           });
@@ -581,7 +599,7 @@ export default function SolicitarLicencia() {
                   onChange={handleInputChange}
                   error={errors.fechaInicio}
                   helperText={errors.fechaInicio && "Campo obligatorio"}
-                  sx={{ flex: "1 1 45%" }}
+                  sx={{ flex: "1 1 30%" }}
                   InputLabelProps={{
                     shrink: true,
                   }}
@@ -594,7 +612,20 @@ export default function SolicitarLicencia() {
                   onChange={handleInputChange}
                   error={errors.fechaFin}
                   helperText={errors.fechaFin && "Campo obligatorio"}
-                  sx={{ flex: "1 1 45%" }}
+                  sx={{ flex: "1 1 30%" }}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+                <TextField
+                  label="Fecha de Reincorporación"
+                  name="fechaReincorporacion"
+                  type="date"
+                  value={form.fechaReincorporacion}
+                  onChange={handleInputChange}
+                  error={errors.fechaReincorporacion}
+                  helperText={errors.fechaReincorporacion && "Campo obligatorio"}
+                  sx={{ flex: "1 1 30%" }}
                   InputLabelProps={{
                     shrink: true,
                   }}
