@@ -63,6 +63,7 @@ router.post(
         diagnosticoCIE10_descripcion,
         fechaInicio,
         fechaFin,
+        fechaReincorporacion,
       } = req.body;
 
       const certificadoMedico = req.file ? req.file.filename : null;
@@ -74,7 +75,8 @@ router.post(
         !documento ||
         !motivo ||
         !fechaInicio ||
-        !fechaFin
+        !fechaFin ||
+        !fechaReincorporacion
       ) {
         console.log("Error: Faltan campos obligatorios");
         return res.status(400).json({ message: "Faltan campos obligatorios" });
@@ -156,14 +158,15 @@ router.post(
 
       const [result] = await pool.execute(
         `INSERT INTO Licencia (
-          Id_Empleado, FechaInicio, FechaFin, Motivo, 
+          Id_Empleado, FechaInicio, FechaFin, FechaReincorporacion, Motivo, 
           Observaciones, CertificadoMedico, DiagnosticoCIE10_Codigo, 
           DiagnosticoCIE10_Descripcion, Estado
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           idEmpleado,
           fechaInicio,
           fechaFin,
+          fechaReincorporacion,
           motivo,
           observaciones || null,
           certificadoMedico,
