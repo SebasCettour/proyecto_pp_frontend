@@ -61,10 +61,11 @@ const GestionUsuarios: React.FC = () => {
             sx={{
               mb: 3,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              color: "#333",
+              fontWeight: 700,
+              color: "#1976d2",
               textAlign: "center",
               letterSpacing: 2,
+              fontSize: 32,
             }}
           >
             Gestión de Usuarios
@@ -78,13 +79,14 @@ const GestionUsuarios: React.FC = () => {
             sx={{
               backgroundColor: "#1976d2",
               color: "#fff",
-              borderRadius: 2,
+              borderRadius: 3,
               py: 2,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
+              fontWeight: 700,
+              fontSize: 20,
               textTransform: "none",
               boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              letterSpacing: 1,
               "&:hover": { backgroundColor: "#115293" },
             }}
           >
@@ -98,13 +100,14 @@ const GestionUsuarios: React.FC = () => {
             sx={{
               backgroundColor: "#1976d2",
               color: "#fff",
-              borderRadius: 2,
+              borderRadius: 3,
               py: 2,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
+              fontWeight: 700,
+              fontSize: 20,
               textTransform: "none",
               boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              letterSpacing: 1,
               "&:hover": { backgroundColor: "#115293" },
             }}
           >
@@ -118,13 +121,14 @@ const GestionUsuarios: React.FC = () => {
             sx={{
               backgroundColor: "#1976d2",
               color: "#fff",
-              borderRadius: 2,
+              borderRadius: 3,
               py: 2,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
+              fontWeight: 700,
+              fontSize: 20,
               textTransform: "none",
               boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              letterSpacing: 1,
               "&:hover": { backgroundColor: "#115293" },
             }}
           >

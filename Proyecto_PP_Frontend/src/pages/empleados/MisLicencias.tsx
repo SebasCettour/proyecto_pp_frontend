@@ -370,7 +370,18 @@ const MisLicencias: React.FC = () => {
 
         {/* Tabla de licencias */}
         <Box sx={{ maxWidth: 900, mx: "auto", mt: 4, mb: 6, width: "100%" }}>
-          <Typography variant="h4" sx={{ mb: 3, fontWeight: 600 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              mb: 3,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 700,
+              color: "#1976d2",
+              textAlign: "center",
+              letterSpacing: 2,
+              fontSize: 32,
+            }}
+          >
             Mis Licencias
           </Typography>
           {loading ? (

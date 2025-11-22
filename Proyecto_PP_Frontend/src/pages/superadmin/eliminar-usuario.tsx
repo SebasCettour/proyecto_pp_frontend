@@ -153,9 +153,10 @@ const EliminarUsuario: React.FC = () => {
             mb: 12,
             fontFamily: "Tektur, sans-serif",
             fontWeight: 700,
-            color: "#333",
+            color: "#1976d2",
             textAlign: "center",
-            letterSpacing: 1,
+            letterSpacing: 2,
+            fontSize: 32,
             whiteSpace: "nowrap",
             maxWidth: "100%",
             overflow: "hidden",
@@ -286,11 +287,13 @@ const EliminarUsuario: React.FC = () => {
               disabled={eliminando || !usuario || !usuario.dni}
               sx={{
                 fontFamily: "Tektur, sans-serif",
-                fontWeight: 600,
-                fontSize: "1.1rem",
-                borderRadius: 1,
+                fontWeight: 700,
+                fontSize: 20,
+                borderRadius: 3,
                 textTransform: "none",
                 width: 220,
+                letterSpacing: 1,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
               }}
             >
               {eliminando ? (

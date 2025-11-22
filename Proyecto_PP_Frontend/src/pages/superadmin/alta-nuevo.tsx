@@ -283,8 +283,19 @@ const AltaNuevo: React.FC = () => {
                 </Alert>
               )}
 
-              <Typography variant="h4" textAlign="center" fontWeight={600} mb={3}>
-                Alta de Nuevo Empleado
+              <Typography
+                variant="h4"
+                sx={{
+                  mb: 3,
+                  fontFamily: "Tektur, sans-serif",
+                  fontWeight: 700,
+                  color: "#1976d2",
+                  textAlign: "center",
+                  letterSpacing: 2,
+                  fontSize: 32,
+                }}
+              >
+                Alta Nuevo Usuario
               </Typography>
 
               <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3 }}>
@@ -641,7 +652,20 @@ const AltaNuevo: React.FC = () => {
                 type="submit"
                 variant="contained"
                 fullWidth
-                sx={{ mt: 4 }}
+                sx={{
+                  mt: 4,
+                  backgroundColor: "#1976d2",
+                  color: "#fff",
+                  borderRadius: 3,
+                  py: 2,
+                  fontFamily: "Tektur, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 20,
+                  textTransform: "none",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  letterSpacing: 1,
+                  '&:hover': { backgroundColor: '#115293' },
+                }}
                 disabled={isLoading}
               >
                 {isLoading ? <CircularProgress size={24} color="inherit" /> : "Registrar Empleado"}

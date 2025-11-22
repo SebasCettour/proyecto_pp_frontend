@@ -33,13 +33,13 @@ type Sindicato = { id: string; nombre: string };
 type Convenio = { id: number; nombre: string };
 type Categoria = { Id_Categoria: number; Nombre_Categoria: string };
 
+// Fix: Assign schema to a variable
 const schema = z.object({
-  Nombre: z.string().min(2).max(100),
-  Apellido: z.string().min(2).max(100),
-  // Area eliminado
+  Nombre: z.string().min(1),
+  Apellido: z.string().min(1),
   Categoria: z.string().min(1),
-  Correo_Electronico: z.string().email().max(100),
-  Domicilio: z.string().min(10).max(150),
+  Correo_Electronico: z.string().email().min(1),
+  Domicilio: z.string().min(1),
   Estado_Civil: z.string().min(1),
   Fecha_Desde: z.string().min(1),
   Fecha_Nacimiento: z.string().min(1),

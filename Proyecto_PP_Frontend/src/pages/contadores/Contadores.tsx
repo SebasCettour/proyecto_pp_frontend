@@ -190,15 +190,18 @@ export const Contadores = () => {
             gap: 4,
           }}
         >
+          {/* Título principal unificado */}
           <Typography
+            component="h1"
             variant="h4"
             sx={{
               mb: 3,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              color: "#333",
+              fontWeight: 700,
+              color: "#1565C0",
               textAlign: "center",
-              letterSpacing: 2,
+              letterSpacing: 1,
+              textShadow: "0 2px 8px rgba(21,101,192,0.08)",
             }}
           >
             Portal Contadores
@@ -313,13 +316,30 @@ export const Contadores = () => {
           <Box
             sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
           >
-            <Button onClick={handleCloseModal} disabled={loading}>
+            <Button
+              onClick={handleCloseModal}
+              disabled={loading}
+              sx={{
+                textTransform: "none",
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 600,
+                borderRadius: 2,
+                boxShadow: "0 2px 8px rgba(21,101,192,0.08)",
+              }}
+            >
               Cancelar
             </Button>
             <Button
               variant="contained"
               onClick={handleChangePassword}
               disabled={loading || !oldPassword || !newPassword}
+              sx={{
+                textTransform: "none",
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 600,
+                borderRadius: 2,
+                boxShadow: "0 2px 8px rgba(21,101,192,0.08)",
+              }}
             >
               Cambiar
             </Button>

@@ -237,15 +237,18 @@ export default function RecibosSueldo() {
       {/* Botón Volver */}
       <BackButton to="/empleados" />
 
+      {/* Título principal unificado */}
       <Typography
         component="h1"
         variant="h4"
         sx={{
           mb: 4,
           fontFamily: "Tektur, sans-serif",
-          fontWeight: 600,
-          color: "#333",
+          fontWeight: 700,
+          color: "#1565C0",
           textAlign: "center",
+          letterSpacing: 1,
+          textShadow: "0 2px 8px rgba(21,101,192,0.08)",
         }}
       >
         Ver y descargar Recibos de Sueldo
@@ -319,7 +322,9 @@ export default function RecibosSueldo() {
                         sx={{
                           textTransform: "none",
                           fontFamily: "Tektur, sans-serif",
-                          fontWeight: 500,
+                          fontWeight: 600,
+                          borderRadius: 2,
+                          boxShadow: "0 2px 8px rgba(21,101,192,0.08)",
                         }}
                       >
                         Descargar PDF
