@@ -471,9 +471,11 @@ export default function SolicitarLicencia() {
             sx={{
               mb: 4,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
+              fontWeight: 700,
               textAlign: "center",
-              color: "#333",
+              color: "#1976d2",
+              fontSize: 32,
+              letterSpacing: 2,
             }}
           >
             Solicitar Licencia
@@ -509,10 +511,12 @@ export default function SolicitarLicencia() {
                     sx={{
                       mb: 2,
                       fontFamily: "Tektur, sans-serif",
-                      fontWeight: 600,
+                      fontWeight: 700,
                       color: "#1976d2",
                       borderBottom: "2px solid #1976d2",
                       pb: 1,
+                      fontSize: 22,
+                      letterSpacing: 1,
                     }}
                   >
                     Datos del Empleado
@@ -526,46 +530,46 @@ export default function SolicitarLicencia() {
                     }}
                   >
                     <Box>
-                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 600 }}>
+                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 700, fontFamily: 'Tektur, sans-serif' }}>
                         Nombre Completo
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'Tektur, sans-serif' }}>
                         {form.nombre} {form.apellido}
                       </Typography>
                     </Box>
                     
                     <Box>
-                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 600 }}>
+                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 700, fontFamily: 'Tektur, sans-serif' }}>
                         Tipo de Documento
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'Tektur, sans-serif' }}>
                         {form.tipoDocumento || "DNI"}
                       </Typography>
                     </Box>
                     
                     <Box>
-                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 600 }}>
+                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 700, fontFamily: 'Tektur, sans-serif' }}>
                         Número de Documento
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'Tektur, sans-serif' }}>
                         {form.documento}
                       </Typography>
                     </Box>
                     
                     <Box>
-                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 600 }}>
+                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 700, fontFamily: 'Tektur, sans-serif' }}>
                         Legajo
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'Tektur, sans-serif' }}>
                         {form.legajo || "N/A"}
                       </Typography>
                     </Box>
                     
                     <Box>
-                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 600 }}>
+                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 700, fontFamily: 'Tektur, sans-serif' }}>
                         Categoría
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'Tektur, sans-serif' }}>
                         {form.categoria || "N/A"}
                       </Typography>
                     </Box>
@@ -641,8 +645,10 @@ export default function SolicitarLicencia() {
                       sx={{
                         mb: 2,
                         fontFamily: "Tektur, sans-serif",
-                        fontWeight: 600,
-                        color: "#333",
+                        fontWeight: 700,
+                        color: "#1976d2",
+                        fontSize: 22,
+                        letterSpacing: 1,
                       }}
                     >
                       Diagnóstico CIE-10
