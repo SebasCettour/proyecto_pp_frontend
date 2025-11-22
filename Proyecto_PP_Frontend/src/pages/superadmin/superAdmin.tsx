@@ -148,10 +148,10 @@ export const SuperAdminView: React.FC = () => {
         >
           <Typography
             sx={{
-              fontWeight: 400,
+              fontWeight: 500,
               letterSpacing: 2,
               fontFamily: "Tektur, sans-serif",
-              fontSize: 16,
+              fontSize: 18,
               color: "#333",
               lineHeight: 1.1,
             }}
@@ -160,10 +160,10 @@ export const SuperAdminView: React.FC = () => {
           </Typography>
           <Typography
             sx={{
-              fontWeight: 600,
+              fontWeight: 700,
               letterSpacing: 2,
               fontFamily: "Tektur, sans-serif",
-              fontSize: 18,
+              fontSize: 22,
               color: "#1976d2",
               lineHeight: 1.1,
             }}
@@ -172,7 +172,7 @@ export const SuperAdminView: React.FC = () => {
           </Typography>
         </Box>
         <IconButton onClick={handleMenuOpen}>
-          <Settings sx={{ fontSize: 40 }} />
+          <Settings sx={{ fontSize: 40, color: '#1976d2' }} />
         </IconButton>
         <Menu
           anchorEl={anchorEl}
@@ -215,10 +215,11 @@ export const SuperAdminView: React.FC = () => {
             sx={{
               mb: 3,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              color: "#333",
+              fontWeight: 700,
+              color: "#1976d2",
               textAlign: "center",
               letterSpacing: 2,
+              fontSize: 32,
             }}
           >
             Portal Administrador
@@ -232,13 +233,14 @@ export const SuperAdminView: React.FC = () => {
             sx={{
               backgroundColor: "#1976d2",
               color: "#fff",
-              borderRadius: 2,
+              borderRadius: 3,
               py: 2,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
+              fontWeight: 700,
+              fontSize: 20,
               textTransform: "none",
               boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              letterSpacing: 1,
               "&:hover": { backgroundColor: "#115293" },
             }}
           >
@@ -253,13 +255,14 @@ export const SuperAdminView: React.FC = () => {
             sx={{
               backgroundColor: "#1976d2",
               color: "#fff",
-              borderRadius: 2,
+              borderRadius: 3,
               py: 2,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
+              fontWeight: 700,
+              fontSize: 20,
               textTransform: "none",
               boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              letterSpacing: 1,
               "&:hover": { backgroundColor: "#115293" },
             }}
           >
@@ -274,13 +277,14 @@ export const SuperAdminView: React.FC = () => {
             sx={{
               backgroundColor: "#1976d2",
               color: "#fff",
-              borderRadius: 2,
+              borderRadius: 3,
               py: 2,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
+              fontWeight: 700,
+              fontSize: 20,
               textTransform: "none",
               boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              letterSpacing: 1,
               "&:hover": { backgroundColor: "#115293" },
             }}
           >
@@ -295,13 +299,14 @@ export const SuperAdminView: React.FC = () => {
             sx={{
               backgroundColor: "#1976d2",
               color: "#fff",
-              borderRadius: 2,
+              borderRadius: 3,
               py: 2,
               fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
+              fontWeight: 700,
+              fontSize: 20,
               textTransform: "none",
               boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              letterSpacing: 1,
               "&:hover": { backgroundColor: "#115293" },
             }}
           >

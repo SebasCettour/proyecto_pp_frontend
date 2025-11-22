@@ -258,10 +258,10 @@ export default function GestionarLicencias() {
         >
           <Typography
             sx={{
-              fontWeight: 400,
+              fontWeight: 500,
               letterSpacing: 2,
               fontFamily: "Tektur, sans-serif",
-              fontSize: 16,
+              fontSize: 18,
               color: "#333",
               lineHeight: 1.1,
             }}
@@ -270,10 +270,10 @@ export default function GestionarLicencias() {
           </Typography>
           <Typography
             sx={{
-              fontWeight: 600,
+              fontWeight: 700,
               letterSpacing: 2,
               fontFamily: "Tektur, sans-serif",
-              fontSize: 18,
+              fontSize: 22,
               color: "#1976d2",
               lineHeight: 1.1,
             }}
@@ -282,7 +282,7 @@ export default function GestionarLicencias() {
           </Typography>
         </Box>
         <IconButton onClick={handleMenuOpen}>
-          <Settings sx={{ fontSize: 40 }} />
+          <Settings sx={{ fontSize: 40, color: '#1976d2' }} />
         </IconButton>
         <Menu
           anchorEl={anchorEl}
@@ -307,8 +307,10 @@ export default function GestionarLicencias() {
             mb: 2,
             textAlign: "center",
             fontFamily: "Tektur, sans-serif",
-            fontWeight: 600,
+            fontWeight: 700,
             color: "#1976d2",
+            fontSize: 32,
+            letterSpacing: 2,
           }}
         >
           Gestionar Licencias
@@ -399,12 +401,15 @@ export default function GestionarLicencias() {
                           onClick={() => handleResponder(licencia)}
                           sx={{
                             textTransform: "none",
-                            backgroundColor: "#1565C0",
-                            ":hover": { backgroundColor: "#0D47A1" },
-                            fontSize: 14,
-                            py: 0.5,
-                            px: 2,
-                            borderRadius: 2,
+                            backgroundColor: "#1976d2",
+                            ":hover": { backgroundColor: "#115293" },
+                            fontSize: 16,
+                            py: 1,
+                            px: 3,
+                            borderRadius: 3,
+                            fontFamily: "Tektur, sans-serif",
+                            fontWeight: 700,
+                            letterSpacing: 1,
                           }}
                         >
                           Responder
@@ -494,13 +499,32 @@ export default function GestionarLicencias() {
           )}
 
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-            <Button variant="outlined" onClick={() => setModalRespuestaOpen(false)}>
+            <Button variant="outlined" onClick={() => setModalRespuestaOpen(false)}
+              sx={{
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 600,
+                fontSize: 16,
+                borderRadius: 3,
+                textTransform: "none",
+                letterSpacing: 1,
+              }}
+            >
               Cancelar
             </Button>
             <Button
               variant="contained"
               onClick={handleEnviarRespuesta}
               disabled={accion === "Rechazada" && !respuesta.trim()}
+              sx={{
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 700,
+                fontSize: 16,
+                borderRadius: 3,
+                textTransform: "none",
+                letterSpacing: 1,
+                backgroundColor: "#1976d2",
+                ":hover": { backgroundColor: "#115293" },
+              }}
             >
               Enviar Respuesta
             </Button>
@@ -575,13 +599,32 @@ export default function GestionarLicencias() {
           <Box
             sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
           >
-            <Button onClick={handleClosePasswordModal} disabled={loadingPassword}>
+            <Button onClick={handleClosePasswordModal} disabled={loadingPassword}
+              sx={{
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 600,
+                fontSize: 16,
+                borderRadius: 3,
+                textTransform: "none",
+                letterSpacing: 1,
+              }}
+            >
               Cancelar
             </Button>
             <Button
               variant="contained"
               onClick={handleChangePassword}
               disabled={loadingPassword || !oldPassword || !newPassword}
+              sx={{
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 700,
+                fontSize: 16,
+                borderRadius: 3,
+                textTransform: "none",
+                letterSpacing: 1,
+                backgroundColor: "#1976d2",
+                ":hover": { backgroundColor: "#115293" },
+              }}
             >
               Cambiar
             </Button>

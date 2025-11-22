@@ -426,18 +426,20 @@ export default function SolicitarLicencia() {
         <Button
           component={Link}
           to="/empleados"
-          variant="outlined"
+          variant="contained"
           sx={{
-            backgroundColor: "#1565C0",
-            color: "#ffffff",
+            backgroundColor: "#1976d2",
+            color: "#fff",
             width: 180,
-            letterSpacing: 3,
-            fontSize: 20,
+            letterSpacing: 2,
+            fontSize: 18,
             borderRadius: 3,
             fontFamily: "Tektur, sans-serif",
-            fontWeight: 500,
+            fontWeight: 600,
             textTransform: "none",
             ml: 2,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            '&:hover': { backgroundColor: '#115293' },
           }}
         >
           Volver
@@ -787,12 +789,14 @@ export default function SolicitarLicencia() {
                     py: 1.5,
                     width: "100%",
                     fontFamily: "Tektur, sans-serif",
-                    fontWeight: 600,
-                    fontSize: "1.1rem",
-                    borderRadius: 2,
+                    fontWeight: 700,
+                    fontSize: 20,
+                    borderRadius: 3,
                     letterSpacing: 2,
                     backgroundColor: "#1976d2",
-                    "&:hover": { backgroundColor: "#115293" },
+                    color: "#fff",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                    '&:hover': { backgroundColor: '#115293' },
                   }}
                 >
                   Enviar Solicitud

@@ -280,7 +280,7 @@ export const RRHHPrincipal = () => {
               letterSpacing: 2,
             }}
           >
-            Portal Recursos Humanos
+              Portal RRHH
           </Typography>
 
           <Button
@@ -300,7 +300,7 @@ export const RRHHPrincipal = () => {
               "&:hover": { backgroundColor: "#115293" },
             }}
           >
-            Gestionar Licencias
+              Gestionar Licencias
           </Button>
           <Button
             onClick={handleIrAHistorialLicencias}
@@ -319,7 +319,7 @@ export const RRHHPrincipal = () => {
               "&:hover": { backgroundColor: "#115293" },
             }}
           >
-            Historial de Licencias
+              Historial de Licencias
           </Button>
 
           <Button
@@ -339,7 +339,7 @@ export const RRHHPrincipal = () => {
               "&:hover": { backgroundColor: "#115293" },
             }}
           >
-            Publicar Novedades
+              Publicar Novedades
           </Button>
 
           <Button
@@ -359,7 +359,7 @@ export const RRHHPrincipal = () => {
               "&:hover": { backgroundColor: "#115293" },
             }}
           >
-            Tablón de Novedades
+              Tablón
           </Button>
 
           <Button

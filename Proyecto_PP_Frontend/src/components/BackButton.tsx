@@ -26,7 +26,7 @@ const BackButton: React.FC<BackButtonProps> = ({ to, label = "Volver" }) => {
           fontSize: 18,
           borderRadius: 3,
           mr: 5,
-          fontFamily: "Roboto, sans-serif",
+          fontFamily: "Tektur, sans-serif",
           fontWeight: 600,
           textTransform: "none",
           boxShadow: "0 2px 8px rgba(21,101,192,0.3)",
