@@ -462,12 +462,10 @@ router.get("/empleado-buscar/:searchTerm", async (req: Request, res: Response) =
         e.Apellido as apellido,
         e.Numero_Documento as dni,
         e.Legajo as legajo,
-        cat.Nombre_Categoria as categoria,
-        e.Fecha_Desde as fechaIngreso,
-        cc.descripcion as convenioColectivo
+        r.Nombre_Rol as rol,
+        e.Fecha_Desde as fechaIngreso
       FROM Empleado e
-      LEFT JOIN Categoria cat ON e.Categoria = cat.Id_Categoria
-      LEFT JOIN ConvenioColectivo cc ON cat.Id_Convenio = cc.id_convenio
+      LEFT JOIN Rol r ON e.Id_Rol = r.Id_Rol
       WHERE `;
     
     let queryParams: any[] = [];
@@ -498,11 +496,10 @@ router.get("/empleado-buscar/:searchTerm", async (req: Request, res: Response) =
         nombre: empleado.nombre,
         apellido: empleado.apellido,
         cuil: empleado.dni, // Si no tienes CUIL, usar DNI
-        categoria: empleado.categoria || "No especificado",
+        rol: empleado.rol || "No especificado",
         fechaIngreso: empleado.fechaIngreso
           ? empleado.fechaIngreso.toISOString?.().split("T")[0] : empleado.fechaIngreso || "",
-        legajo: empleado.legajo || "",
-        convenioColectivo: empleado.convenioColectivo || ""
+        legajo: empleado.legajo || ""
       };
       res.json(response);
     } else {
@@ -513,11 +510,10 @@ router.get("/empleado-buscar/:searchTerm", async (req: Request, res: Response) =
         nombre: empleado.nombre,
         apellido: empleado.apellido,
         cuil: empleado.dni,
-        categoria: empleado.categoria || "No especificado",
+        rol: empleado.rol || "No especificado",
         fechaIngreso: empleado.fechaIngreso
           ? empleado.fechaIngreso.toISOString?.().split("T")[0] : empleado.fechaIngreso || "",
-        legajo: empleado.legajo || "",
-        convenioColectivo: empleado.convenioColectivo || ""
+        legajo: empleado.legajo || ""
       }));
       res.json(response);
     }
