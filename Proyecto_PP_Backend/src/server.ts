@@ -61,6 +61,7 @@ app.use("/api/liquidacion", liquidacionRoutes);
 
 // Registrar categorías bajo /api/empleado/categorias
 app.use("/api/empleado/categorias", categoriasRouter);
+app.use("/api/categorias", categoriasRouter);
 
 // 🔹 Ruta raíz
 app.get("/", async (_req: Request, res: Response) => {
