@@ -1,4 +1,9 @@
 import React, { useEffect, useState } from "react";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import { Link } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -22,22 +27,19 @@ import Footer from "../../components/Footer";
 import { API_BASE_URL } from "../../config/api";
 import { Categoria, Convenio } from "../../types";
 
-const ActualizarSalario = () => {
-  // No se usa useNavigate, se usará Link
+const ActualizarSalario: React.FC = () => {
   const [convenios, setConvenios] = useState<Convenio[]>([]);
-  const [convenioSeleccionado, setConvenioSeleccionado] = useState<number | "">(
-    ""
-  );
+  const [convenioSeleccionado, setConvenioSeleccionado] = useState<number | "">("");
   const [porcentaje, setPorcentaje] = useState<string>("");
   const [fecha, setFecha] = useState<string>("");
   const [porcentajeError, setPorcentajeError] = useState<string>("");
   const [fechaError, setFechaError] = useState<string>("");
-
-  // Obtener la fecha actual en formato yyyy-mm-dd
   const today = new Date().toISOString().split('T')[0];
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [inputs, setInputs] = useState<{ [key: number]: string }>({});
   const [loading, setLoading] = useState(false);
+  const [openReset, setOpenReset] = useState(false);
+  const [resetId, setResetId] = useState<number | null>(null);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/convenios`)
@@ -47,14 +49,11 @@ const ActualizarSalario = () => {
 
   useEffect(() => {
     if (convenioSeleccionado) {
-      fetch(
-        `${API_BASE_URL}/api/categorias?convenio=${convenioSeleccionado}`
-      )
+      fetch(`${API_BASE_URL}/api/categorias?convenio=${convenioSeleccionado}`)
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data)) {
             setCategorias(data);
-            // Limpiar todos los inputs de nuevo sueldo al recargar categorías
             const initialInputs: { [key: number]: string } = {};
             data.forEach((cat: Categoria) => {
               initialInputs[cat.Id_Categoria] = "";
@@ -88,12 +87,38 @@ const ActualizarSalario = () => {
     });
     setPorcentaje("");
     setLoading(false);
-    // Refrescar categorías
-    fetch(
-      `${API_BASE_URL}/api/categorias?convenio=${convenioSeleccionado}`
-    )
+    fetch(`${API_BASE_URL}/api/categorias?convenio=${convenioSeleccionado}`)
       .then((res) => res.json())
       .then((data) => setCategorias(data));
+  };
+
+  const handleOpenReset = (id: number) => {
+    setResetId(id);
+    setOpenReset(true);
+  };
+
+  const handleCloseReset = () => {
+    setOpenReset(false);
+    setResetId(null);
+  };
+
+  const handleConfirmReset = async () => {
+    if (resetId == null) return;
+    setOpenReset(false);
+    setLoading(true);
+    await fetch(`${API_BASE_URL}/api/categorias/${resetId}/actualizar-sueldo`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nuevoSueldo: 0 })
+    });
+    setLoading(false);
+    if (convenioSeleccionado) {
+      fetch(`${API_BASE_URL}/api/categorias?convenio=${convenioSeleccionado}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) setCategorias(data);
+        });
+    }
   };
 
   return (
@@ -110,7 +135,7 @@ const ActualizarSalario = () => {
     >
       <Header />
       <Container
-        maxWidth="md"
+        maxWidth={false}
         sx={{
           mt: 8,
           mb: 8,
@@ -119,6 +144,9 @@ const ActualizarSalario = () => {
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
+          width: '100vw',
+          maxWidth: '1700px',
+          px: 4,
         }}
       >
         {/* Botón Volver */}
@@ -151,6 +179,7 @@ const ActualizarSalario = () => {
             boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
             p: 5,
             width: "100%",
+            maxWidth: '800px',
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -258,6 +287,7 @@ const ActualizarSalario = () => {
             boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
             p: 5,
             width: "100%",
+            maxWidth: '1600px',
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -278,8 +308,8 @@ const ActualizarSalario = () => {
           >
             Actualización individual de sueldos
           </Typography>
-          <TableContainer component={Paper}>
-            <Table>
+          <TableContainer component={Paper} sx={{ width: '100%', maxWidth: '1550px', overflowX: 'auto' }}>
+            <Table sx={{ minWidth: 1500 }}>
               <TableHead>
                 <TableRow>
                   <TableCell>
@@ -297,7 +327,9 @@ const ActualizarSalario = () => {
                   <TableCell align="center">
                     <b>Nuevo Sueldo</b>
                   </TableCell>
-                  <TableCell align="center"></TableCell>
+                  <TableCell align="center">
+                    <b>Acción</b>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -331,35 +363,64 @@ const ActualizarSalario = () => {
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        disabled={loading || !inputs[cat.Id_Categoria] || isNaN(Number(inputs[cat.Id_Categoria]))}
-                        onClick={async () => {
-                          setLoading(true);
-                          // Limpiar el input de nuevo sueldo inmediatamente
-                          setInputs((prev) => ({ ...prev, [cat.Id_Categoria]: "" }));
-                          await fetch(`${API_BASE_URL}/api/categorias/${cat.Id_Categoria}/actualizar-sueldo`, {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ nuevoSueldo: parseFloat(inputs[cat.Id_Categoria]) })
-                          });
-                          setLoading(false);
-                          // Refrescar categorías
-                          if (convenioSeleccionado) {
-                            fetch(`${API_BASE_URL}/api/categorias?convenio=${convenioSeleccionado}`)
-                              .then((res) => res.json())
-                              .then((data) => {
-                                if (Array.isArray(data)) setCategorias(data);
-                              });
-                          }
-                        }}
-                      >
-                        Actualizar
-                      </Button>
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          size="small"
+                          sx={{ minWidth: 110, fontWeight: 600, fontSize: 15 }}
+                          disabled={loading || !inputs[cat.Id_Categoria] || isNaN(Number(inputs[cat.Id_Categoria]))}
+                          onClick={async () => {
+                            setLoading(true);
+                            setInputs((prev) => ({ ...prev, [cat.Id_Categoria]: "" }));
+                            await fetch(`${API_BASE_URL}/api/categorias/${cat.Id_Categoria}/actualizar-sueldo`, {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ nuevoSueldo: parseFloat(inputs[cat.Id_Categoria]) })
+                            });
+                            setLoading(false);
+                            if (convenioSeleccionado) {
+                              fetch(`${API_BASE_URL}/api/categorias?convenio=${convenioSeleccionado}`)
+                                .then((res) => res.json())
+                                .then((data) => {
+                                  if (Array.isArray(data)) setCategorias(data);
+                                });
+                            }
+                          }}
+                        >
+                          Actualizar
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          sx={{ minWidth: 110, fontWeight: 600, fontSize: 15 }}
+                          disabled={loading}
+                          onClick={() => handleOpenReset(cat.Id_Categoria)}
+                        >
+                          Reiniciar
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
+                {/* Diálogo de confirmación para reiniciar sueldo */}
+                <Dialog open={openReset} onClose={handleCloseReset}>
+                  <DialogTitle>Reiniciar sueldo</DialogTitle>
+                  <DialogContent>
+                    <DialogContentText>
+                      ¿Estás seguro que deseas reiniciar el sueldo de esta categoría a $0,00? Esta acción no se puede deshacer.
+                    </DialogContentText>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={handleCloseReset} color="primary">
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleConfirmReset} color="error" variant="contained">
+                      Reiniciar
+                    </Button>
+                  </DialogActions>
+                </Dialog>
               </TableBody>
             </Table>
           </TableContainer>
