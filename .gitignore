@@ -1,3 +1,12 @@
+# Stack dumps y archivos temporales
+bash.exe.stackdump
+*.stackdump
+
+# Carpeta de migraciones SQL
+init.sql/
+
+# Archivos de notas o tareas
+toDo.md
 # Dependencies
 node_modules/
 */node_modules/

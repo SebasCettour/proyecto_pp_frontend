@@ -41,6 +41,7 @@ services:
       - DB_NAME=ProyectoPP
       - JWT_SECRET=mi_super_secreto_jwt_muy_seguro_2024
       - PORT=4000
+      - BIOPORTAL_API_KEY=${BIOPORTAL_API_KEY}
     restart: unless-stopped
     command: ["npx", "tsx", "src/server.ts"]
 
