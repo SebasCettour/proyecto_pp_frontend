@@ -94,6 +94,7 @@ export interface Categoria {
   Id_Convenio: number;
   Sueldo_Basico: number;
   Ultimo_Sueldo_Basico: number;
+  Fecha_Actualizacion: string | null;
 }
 
 export interface Convenio {

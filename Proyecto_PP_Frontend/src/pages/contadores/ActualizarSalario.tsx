@@ -292,6 +292,9 @@ const ActualizarSalario = () => {
                     <b>Actual Sueldo Básico</b>
                   </TableCell>
                   <TableCell align="center">
+                    <b>Fecha Actualización</b>
+                  </TableCell>
+                  <TableCell align="center">
                     <b>Nuevo Sueldo</b>
                   </TableCell>
                   <TableCell align="center"></TableCell>
@@ -309,6 +312,11 @@ const ActualizarSalario = () => {
                     <TableCell align="center">
                       {cat.Sueldo_Basico !== null && cat.Sueldo_Basico !== undefined
                         ? `$${Number(cat.Sueldo_Basico).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`
+                        : "-"}
+                    </TableCell>
+                    <TableCell align="center">
+                      {cat.Fecha_Actualizacion
+                        ? new Date(cat.Fecha_Actualizacion).toLocaleDateString("es-AR")
                         : "-"}
                     </TableCell>
                     <TableCell align="center">
