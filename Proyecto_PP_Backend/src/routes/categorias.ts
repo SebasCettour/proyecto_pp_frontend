@@ -12,19 +12,11 @@ router.put("/:idCategoria/actualizar-sueldo", async (req: Request, res: Response
     return res.status(400).json({ error: "Falta el nuevo sueldo o es inválido" });
   }
   try {
-    // Intentar actualizar historial si la columna existe, si falla, solo actualizar el sueldo actual
-    try {
-      await pool.query(
-        `UPDATE Categoria SET Ultimo_Sueldo_Basico = Sueldo_Basico, Sueldo_Basico = ? WHERE Id_Categoria = ?`,
-        [nuevoSueldo, idCategoria]
-      );
-    } catch (err) {
-      // Si la columna no existe, solo actualizar el sueldo actual
-      await pool.query(
-        `UPDATE Categoria SET Sueldo_Basico = ? WHERE Id_Categoria = ?`,
-        [nuevoSueldo, idCategoria]
-      );
-    }
+    // Actualizar historial y fecha
+    await pool.query(
+      `UPDATE Categoria SET Ultimo_Sueldo_Basico = Sueldo_Basico, Sueldo_Basico = ?, Fecha_Actualizacion = NOW() WHERE Id_Categoria = ?`,
+      [nuevoSueldo, idCategoria]
+    );
     res.json({ success: true, message: "Sueldo actualizado correctamente" });
   } catch (err) {
     console.error("Error al actualizar sueldo individual:", err);
@@ -45,7 +37,7 @@ router.put("/actualizar-general", async (req: Request, res: Response) => {
       [idConvenio]
     );
     await pool.query(
-      `UPDATE Categoria SET Sueldo_Basico = ROUND(Sueldo_Basico * (1 + ? / 100), 2) WHERE Id_Convenio = ?`,
+      `UPDATE Categoria SET Sueldo_Basico = ROUND(Sueldo_Basico * (1 + ? / 100), 2), Fecha_Actualizacion = NOW() WHERE Id_Convenio = ?`,
       [porcentaje, idConvenio]
     );
     res.json({ success: true, message: "Actualización general realizada correctamente" });
@@ -60,7 +52,7 @@ router.put("/actualizar-general", async (req: Request, res: Response) => {
 // GET /api/categorias?convenio=ID
 router.get("/", async (req: Request, res: Response) => {
   const { convenio } = req.query;
-  let query = `SELECT c.Id_Categoria, c.Nombre_Categoria, c.Id_Convenio, c.Sueldo_Basico, c.Ultimo_Sueldo_Basico FROM Categoria c`;
+  let query = `SELECT c.Id_Categoria, c.Nombre_Categoria, c.Id_Convenio, c.Sueldo_Basico, c.Ultimo_Sueldo_Basico, c.Fecha_Actualizacion FROM Categoria c`;
   let params: any[] = [];
   if (convenio) {
     query += " WHERE c.Id_Convenio = ?";
