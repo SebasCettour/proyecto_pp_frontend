@@ -8,7 +8,7 @@ const router = Router();
 router.put("/:idCategoria/actualizar-sueldo", async (req: Request, res: Response) => {
   const { idCategoria } = req.params;
   const { nuevoSueldo } = req.body;
-  if (!nuevoSueldo || isNaN(Number(nuevoSueldo))) {
+  if (nuevoSueldo === undefined || nuevoSueldo === null || isNaN(Number(nuevoSueldo))) {
     return res.status(400).json({ error: "Falta el nuevo sueldo o es inválido" });
   }
   try {
