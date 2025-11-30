@@ -28,6 +28,11 @@ const ActualizarSalario = () => {
   );
   const [porcentaje, setPorcentaje] = useState<string>("");
   const [fecha, setFecha] = useState<string>("");
+  const [porcentajeError, setPorcentajeError] = useState<string>("");
+  const [fechaError, setFechaError] = useState<string>("");
+
+  // Obtener la fecha actual en formato yyyy-mm-dd
+  const today = new Date().toISOString().split('T')[0];
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [inputs, setInputs] = useState<{ [key: number]: string }>({});
   const [loading, setLoading] = useState(false);
@@ -170,9 +175,19 @@ const ActualizarSalario = () => {
                 label="Ingrese porcentaje de aumento"
                 type="number"
                 value={porcentaje}
-                onChange={(e) => setPorcentaje(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setPorcentaje(value);
+                  if (parseFloat(value) > 100) {
+                    setPorcentajeError("El porcentaje no puede ser mayor a 100");
+                  } else {
+                    setPorcentajeError("");
+                  }
+                }}
                 fullWidth
-                inputProps={{ min: 0, step: 0.01 }}
+                inputProps={{ min: 0, max: 100, step: 0.01 }}
+                error={!!porcentajeError}
+                helperText={porcentajeError}
               />
             </Box>
             <Box flex="1 1 180px" minWidth={150}>
@@ -180,9 +195,20 @@ const ActualizarSalario = () => {
                 label="Fecha"
                 type="date"
                 value={fecha}
-                onChange={(e) => setFecha(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFecha(value);
+                  if (value > today) {
+                    setFechaError("La fecha no puede ser posterior a hoy");
+                  } else {
+                    setFechaError("");
+                  }
+                }}
                 fullWidth
                 InputLabelProps={{ shrink: true }}
+                inputProps={{ max: today }}
+                error={!!fechaError}
+                helperText={fechaError}
               />
             </Box>
             <Box flex="1 1 150px" minWidth={120} display="flex" alignItems="center">
@@ -191,7 +217,7 @@ const ActualizarSalario = () => {
                 color="primary"
                 fullWidth
                 onClick={handleActualizarGeneral}
-                disabled={!convenioSeleccionado || !porcentaje || loading}
+                disabled={!convenioSeleccionado || !porcentaje || loading || !!porcentajeError || !!fechaError || !fecha}
               >
                 Actualización general
               </Button>
