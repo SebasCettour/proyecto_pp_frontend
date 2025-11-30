@@ -251,42 +251,42 @@ router.delete(
         apellido: checkEmpleado[0].Apellido,
       });
 
-      // ✅ ELIMINAR DE USUARIOS PRIMERO (por la foreign key)
-      console.log("🗑️ Eliminando de tabla Usuarios...");
+      // ✅ BORRADO LÓGICO DE USUARIOS
+      console.log("🗑️ Borrado lógico en tabla Usuarios...");
       const [resultUsuarios]: any = await connection.query(
-        "DELETE FROM Usuarios WHERE Numero_Documento = ?",
+        "UPDATE Usuarios SET Activo = 0 WHERE Numero_Documento = ?",
         [dni]
       );
       console.log(
-        "📊 Filas eliminadas de Usuarios:",
+        "📊 Filas actualizadas en Usuarios:",
         resultUsuarios.affectedRows
       );
 
-      // ✅ ELIMINAR DE EMPLEADO
-      console.log("🗑️ Eliminando de tabla Empleado...");
+      // ✅ BORRADO LÓGICO DE EMPLEADO
+      console.log("🗑️ Borrado lógico en tabla Empleado...");
       const [resultEmpleado]: any = await connection.query(
-        "DELETE FROM Empleado WHERE Numero_Documento = ?",
+        "UPDATE Empleado SET Activo = 0 WHERE Numero_Documento = ?",
         [dni]
       );
       console.log(
-        "📊 Filas eliminadas de Empleado:",
+        "📊 Filas actualizadas en Empleado:",
         resultEmpleado.affectedRows
       );
 
-      // ✅ VERIFICAR QUE AL MENOS SE ELIMINÓ DE EMPLEADO
+      // ✅ VERIFICAR QUE AL MENOS SE ACTUALIZÓ EMPLEADO
       if (resultEmpleado.affectedRows === 0) {
         await connection.rollback();
-        console.log("❌ No se pudo eliminar el empleado");
+        console.log("❌ No se pudo dar de baja el empleado");
         return res
           .status(404)
-          .json({ error: "No se pudo eliminar el usuario" });
+          .json({ error: "No se pudo dar de baja el usuario" });
       }
 
       await connection.commit();
-      console.log("✅ Usuario eliminado exitosamente");
+      console.log("✅ Usuario dado de baja lógicamente");
       console.log("📊 Resumen:");
-      console.log("  - Usuarios eliminados:", resultUsuarios.affectedRows);
-      console.log("  - Empleados eliminados:", resultEmpleado.affectedRows);
+      console.log("  - Usuarios actualizados:", resultUsuarios.affectedRows);
+      console.log("  - Empleados actualizados:", resultEmpleado.affectedRows);
 
       res.status(204).send();
     } catch (err: unknown) {
