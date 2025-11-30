@@ -86,4 +86,17 @@ export interface FormRol {
   nombre: 'admin' | 'empleado' | 'rrhh' | 'contador';
   descripcion: string;
   permisos: string[];
-} 
+}
+
+export interface Categoria {
+  Id_Categoria: number;
+  Nombre_Categoria: string;
+  Id_Convenio: number;
+  Sueldo_Basico: number;
+  Ultimo_Sueldo_Basico: number;
+}
+
+export interface Convenio {
+  id: number;
+  nombre: string;
+}

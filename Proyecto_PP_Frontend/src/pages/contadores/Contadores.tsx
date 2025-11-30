@@ -246,6 +246,26 @@ export const Contadores = () => {
           >
             Ir a Historial de liquidaciones
           </Button>
+
+          <Button
+            onClick={() => navigate("/actualizar")}
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: "#1976d2",
+              color: "#fff",
+              borderRadius: 2,
+              py: 2,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 600,
+              fontSize: 18,
+              textTransform: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+              "&:hover": { backgroundColor: "#115293" },
+            }}
+          >
+            Actualizar Salario Básico
+          </Button>
         </Box>
       </Container>
 
