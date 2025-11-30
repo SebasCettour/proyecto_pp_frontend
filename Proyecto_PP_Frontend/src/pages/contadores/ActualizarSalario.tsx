@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
@@ -22,6 +23,7 @@ import { API_BASE_URL } from "../../config/api";
 import { Categoria, Convenio } from "../../types";
 
 const ActualizarSalario = () => {
+  // No se usa useNavigate, se usará Link
   const [convenios, setConvenios] = useState<Convenio[]>([]);
   const [convenioSeleccionado, setConvenioSeleccionado] = useState<number | "">(
     ""
@@ -119,6 +121,29 @@ const ActualizarSalario = () => {
           alignItems: "center",
         }}
       >
+        {/* Botón Volver */}
+        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mt: 2, mb: 1, pr: 0.5 }}>
+          <Button
+            component={Link}
+            to="/contadores"
+            variant="outlined"
+            sx={{
+              backgroundColor: "#1565C0",
+              color: "#ffffff",
+              width: 180,
+              letterSpacing: 3,
+              fontSize: 20,
+              borderRadius: 3,
+              mr: 0,
+              fontFamily: "Tektur, sans-serif",
+              fontWeight: 500,
+              textTransform: "none",
+              boxShadow: '0 2px 8px rgba(21,101,192,0.08)'
+            }}
+          >
+            Volver
+          </Button>
+        </Box>
         <Box
           sx={{
             backgroundColor: "#fff",
@@ -277,10 +302,14 @@ const ActualizarSalario = () => {
                   <TableRow key={cat.Id_Categoria}>
                     <TableCell>{cat.Nombre_Categoria}</TableCell>
                     <TableCell align="center">
-                      ${cat.Ultimo_Sueldo_Basico?.toLocaleString("es-AR", { minimumFractionDigits: 2 }) ?? "-"}
+                      {cat.Ultimo_Sueldo_Basico !== null && cat.Ultimo_Sueldo_Basico !== undefined
+                        ? `$${Number(cat.Ultimo_Sueldo_Basico).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`
+                        : "-"}
                     </TableCell>
                     <TableCell align="center">
-                      ${cat.Sueldo_Basico.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      {cat.Sueldo_Basico !== null && cat.Sueldo_Basico !== undefined
+                        ? `$${Number(cat.Sueldo_Basico).toLocaleString("es-AR", { minimumFractionDigits: 2 })}`
+                        : "-"}
                     </TableCell>
                     <TableCell align="center">
                       <TextField
