@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Snackbar from "@mui/material/Snackbar";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
@@ -53,6 +54,8 @@ const PublicarNovedad: React.FC = () => {
   const [mensajeExito, setMensajeExito] = useState<string>("");
   const [imagenNombre, setImagenNombre] = useState<string>("");
   const [archivoNombre, setArchivoNombre] = useState<string>("");
+  const [imagenPreview, setImagenPreview] = useState<string>("");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const {
     control,
@@ -84,11 +87,30 @@ const PublicarNovedad: React.FC = () => {
       formData.append("idEmpleado", idEmpleado);
       formData.append("descripcion", data.contenido);
 
+      // Validación de imagen (tipo y tamaño)
       if (data.imagen && data.imagen[0]) {
-        formData.append("imagen", data.imagen[0]);
+        const file = data.imagen[0];
+        if (!file.type.startsWith("image/")) {
+          setError("El archivo seleccionado no es una imagen válida.");
+          setIsLoading(false);
+          return;
+        }
+        if (file.size > 3 * 1024 * 1024) {
+          setError("La imagen no puede superar los 3MB.");
+          setIsLoading(false);
+          return;
+        }
+        formData.append("imagen", file);
       }
+      // Validación de archivo (máx 5MB)
       if (data.archivo && data.archivo[0]) {
-        formData.append("archivo", data.archivo[0]);
+        const file = data.archivo[0];
+        if (file.size > 5 * 1024 * 1024) {
+          setError("El archivo no puede superar los 5MB.");
+          setIsLoading(false);
+          return;
+        }
+        formData.append("archivo", file);
       }
 
       const response = await fetch("http://localhost:4000/api/novedad/tablon", {
@@ -99,9 +121,11 @@ const PublicarNovedad: React.FC = () => {
       if (!response.ok) throw new Error("Error al publicar la novedad");
 
       setMensajeExito("Novedad publicada exitosamente");
+      setSnackbarOpen(true);
       reset();
       setImagenNombre("");
       setArchivoNombre("");
+      setImagenPreview("");
     } catch (err) {
       setError("Ocurrió un error al publicar la novedad.");
     } finally {
@@ -180,122 +204,48 @@ const PublicarNovedad: React.FC = () => {
     >
       <Header />
       {/* Menú Editar y Cerrar Sesión */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: 35,
-          right: 32,
-          display: "flex",
-          alignItems: "center",
-          zIndex: 10,
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            mr: 1,
-          }}
-        >
-          <Typography
-            sx={{
-              fontWeight: 400,
-              letterSpacing: 2,
-              fontFamily: "Tektur, sans-serif",
-              fontSize: 16,
-              color: "#333",
-              lineHeight: 1.1,
-            }}
-          >
-            Bienvenido/a
-          </Typography>
-          <Typography
-            sx={{
-              fontWeight: 600,
-              letterSpacing: 2,
-              fontFamily: "Tektur, sans-serif",
-              fontSize: 18,
-              color: "#1976d2",
-              lineHeight: 1.1,
-            }}
-          >
-            {userName}
-          </Typography>
+      <Box sx={{ position: "absolute", top: 35, right: 32, display: "flex", alignItems: "center", zIndex: 10 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", mr: 1 }}>
+          <Typography sx={{ fontWeight: 400, letterSpacing: 2, fontFamily: "Tektur, sans-serif", fontSize: 16, color: "#333", lineHeight: 1.1 }}>Bienvenido/a</Typography>
+          <Typography sx={{ fontWeight: 600, letterSpacing: 2, fontFamily: "Tektur, sans-serif", fontSize: 18, color: "#1976d2", lineHeight: 1.1 }}>{userName}</Typography>
         </Box>
-        <IconButton onClick={handleMenuOpen}>
-          <Settings sx={{ fontSize: 40 }} />
-        </IconButton>
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-        >
-          <MenuItem onClick={handleOpenPasswordModal}>
-            Cambiar Contraseña
-          </MenuItem>
+        <IconButton onClick={handleMenuOpen}><Settings sx={{ fontSize: 40 }} /></IconButton>
+        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+          <MenuItem onClick={handleOpenPasswordModal}>Cambiar Contraseña</MenuItem>
           <MenuItem onClick={handleCerrarSesion}>Cerrar Sesión</MenuItem>
         </Menu>
       </Box>
-
-      {/* Botón Volver */}
-      <BackButton to="/rrhh-principal" />
-
-      {/* Contenedor principal */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          px: 4,
-          mt: 4,
-          width: "100%",
-          maxWidth: "800px",
-          mx: "auto",
-          p: 5,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
-        <Typography
-          component="h1"
-          variant="h4"
+      {/* Botón Ir al Tablón arriba, fuera del header, alineado a la izquierda */}
+      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-start', mt: 2, mb: 1, pl: 4 }}>
+        <Button
+          onClick={handleIrAlTablon}
+          variant="contained"
           sx={{
-            mb: 5,
+            py: 1,
+            px: 3,
             fontFamily: "Tektur, sans-serif",
-            fontWeight: 700,
-            color: "#333",
-            letterSpacing: 1,
+            fontWeight: 600,
+            fontSize: "1rem",
+            borderRadius: 3,
+            textTransform: "none",
+            letterSpacing: 2,
+            backgroundColor: "#4c77af",
+            color: "#fff",
+            boxShadow: 'none',
+            minWidth: 120,
+            height: 40,
+            '&:hover': { backgroundColor: "#0a386f" }
           }}
         >
-          Publicar Novedad
-        </Typography>
-
-        {error && (
-          <Alert
-            severity="error"
-            sx={{ width: "100%", mb: 3, borderRadius: 2, fontWeight: 500 }}
-          >
-            {error}
-          </Alert>
-        )}
-
-        {mensajeExito && (
-          <Alert
-            severity="success"
-            sx={{ width: "100%", mb: 3, borderRadius: 2, fontWeight: 500 }}
-          >
-            {mensajeExito}
-          </Alert>
-        )}
-
-        {/* Formulario */}
-        <Box
-          component="form"
-          onSubmit={handleSubmit(onSubmit)}
-          sx={{ width: "100%" }}
-          encType="multipart/form-data"
-        >
+          Ir al Tablón
+        </Button>
+      </Box>
+      <BackButton to="/rrhh-principal" />
+      <Box component="main" sx={{ flexGrow: 1, px: 4, mt: 4, width: "100%", maxWidth: "800px", mx: "auto", p: 5, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <Typography component="h1" variant="h4" sx={{ mb: 5, fontFamily: "Tektur, sans-serif", fontWeight: 700, color: "#333", letterSpacing: 1 }}>Publicar Novedad</Typography>
+        {error && (<Alert severity="error" sx={{ width: "100%", mb: 3, borderRadius: 2, fontWeight: 500 }}>{error}</Alert>)}
+        {mensajeExito && (<Alert severity="success" sx={{ width: "100%", mb: 3, borderRadius: 2, fontWeight: 500 }}>{mensajeExito}</Alert>)}
+        <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ width: "100%" }} encType="multipart/form-data">
           <Controller
             name="contenido"
             control={control}
@@ -308,23 +258,12 @@ const PublicarNovedad: React.FC = () => {
                 fullWidth
                 error={!!errors.contenido}
                 helperText={errors.contenido?.message}
-                sx={{
-                  mb: 4,
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                    backgroundColor: "#f9f9f9",
-                  },
-                  "& .MuiFormHelperText-root": { ml: 0 },
-                }}
+                sx={{ mb: 4, "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f9f9f9" }, "& .MuiFormHelperText-root": { ml: 0 } }}
                 disabled={isLoading}
               />
             )}
           />
-
-          <Box
-            sx={{ display: "flex", gap: 2, mb: 4, justifyContent: "center" }}
-          >
-            {/* Botón para adjuntar imagen */}
+          <Box sx={{ display: "flex", gap: 2, mb: 4, justifyContent: "center", alignItems: "center" }}>
             <Controller
               name="imagen"
               control={control}
@@ -342,11 +281,21 @@ const PublicarNovedad: React.FC = () => {
                     backgroundColor: "#e3f2fd",
                     color: "#1976d2",
                     minWidth: 180,
-                    "&:hover": { backgroundColor: "#bbdefb" },
+                    maxWidth: 320,
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                    textOverflow: "ellipsis",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-start",
+                    '&:hover': { backgroundColor: "#bbdefb" }
                   }}
+                  aria-label="Adjuntar imagen"
                   disabled={isLoading}
                 >
-                  {imagenNombre ? imagenNombre : "Imagen"}
+                  <Box sx={{ maxWidth: 180, overflowX: 'auto', whiteSpace: 'nowrap', textOverflow: 'ellipsis', flex: 1, textAlign: 'left' }}>
+                    {imagenNombre ? imagenNombre : "Imagen"}
+                  </Box>
                   <input
                     type="file"
                     accept="image/*"
@@ -359,8 +308,6 @@ const PublicarNovedad: React.FC = () => {
                 </Button>
               )}
             />
-
-            {/* Botón para adjuntar archivo */}
             <Controller
               name="archivo"
               control={control}
@@ -378,8 +325,10 @@ const PublicarNovedad: React.FC = () => {
                     backgroundColor: "#e3f2fd",
                     color: "#1976d2",
                     minWidth: 180,
-                    "&:hover": { backgroundColor: "#bbdefb" },
+                    maxWidth: 220,
+                    '&:hover': { backgroundColor: "#bbdefb" }
                   }}
+                  aria-label="Adjuntar archivo"
                   disabled={isLoading}
                 >
                   {archivoNombre ? archivoNombre : "Archivo"}
@@ -395,143 +344,79 @@ const PublicarNovedad: React.FC = () => {
               )}
             />
           </Box>
-
-          <Box sx={{ textAlign: "center" }}>
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
             <Button
               type="submit"
               variant="contained"
               disabled={isLoading}
               sx={{
                 py: 1.5,
-                width: 220,
+                width: 420,
                 fontFamily: "Tektur, sans-serif",
                 fontWeight: 600,
                 fontSize: "1.1rem",
                 borderRadius: 3,
                 textTransform: "none",
                 letterSpacing: 2,
-                backgroundColor: "#4c77afff",
-                "&:hover": { backgroundColor: "#0a386fff" },
+                backgroundColor: "#1976d2",
+                '&:hover': { backgroundColor: "#0a386f" }
               }}
+              startIcon={isLoading ? <CircularProgress size={22} color="inherit" /> : null}
             >
-              {isLoading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                "Enviar"
-              )}
+              {isLoading ? "Publicando..." : "Publicar Novedad"}
             </Button>
           </Box>
         </Box>
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
-          <Button
-            onClick={handleIrAlTablon}
-            variant="contained"
-            sx={{
-              mt: 10,
-              py: 1.5,
-              width: 420,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: "1.1rem",
-              borderRadius: 3,
-              textTransform: "none",
-              letterSpacing: 2,
-              backgroundColor: "#4c77afff",
-              "&:hover": { backgroundColor: "#0a386fff" },
-            }}
-          >
-            Ir al Tablón
-          </Button>
+        <Modal open={modalPasswordOpen} onClose={handleClosePasswordModal}>
+          <Box sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", bgcolor: "background.paper", boxShadow: 24, borderRadius: 3, p: 4, minWidth: 350, maxWidth: "90vw", display: "flex", flexDirection: "column", gap: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Cambiar Contraseña</Typography>
+            <TextField
+              label="Contraseña Actual"
+              type={showOld ? "text" : "password"}
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              fullWidth
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowOld((v) => !v)} edge="end">
+                      {showOld ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <TextField
+              label="Nueva Contraseña"
+              type={showNew ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              fullWidth
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowNew((v) => !v)} edge="end">
+                      {showNew ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {msg && (
+              <Typography color={msg.includes("correctamente") ? "success.main" : "error.main"} sx={{ mt: 1 }}>{msg}</Typography>
+            )}
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}>
+              <Button onClick={handleClosePasswordModal} disabled={loadingPassword}>Cancelar</Button>
+              <Button variant="contained" onClick={handleChangePassword} disabled={loadingPassword || !oldPassword || !newPassword}>Cambiar</Button>
+            </Box>
+          </Box>
+        </Modal>
+        <Box sx={{ width: '100%', position: 'fixed', left: 0, bottom: 0 }}>
+          <Footer />
         </Box>
       </Box>
-
-      {/* Modal para cambiar contraseña */}
-      <Modal open={modalPasswordOpen} onClose={handleClosePasswordModal}>
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            borderRadius: 3,
-            p: 4,
-            minWidth: 350,
-            maxWidth: "90vw",
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          }}
-        >
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Cambiar Contraseña
-          </Typography>
-          <TextField
-            label="Contraseña Actual"
-            type={showOld ? "text" : "password"}
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-            fullWidth
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowOld((v) => !v)} edge="end">
-                    {showOld ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <TextField
-            label="Nueva Contraseña"
-            type={showNew ? "text" : "password"}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            fullWidth
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowNew((v) => !v)} edge="end">
-                    {showNew ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          {msg && (
-            <Typography
-              color={
-                msg.includes("correctamente") ? "success.main" : "error.main"
-              }
-              sx={{ mt: 1 }}
-            >
-              {msg}
-            </Typography>
-          )}
-          <Box
-            sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
-          >
-            <Button
-              onClick={handleClosePasswordModal}
-              disabled={loadingPassword}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleChangePassword}
-              disabled={loadingPassword || !oldPassword || !newPassword}
-            >
-              Cambiar
-            </Button>
-          </Box>
-        </Box>
-      </Modal>
-
-      <Footer />
     </Box>
   );
-};
+}
 
 export default PublicarNovedad;
