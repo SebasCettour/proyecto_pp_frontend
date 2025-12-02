@@ -215,34 +215,10 @@ const PublicarNovedad: React.FC = () => {
           <MenuItem onClick={handleCerrarSesion}>Cerrar Sesión</MenuItem>
         </Menu>
       </Box>
-      {/* Botón Ir al Tablón arriba, fuera del header, alineado a la izquierda */}
-      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-start', mt: 2, mb: 1, pl: 4 }}>
-        <Button
-          onClick={handleIrAlTablon}
-          variant="contained"
-          sx={{
-            py: 1,
-            px: 3,
-            fontFamily: "Tektur, sans-serif",
-            fontWeight: 600,
-            fontSize: "1rem",
-            borderRadius: 3,
-            textTransform: "none",
-            letterSpacing: 2,
-            backgroundColor: "#4c77af",
-            color: "#fff",
-            boxShadow: 'none',
-            minWidth: 120,
-            height: 40,
-            '&:hover': { backgroundColor: "#0a386f" }
-          }}
-        >
-          Ir al Tablón
-        </Button>
-      </Box>
+      {/* Botón Ir al Tablón debajo del título */}
       <BackButton to="/rrhh-principal" />
       <Box component="main" sx={{ flexGrow: 1, px: 4, mt: 4, width: "100%", maxWidth: "800px", mx: "auto", p: 5, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <Typography component="h1" variant="h4" sx={{ mb: 5, fontFamily: "Tektur, sans-serif", fontWeight: 700, color: "#333", letterSpacing: 1 }}>Publicar Novedad</Typography>
+        <Typography component="h1" variant="h4" sx={{ mb: 3, fontFamily: "Tektur, sans-serif", fontWeight: 700, color: "#333", letterSpacing: 1 }}>Publicar Novedad</Typography>
         {error && (<Alert severity="error" sx={{ width: "100%", mb: 3, borderRadius: 2, fontWeight: 500 }}>{error}</Alert>)}
         {mensajeExito && (<Alert severity="success" sx={{ width: "100%", mb: 3, borderRadius: 2, fontWeight: 500 }}>{mensajeExito}</Alert>)}
         <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ width: "100%" }} encType="multipart/form-data">
@@ -364,6 +340,30 @@ const PublicarNovedad: React.FC = () => {
               startIcon={isLoading ? <CircularProgress size={22} color="inherit" /> : null}
             >
               {isLoading ? "Publicando..." : "Publicar Novedad"}
+            </Button>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
+            <Button
+              onClick={handleIrAlTablon}
+              variant="contained"
+              sx={{
+                py: 1,
+                px: 3,
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 600,
+                fontSize: "1rem",
+                borderRadius: 3,
+                textTransform: "none",
+                letterSpacing: 2,
+                backgroundColor: "#4c77af",
+                color: "#fff",
+                boxShadow: 'none',
+                minWidth: 120,
+                height: 40,
+                '&:hover': { backgroundColor: "#0a386f" }
+              }}
+            >
+              Ir al Tablón
             </Button>
           </Box>
         </Box>
