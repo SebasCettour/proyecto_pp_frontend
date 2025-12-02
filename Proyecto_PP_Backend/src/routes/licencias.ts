@@ -347,7 +347,7 @@ router.get(
 
       // Obtener licencias del empleado por su DNI (documento)
       const [rows] = await pool.execute(
-        `SELECT l.*, e.Nombre AS NombreEmpleado, e.Apellido AS ApellidoEmpleado
+        `SELECT l.*, e.Nombre AS NombreEmpleado, e.Apellido AS ApellidoEmpleado, e.Numero_Documento AS Documento
          FROM Licencia l
          JOIN Empleado e ON l.Id_Empleado = e.Id_Empleado
          WHERE e.Numero_Documento = ?
