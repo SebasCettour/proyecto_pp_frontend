@@ -24,10 +24,9 @@ import BackButton from "../../components/BackButton";
 
 interface Licencia {
   Id_Licencia: number;
-  Nombre: string;
-  Apellido: string;
-  Documento: string;
-  Area: string;
+  Nombre?: string;
+  Apellido?: string;
+  Documento?: string;
   Motivo: string;
   Observaciones?: string;
   CertificadoMedico?: string;
@@ -37,6 +36,8 @@ interface Licencia {
   FechaSolicitud: string;
   FechaRespuesta?: string;
   MotivoRechazo?: string;
+  NombreEmpleado?: string;
+  ApellidoEmpleado?: string;
 }
 
 export default function GestionarLicencias() {
@@ -47,11 +48,17 @@ export default function GestionarLicencias() {
   const [searched, setSearched] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
+
   // mostrar nombre del empleado si el historial contiene datos
   const empleadoNombre =
     historial.length > 0
-      ? `${historial[0].Nombre} ${historial[0].Apellido}`
+      ? `${
+          historial[0].NombreEmpleado || historial[0].Nombre || ''
+        } ${
+          historial[0].ApellidoEmpleado || historial[0].Apellido || ''
+        }`.trim() || searchTerm
       : searchTerm;
+  const empleadoDocumento = historial.length > 0 ? historial[0].Documento || '' : '';
 
   const userName =
     localStorage.getItem("nombre") ||
@@ -324,28 +331,12 @@ export default function GestionarLicencias() {
             <Table size="small">
               <TableHead sx={{ backgroundColor: "#6c757d" }}>
                 <TableRow>
-                  {[
-                    "Fecha Solicitud",
-                    "Nombre",
-                    "Documento",
-                    "Área",
-                    "Motivo",
-                    "Estado",
-                    "Certificado",
-                  ].map((h: string) => (
-                    <TableCell
-                      key={h}
-                      sx={{
-                        color: "#fff",
-                        fontWeight: 700,
-                        textAlign: "center",
-                        fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                        py: 1.25,
-                      }}
-                    >
-                      {h}
-                    </TableCell>
-                  ))}
+                  <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Fecha Solicitud</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Nombre</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Documento</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Motivo</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Estado</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Certificado</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -357,49 +348,16 @@ export default function GestionarLicencias() {
                       "&:hover": { backgroundColor: "#eaf4ff" },
                     }}
                   >
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontSize: { xs: "0.9rem", sm: "0.95rem" },
-                        py: 1.25,
-                      }}
-                    >
+                    <TableCell align="center" sx={{ fontSize: { xs: "0.9rem", sm: "0.95rem" }, py: 1.25 }}>
                       {formatDate(lic.FechaSolicitud)}
                     </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontSize: { xs: "0.9rem", sm: "0.95rem" },
-                        py: 1.25,
-                      }}
-                    >
-                      {`${lic.Nombre} ${lic.Apellido}`}
+                    <TableCell align="center" sx={{ fontSize: { xs: "0.9rem", sm: "0.95rem" }, py: 1.25 }}>
+                      {`${lic.NombreEmpleado || lic.Nombre || ''} ${lic.ApellidoEmpleado || lic.Apellido || ''}`.trim()}
                     </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontSize: { xs: "0.9rem", sm: "0.95rem" },
-                        py: 1.25,
-                      }}
-                    >
+                    <TableCell align="center" sx={{ fontSize: { xs: "0.9rem", sm: "0.95rem" }, py: 1.25 }}>
                       {lic.Documento}
                     </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontSize: { xs: "0.9rem", sm: "0.95rem" },
-                        py: 1.25,
-                      }}
-                    >
-                      {lic.Area}
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        fontSize: { xs: "0.9rem", sm: "0.95rem" },
-                        py: 1.25,
-                      }}
-                    >
+                    <TableCell align="center" sx={{ fontSize: { xs: "0.9rem", sm: "0.95rem" }, py: 1.25 }}>
                       {lic.Motivo}
                     </TableCell>
                     <TableCell align="center" sx={{ py: 1.25 }}>
