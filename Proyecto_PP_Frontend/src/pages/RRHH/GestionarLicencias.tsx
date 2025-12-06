@@ -23,8 +23,10 @@ import {
   InputAdornment,
   Snackbar,
   Alert,
+  Tooltip,
 } from "@mui/material";
 import { Settings, Visibility, VisibilityOff } from "@mui/icons-material";
+import DownloadIcon from "@mui/icons-material/Download";
 import { Link as RouterLink } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
@@ -333,38 +335,25 @@ export default function GestionarLicencias() {
           <Table>
             <TableHead sx={{ backgroundColor: "#858789ff" }}>
               <TableRow>
-                {[
-                  "Fecha",
-                  "Documento",
-                  "Nombre y Apellido",
-                  "Motivo",
-                  "Estado",
-                  "Acciones",
-                ].map((header) => (
-                  <TableCell
-                    key={header}
-                    sx={{
-                      color: "#fff",
-                      fontWeight: 600,
-                      fontFamily: "Tektur, sans-serif",
-                      textAlign: "center",
-                    }}
-                  >
-                    {header}
-                  </TableCell>
-                ))}
+                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Fecha</TableCell>
+                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Documento</TableCell>
+                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Nombre y Apellido</TableCell>
+                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Motivo</TableCell>
+                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Certificado</TableCell>
+                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Estado</TableCell>
+                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
+                  <TableCell colSpan={7} align="center">
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : licencias.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
+                  <TableCell colSpan={7} align="center">
                     <Typography variant="h6" color="text.secondary">
                       No hay solicitudes pendientes
                     </Typography>
@@ -387,6 +376,31 @@ export default function GestionarLicencias() {
                       {`${licencia.Nombre} ${licencia.Apellido}`}
                     </TableCell>
                     <TableCell align="center">{licencia.Motivo}</TableCell>
+                    <TableCell align="center">
+                      {licencia.CertificadoMedico ? (
+                        <Tooltip title="Descargar certificado médico">
+                          <a
+                            href={licencia.CertificadoMedico}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: '#1976d2',
+                              textDecoration: 'none',
+                              fontWeight: 500,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                          >
+                            <DownloadIcon sx={{ fontSize: 22, mr: 0.5 }} />
+                            Descargar
+                          </a>
+                        </Tooltip>
+                      ) : (
+                        <span style={{ color: '#888' }}>No adjunto</span>
+                      )}
+                    </TableCell>
                     <TableCell align="center">
                       <Chip
                         label={licencia.Estado}
