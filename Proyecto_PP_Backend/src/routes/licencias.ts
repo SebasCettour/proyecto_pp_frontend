@@ -201,7 +201,8 @@ router.get(
           l.*, 
           e.Nombre, 
           e.Apellido, 
-          e.Numero_Documento as Documento
+          e.Numero_Documento as Documento,
+          e.Categoria AS Categoria
         FROM Licencia l
         INNER JOIN Empleado e ON l.Id_Empleado = e.Id_Empleado
         WHERE l.Estado = 'Pendiente' 

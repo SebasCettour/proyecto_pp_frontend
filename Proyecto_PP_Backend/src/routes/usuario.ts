@@ -193,7 +193,10 @@ router.get("/usuario-dni/:dni", async (req, res) => {
   const { dni } = req.params;
   try {
     const [rows]: any = await db.query(
-      "SELECT * FROM `ProyectoPP`.`Empleado` WHERE Numero_Documento = ?",
+      `SELECT e.*, c.Nombre AS Categoria
+       FROM ProyectoPP.Empleado e
+       LEFT JOIN ProyectoPP.Categorias c ON e.Id_Categoria = c.Id_Categoria
+       WHERE e.Numero_Documento = ?`,
       [dni]
     );
     if (rows.length === 0) {
@@ -463,9 +466,11 @@ router.get("/empleado-buscar/:searchTerm", async (req: Request, res: Response) =
         e.Numero_Documento as dni,
         e.Legajo as legajo,
         r.Nombre_Rol as rol,
-        e.Fecha_Desde as fechaIngreso
+        e.Fecha_Desde as fechaIngreso,
+        c.Nombre AS categoria
       FROM Empleado e
       LEFT JOIN Rol r ON e.Id_Rol = r.Id_Rol
+      LEFT JOIN Categorias c ON e.Id_Categoria = c.Id_Categoria
       WHERE `;
     
     let queryParams: any[] = [];
@@ -499,7 +504,8 @@ router.get("/empleado-buscar/:searchTerm", async (req: Request, res: Response) =
         rol: empleado.rol || "No especificado",
         fechaIngreso: empleado.fechaIngreso
           ? empleado.fechaIngreso.toISOString?.().split("T")[0] : empleado.fechaIngreso || "",
-        legajo: empleado.legajo || ""
+        legajo: empleado.legajo || "",
+        categoria: empleado.categoria || null
       };
       res.json(response);
     } else {
@@ -513,7 +519,8 @@ router.get("/empleado-buscar/:searchTerm", async (req: Request, res: Response) =
         rol: empleado.rol || "No especificado",
         fechaIngreso: empleado.fechaIngreso
           ? empleado.fechaIngreso.toISOString?.().split("T")[0] : empleado.fechaIngreso || "",
-        legajo: empleado.legajo || ""
+        legajo: empleado.legajo || "",
+        categoria: empleado.categoria || null
       }));
       res.json(response);
     }

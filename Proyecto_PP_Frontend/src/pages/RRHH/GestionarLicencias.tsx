@@ -46,6 +46,7 @@ interface Licencia {
   FechaSolicitud: string;
   FechaRespuesta?: string;
   MotivoRechazo?: string;
+  Categoria?: string;
 }
 
 export default function GestionarLicencias() {
@@ -338,6 +339,7 @@ export default function GestionarLicencias() {
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Fecha</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Documento</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Nombre y Apellido</TableCell>
+                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Categoría</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Motivo</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Certificado</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Estado</TableCell>
@@ -374,6 +376,9 @@ export default function GestionarLicencias() {
                     <TableCell align="center">{licencia.Documento}</TableCell>
                     <TableCell align="center">
                       {`${licencia.Nombre} ${licencia.Apellido}`}
+                    </TableCell>
+                    <TableCell align="center">
+                      {licencia.Categoria || <span style={{ color: '#888' }}>N/A</span>}
                     </TableCell>
                     <TableCell align="center">{licencia.Motivo}</TableCell>
                     <TableCell align="center">
