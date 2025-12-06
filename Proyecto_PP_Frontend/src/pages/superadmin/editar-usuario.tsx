@@ -248,38 +248,52 @@ const EditarUsuario = () => {
     setSuccess(null);
     setSearchError(null);
     setSearchLoading(true);
-    
+
     try {
       if (!searchTerm.trim()) {
         setSearchError("Ingrese un DNI, nombre o apellido");
+        setSearchLoading(false);
         return;
       }
 
       const response = await fetch(
         `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(searchTerm)}`
       );
-      
+      let result = null;
+      try {
+        result = await response.json();
+      } catch (jsonErr) {
+        setSearchError("Error al interpretar la respuesta del servidor");
+        setSearchLoading(false);
+        return;
+      }
+      console.log("Respuesta backend empleado-buscar:", result);
+
       if (!response.ok) {
-        setSearchError("Usuario no encontrado");
+        // Si el backend envía un error, mostrarlo
+        setSearchError(result?.error || "Usuario no encontrado");
+        setSearchLoading(false);
         return;
       }
 
-      const result = await response.json();
-      
       // Si es un array, verificar cantidad de resultados
       if (Array.isArray(result)) {
         if (result.length === 0) {
           setSearchError("No se encontraron usuarios");
+          setSearchLoading(false);
           return;
         } else if (result.length > 1) {
           setSearchError(`Se encontraron ${result.length} usuarios. Por favor, sea más específico.`);
+          setSearchLoading(false);
           return;
         }
         // Usar el primer (y único) resultado
         await cargarDatosUsuario(result[0].dni);
-      } else {
+      } else if (result && result.dni) {
         // Es un objeto único
         await cargarDatosUsuario(result.dni);
+      } else {
+        setSearchError("Formato de respuesta inesperado del servidor");
       }
     } catch (err: any) {
       setSearchError(err.message || "Error al buscar usuario");

@@ -27,6 +27,11 @@ import { API_ENDPOINTS } from "../../config/api";
 import Header from "../../components/Header";
 import MenuUsuario from "../../components/MenuUsuario";
 
+interface Categoria {
+  Id_Categoria: number;
+  Nombre_Categoria: string;
+}
+
 interface DiagnosticoCIE10 {
   codigo: string;
   descripcion: string;
@@ -48,6 +53,9 @@ export default function SolicitarLicencia() {
     archivo: null as File | null,
     diagnosticoCIE10: null as DiagnosticoCIE10 | null,
   });
+
+  // Estado para las categorías
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
 
   const [errors, setErrors] = useState({
     nombre: false,
@@ -83,7 +91,9 @@ export default function SolicitarLicencia() {
   // Estados para Snackbar
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("info");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    "success" | "error" | "warning" | "info"
+  >("info");
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
@@ -96,7 +106,15 @@ export default function SolicitarLicencia() {
       localStorage.getItem("nombre") ||
       "Usuario";
     setUserName(name);
-    
+
+    // Cargar categorías desde el backend
+    fetch("http://localhost:4000/api/empleado/categorias")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setCategorias(data);
+      })
+      .catch(() => setCategorias([]));
+
     // Cargar datos del empleado
     cargarDatosEmpleado();
   }, []);
@@ -106,7 +124,7 @@ export default function SolicitarLicencia() {
     try {
       const token = localStorage.getItem("token");
       const documento = localStorage.getItem("documento");
-      
+
       if (!documento) {
         console.error("No se encontró el documento en localStorage");
         setLoadingEmpleado(false);
@@ -114,7 +132,9 @@ export default function SolicitarLicencia() {
       }
 
       const response = await fetch(
-        `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(documento)}`,
+        `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(
+          documento
+        )}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -125,14 +145,14 @@ export default function SolicitarLicencia() {
 
       if (response.ok) {
         const empleado = await response.json();
-        
+
         console.log("✅ Datos del empleado recibidos:", empleado);
         console.log("✅ DNI recibido:", empleado.dni);
         console.log("✅ Nombre recibido:", empleado.nombre);
         console.log("✅ Apellido recibido:", empleado.apellido);
         console.log("✅ Legajo recibido:", empleado.legajo);
         console.log("✅ Categoría recibida:", empleado.categoria);
-        
+
         setForm((prev) => ({
           ...prev,
           nombre: empleado.nombre || "",
@@ -143,7 +163,10 @@ export default function SolicitarLicencia() {
           tipoDocumento: "DNI",
         }));
       } else {
-        console.error("❌ Error al cargar datos del empleado - Status:", response.status);
+        console.error(
+          "❌ Error al cargar datos del empleado - Status:",
+          response.status
+        );
         const errorData = await response.json().catch(() => ({}));
         console.error("❌ Error data:", errorData);
       }
@@ -163,20 +186,26 @@ export default function SolicitarLicencia() {
 
     setCie10Loading(true);
     try {
-      const url = `${API_ENDPOINTS.CIE10_SEARCH}?query=${encodeURIComponent(query)}`;
+      const url = `${API_ENDPOINTS.CIE10_SEARCH}?query=${encodeURIComponent(
+        query
+      )}`;
       console.log("🔍 Buscando CIE10:", query);
       console.log("🌐 URL:", url);
-      
+
       const response = await fetch(url);
       console.log("📡 Response status:", response.status);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log("✅ Datos recibidos:", data);
         setCie10Results(data);
       } else {
         const errorText = await response.text();
-        console.error("❌ Error en búsqueda CIE10:", response.status, errorText);
+        console.error(
+          "❌ Error en búsqueda CIE10:",
+          response.status,
+          errorText
+        );
         setCie10Results([]);
       }
     } catch (error) {
@@ -301,7 +330,9 @@ export default function SolicitarLicencia() {
       form.fechaFin &&
       form.fechaFin <= form.fechaInicio
     ) {
-      setSnackbarMessage("La fecha de fin debe ser posterior a la fecha de inicio");
+      setSnackbarMessage(
+        "La fecha de fin debe ser posterior a la fecha de inicio"
+      );
       setSnackbarSeverity("warning");
       setSnackbarOpen(true);
       return;
@@ -313,7 +344,9 @@ export default function SolicitarLicencia() {
       form.fechaReincorporacion &&
       form.fechaReincorporacion < form.fechaFin
     ) {
-      setSnackbarMessage("La fecha de reincorporación debe ser igual o posterior a la fecha de fin de licencia");
+      setSnackbarMessage(
+        "La fecha de reincorporación debe ser igual o posterior a la fecha de fin de licencia"
+      );
       setSnackbarSeverity("warning");
       setSnackbarOpen(true);
       setErrors((prev) => ({ ...prev, fechaReincorporacion: true }));
@@ -439,7 +472,7 @@ export default function SolicitarLicencia() {
             textTransform: "none",
             ml: 2,
             boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-            '&:hover': { backgroundColor: '#115293' },
+            "&:hover": { backgroundColor: "#115293" },
           }}
         >
           Volver
@@ -490,7 +523,14 @@ export default function SolicitarLicencia() {
             }}
           >
             {loadingEmpleado ? (
-              <Box sx={{ width: "100%", display: "flex", justifyContent: "center", py: 4 }}>
+              <Box
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: "center",
+                  py: 4,
+                }}
+              >
                 <CircularProgress />
               </Box>
             ) : (
@@ -521,56 +561,133 @@ export default function SolicitarLicencia() {
                   >
                     Datos del Empleado
                   </Typography>
-                  
+
                   <Box
                     sx={{
                       display: "grid",
-                      gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
+                      gridTemplateColumns: {
+                        xs: "1fr",
+                        sm: "repeat(2, 1fr)",
+                        md: "repeat(3, 1fr)",
+                      },
                       gap: 2,
                     }}
                   >
                     <Box>
-                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 700, fontFamily: 'Tektur, sans-serif' }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "#666",
+                          fontWeight: 700,
+                          fontFamily: "Tektur, sans-serif",
+                        }}
+                      >
                         Nombre Completo
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'Tektur, sans-serif' }}>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: 600,
+                          fontFamily: "Tektur, sans-serif",
+                        }}
+                      >
                         {form.nombre} {form.apellido}
                       </Typography>
                     </Box>
-                    
+
                     <Box>
-                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 700, fontFamily: 'Tektur, sans-serif' }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "#666",
+                          fontWeight: 700,
+                          fontFamily: "Tektur, sans-serif",
+                        }}
+                      >
                         Tipo de Documento
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'Tektur, sans-serif' }}>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: 600,
+                          fontFamily: "Tektur, sans-serif",
+                        }}
+                      >
                         {form.tipoDocumento || "DNI"}
                       </Typography>
                     </Box>
-                    
+
                     <Box>
-                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 700, fontFamily: 'Tektur, sans-serif' }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "#666",
+                          fontWeight: 700,
+                          fontFamily: "Tektur, sans-serif",
+                        }}
+                      >
                         Número de Documento
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'Tektur, sans-serif' }}>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: 600,
+                          fontFamily: "Tektur, sans-serif",
+                        }}
+                      >
                         {form.documento}
                       </Typography>
                     </Box>
-                    
+
                     <Box>
-                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 700, fontFamily: 'Tektur, sans-serif' }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "#666",
+                          fontWeight: 700,
+                          fontFamily: "Tektur, sans-serif",
+                        }}
+                      >
                         Legajo
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'Tektur, sans-serif' }}>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: 600,
+                          fontFamily: "Tektur, sans-serif",
+                        }}
+                      >
                         {form.legajo || "N/A"}
                       </Typography>
                     </Box>
-                    
+
                     <Box>
-                      <Typography variant="caption" sx={{ color: "#666", fontWeight: 700, fontFamily: 'Tektur, sans-serif' }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "#666",
+                          fontWeight: 700,
+                          fontFamily: "Tektur, sans-serif",
+                        }}
+                      >
                         Categoría
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: 'Tektur, sans-serif' }}>
-                        {form.categoria || "N/A"}
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: 600,
+                          fontFamily: "Tektur, sans-serif",
+                        }}
+                      >
+                        {
+                          // Buscar el nombre de la categoría por ID
+                          categorias.find(
+                            (c) =>
+                              String(c.Id_Categoria) === String(form.categoria)
+                          )?.Nombre_Categoria ||
+                            form.categoria ||
+                            "N/A"
+                        }
                       </Typography>
                     </Box>
                   </Box>
@@ -630,7 +747,9 @@ export default function SolicitarLicencia() {
                   value={form.fechaReincorporacion}
                   onChange={handleInputChange}
                   error={errors.fechaReincorporacion}
-                  helperText={errors.fechaReincorporacion && "Campo obligatorio"}
+                  helperText={
+                    errors.fechaReincorporacion && "Campo obligatorio"
+                  }
                   sx={{ flex: "1 1 30%" }}
                   InputLabelProps={{
                     shrink: true,
@@ -707,10 +826,16 @@ export default function SolicitarLicencia() {
                         return (
                           <Box key={key} component="li" {...otherProps}>
                             <Box>
-                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 600 }}
+                              >
                                 {option.codigo}
                               </Typography>
-                              <Typography variant="body2" color="text.secondary">
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
                                 {option.descripcion}
                               </Typography>
                             </Box>
@@ -802,7 +927,7 @@ export default function SolicitarLicencia() {
                     backgroundColor: "#1976d2",
                     color: "#fff",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                    '&:hover': { backgroundColor: '#115293' },
+                    "&:hover": { backgroundColor: "#115293" },
                   }}
                 >
                   Enviar Solicitud
@@ -898,20 +1023,20 @@ export default function SolicitarLicencia() {
         open={snackbarOpen}
         autoHideDuration={5000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbarSeverity} 
-          sx={{ 
-            width: '100%',
-            minWidth: '400px',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{
+            width: "100%",
+            minWidth: "400px",
+            fontSize: "1.1rem",
+            fontWeight: "bold",
             boxShadow: 6,
-            '& .MuiAlert-message': {
-              fontSize: '1.1rem'
-            }
+            "& .MuiAlert-message": {
+              fontSize: "1.1rem",
+            },
           }}
         >
           {snackbarMessage}

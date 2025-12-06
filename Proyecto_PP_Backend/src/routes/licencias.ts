@@ -202,9 +202,10 @@ router.get(
           e.Nombre, 
           e.Apellido, 
           e.Numero_Documento as Documento,
-          e.Categoria AS Categoria
+          c.Nombre AS Categoria
         FROM Licencia l
         INNER JOIN Empleado e ON l.Id_Empleado = e.Id_Empleado
+        LEFT JOIN Categoria c ON e.Categoria = c.Id_Categoria
         WHERE l.Estado = 'Pendiente' 
         ORDER BY l.FechaSolicitud DESC`
       );

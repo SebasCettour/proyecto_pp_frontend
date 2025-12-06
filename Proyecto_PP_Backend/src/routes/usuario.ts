@@ -192,21 +192,27 @@ router.post("/auth/register", async (req, res) => {
 router.get("/usuario-dni/:dni", async (req, res) => {
   const { dni } = req.params;
   try {
-    const [rows]: any = await db.query(
-      `SELECT e.*, c.Nombre AS Categoria
+    console.log("[usuario-dni] DNI recibido:", dni);
+    const sql = `SELECT e.*, c.Id_Categoria, c.Nombre_Categoria AS Nombre_Categoria
        FROM ProyectoPP.Empleado e
-       LEFT JOIN ProyectoPP.Categorias c ON e.Id_Categoria = c.Id_Categoria
-       WHERE e.Numero_Documento = ?`,
-      [dni]
-    );
-    if (rows.length === 0) {
+      LEFT JOIN ProyectoPP.Categoria c ON e.Categoria = c.Id_Categoria
+       WHERE e.Numero_Documento = ?`;
+    console.log("[usuario-dni] SQL:", sql);
+    const [rows]: any = await db.query(sql, [dni]);
+    console.log("[usuario-dni] Resultado SQL:", rows);
+    if (!rows || rows.length === 0) {
+      console.log("[usuario-dni] Usuario no encontrado para DNI:", dni);
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
-    res.json(rows[0]);
+    const user = rows[0];
+    user.Id_Categoria = user.Id_Categoria || null;
+    user.Nombre_Categoria = user.Nombre_Categoria || null;
+    console.log("[usuario-dni] Usuario encontrado:", user);
+    res.json(user);
   } catch (err: unknown) {
     const error = err as Error;
-    console.error("Error al buscar usuario:", error);
-    res.status(500).json({ error: "Error al buscar usuario" });
+    console.error("[usuario-dni] Error al buscar usuario:", error);
+    res.status(500).json({ error: "Error al buscar usuario", details: error.message });
   }
 });
 
@@ -345,6 +351,7 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
   const {
     Nombre,
     Apellido,
+    Categoria,
     Correo_Electronico,
     Domicilio,
     Estado_Civil,
@@ -362,6 +369,7 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
       `UPDATE Empleado SET
         Nombre = ?,
         Apellido = ?,
+        Categoria = ?,
         Correo_Electronico = ?,
         Domicilio = ?,
         Estado_Civil = ?,
@@ -375,6 +383,7 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
       [
         Nombre,
         Apellido,
+        Categoria,
         Correo_Electronico,
         Domicilio,
         Estado_Civil,
