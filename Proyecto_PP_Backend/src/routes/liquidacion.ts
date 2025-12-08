@@ -939,4 +939,28 @@ router.get("/:id/pdf", authenticateToken, async (req: Request, res: Response) =>
   }
 });
 
+// Obtener sueldo básico por empleado (por DNI)
+router.get("/empleado/:dni/sueldo-basico", authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { dni } = req.params;
+    // JOIN por nombre de categoría y campos correctos
+    const [rows] = await pool.execute(
+      `SELECT c.Nombre_Categoria, c.Sueldo_Basico
+         FROM Empleado e
+         JOIN Categoria c ON e.Categoria = c.Nombre_Categoria
+        WHERE e.Numero_Documento = ?`,
+      [dni]
+    );
+    const result = Array.isArray(rows) ? rows as any[] : [];
+    if (result.length > 0) {
+      res.json({ sueldoBasico: result[0].Sueldo_Basico });
+    } else {
+      res.status(404).json({ message: "Empleado o categoría no encontrada" });
+    }
+  } catch (error) {
+    console.error("Error obteniendo sueldo básico:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
 export default router;
