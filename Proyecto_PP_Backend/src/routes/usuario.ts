@@ -476,9 +476,10 @@ router.get("/empleado-buscar/:searchTerm", async (req: Request, res: Response) =
         e.Legajo as legajo,
         r.Nombre_Rol as rol,
         e.Fecha_Desde as fechaIngreso,
-        e.Categoria AS categoria
+        c.Nombre_Categoria AS categoria
       FROM Empleado e
       LEFT JOIN Rol r ON e.Id_Rol = r.Id_Rol
+      LEFT JOIN Categoria c ON e.Categoria = c.Id_Categoria
       WHERE `;
     
     let queryParams: any[] = [];
