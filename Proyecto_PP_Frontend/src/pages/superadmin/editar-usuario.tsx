@@ -434,26 +434,18 @@ const EditarUsuario = () => {
     setSuccess(null);
     setIsLoading(true);
     try {
-      // Mapear a IDs para el backend (buscar por id, no por nombre)
+      // Buscar el nombre de la categoría seleccionada
       const categoriaObj = categorias.find(
-        (c) =>
-          String(c.Id_Categoria) === String(data.Categoria) ||
-          c.Nombre_Categoria === data.Categoria
+        (c) => String(c.Id_Categoria) === String(data.Categoria) || c.Nombre_Categoria === data.Categoria
       );
       const sindicatoObj = sindicatos.find(
-        (s) =>
-          String(s.id) === String(data.Id_Sindicato) ||
-          s.nombre === data.Id_Sindicato
+        (s) => String(s.id) === String(data.Id_Sindicato) || s.nombre === data.Id_Sindicato
       );
       const obraSocialObj = obrasSociales.find(
-        (o) =>
-          String(o.id) === String(data.Id_ObraSocial) ||
-          o.nombre === data.Id_ObraSocial
+        (o) => String(o.id) === String(data.Id_ObraSocial) || o.nombre === data.Id_ObraSocial
       );
       const convenioObj = convenios.find(
-        (c) =>
-          String(c.id) === String(data.id_convenio) ||
-          c.nombre === data.id_convenio
+        (c) => String(c.id) === String(data.id_convenio) || c.nombre === data.id_convenio
       );
 
       // Validar que todos los IDs requeridos existen
@@ -474,9 +466,10 @@ const EditarUsuario = () => {
         return fecha;
       };
 
+      // Enviar el nombre de la categoría
       const payload = {
         ...data,
-        Categoria: categoriaObj.Id_Categoria,
+        Categoria: categoriaObj.Nombre_Categoria,
         Id_Sindicato: sindicatoObj.id,
         Id_ObraSocial: obraSocialObj.id,
         id_convenio: convenioObj.id,

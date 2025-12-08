@@ -211,12 +211,21 @@ const AltaNuevo: React.FC = () => {
     setSuccess(null);
     setIsLoading(true);
     try {
+      // Buscar el nombre de la categoría seleccionada
+      const categoriaSeleccionada = categorias.find(
+        (c) => String(c.Id_Categoria) === String(data.categoriaId)
+      );
+      const nombreCategoria = categoriaSeleccionada?.Nombre_Categoria || "";
+
       const payload = {
         ...data,
         convenioId: Number(data.convenioId),
-        categoriaId: Number(data.categoriaId),
+        // Enviar el nombre de la categoría en vez del ID
+        categoria: nombreCategoria,
         legajo: "",
       };
+      // Eliminar categoriaId del payload si existe
+      delete (payload as any).categoriaId;
 
       const response = await fetch(
         "http://localhost:4000/api/usuario/auth/register",

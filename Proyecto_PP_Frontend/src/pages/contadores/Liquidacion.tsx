@@ -97,9 +97,59 @@ const Liquidacion = () => {
     "completa" | "dos_tercios" | "media"
   >("completa");
 
+
   // Estados para el input de sueldo básico
   const [sueldoDisplay, setSueldoDisplay] = useState<string>("");
   const [editingSueldo, setEditingSueldo] = useState<boolean>(false);
+
+  // Autocompletar sueldo básico al seleccionar empleado
+  // Sincronizar sueldo básico cuando hay empleado y conceptos cargados
+  useEffect(() => {
+    const fetchSueldoBasico = async () => {
+      if (employeeFound && employeeFound.dni && conceptos.length > 0) {
+        try {
+          const response = await fetch(
+            `http://localhost:4000/api/liquidacion/empleado/${employeeFound.dni}/sueldo-basico`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+          if (response.ok) {
+            const data = await response.json();
+            if (data && typeof data.sueldoBasico !== "undefined") {
+              setValores((prev) => ({
+                ...prev,
+                ["Sueldo básico"]: data.sueldoBasico.toString(),
+              }));
+            }
+          }
+        } catch (error) {
+          // Opcional: mostrar error
+        }
+      }
+    };
+    fetchSueldoBasico();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employeeFound, conceptos]);
+
+  // Cuando se cargan los conceptos, si ya hay un sueldo básico en valores, mantenerlo
+  useEffect(() => {
+    if (conceptos.length > 0) {
+      setValores((prev) => {
+        const inicial: { [key: string]: string } = {};
+        conceptos.forEach((c: any) => {
+          if (c.nombre === "Sueldo básico" && prev["Sueldo básico"]) {
+            inicial[c.nombre] = prev["Sueldo básico"];
+          } else {
+            inicial[c.nombre] = prev[c.nombre] || "";
+          }
+        });
+        return inicial;
+      });
+    }
+  }, [conceptos]);
 
   // Estados para suma fija no remunerativa
   const [sumaFijaNoRemunerativa, setSumaFijaNoRemunerativa] =
