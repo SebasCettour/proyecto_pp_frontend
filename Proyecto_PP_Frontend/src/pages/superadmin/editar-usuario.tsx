@@ -348,24 +348,18 @@ const EditarUsuario = () => {
 
       await waitForOptions();
 
-      const sindicatoNombre =
-        sindicatos.find((s) => String(s.id) === String(user.Id_Sindicato))
-          ?.nombre || "";
-      const obraSocialNombre =
-        obrasSociales.find((o) => String(o.id) === String(user.Id_ObraSocial))
-          ?.nombre || "";
 
       // Para convenio, usar el id como valor, pero mostrar el nombre en el select
       const convenioId =
         convenios.find((c) => String(c.id) === String(user.id_convenio))?.id ||
         "";
 
-      // Primero establecer el formulario sin categoría
+      // Cargar los ids de sindicato y obra social directamente desde la base
       reset({
         ...user,
         Categoria: "", // Temporalmente vacío
-        Id_Sindicato: sindicatoNombre,
-        Id_ObraSocial: obraSocialNombre,
+        Id_Sindicato: user.Id_Sindicato ? String(user.Id_Sindicato) : "",
+        Id_ObraSocial: user.Id_ObraSocial ? String(user.Id_ObraSocial) : "",
         id_convenio: convenioId ? String(convenioId) : "",
         Estado_Civil:
           validEstadoCivil.includes(user.Estado_Civil) && user.Estado_Civil
@@ -399,8 +393,8 @@ const EditarUsuario = () => {
             reset({
               ...user,
               Categoria: String(categoriaCorrecta.Id_Categoria),
-              Id_Sindicato: sindicatoNombre,
-              Id_ObraSocial: obraSocialNombre,
+              Id_Sindicato: user.Id_Sindicato ? String(user.Id_Sindicato) : "",
+              Id_ObraSocial: user.Id_ObraSocial ? String(user.Id_ObraSocial) : "",
               id_convenio: String(convenioId),
               Estado_Civil:
                 validEstadoCivil.includes(user.Estado_Civil) && user.Estado_Civil
@@ -713,6 +707,7 @@ const EditarUsuario = () => {
                       error={!!errors.Telefono}
                       helperText={errors.Telefono?.message}
                       disabled={isLoading}
+                      inputProps={{ maxLength: 10 }}
                     />
                     <Controller
                       name="Fecha_Nacimiento"
@@ -769,6 +764,12 @@ const EditarUsuario = () => {
                       error={!!errors.Numero_Documento}
                       helperText={errors.Numero_Documento?.message}
                       disabled={isLoading}
+                      inputProps={{
+                        maxLength:
+                          watch("Tipo_Documento") === "Pasaporte"
+                            ? 9
+                            : 8
+                      }}
                     />
                     <TextField
                       fullWidth
