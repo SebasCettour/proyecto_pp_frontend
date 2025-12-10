@@ -131,10 +131,9 @@ export default function SolicitarLicencia() {
         return;
       }
 
-      const response = await fetch(
-        `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(
-          documento
-        )}`,
+      // Obtener datos básicos del empleado
+      const responseEmpleado = await fetch(
+        `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(documento)}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -143,33 +142,53 @@ export default function SolicitarLicencia() {
         }
       );
 
-      if (response.ok) {
-        const empleado = await response.json();
-
-        console.log("✅ Datos del empleado recibidos:", empleado);
-        console.log("✅ DNI recibido:", empleado.dni);
-        console.log("✅ Nombre recibido:", empleado.nombre);
-        console.log("✅ Apellido recibido:", empleado.apellido);
-        console.log("✅ Legajo recibido:", empleado.legajo);
-        console.log("✅ Categoría recibida:", empleado.categoria);
-
-        setForm((prev) => ({
-          ...prev,
-          nombre: empleado.nombre || "",
-          apellido: empleado.apellido || "",
-          documento: empleado.dni || "",
-          legajo: empleado.legajo || "",
-          categoria: empleado.categoria || "",
-          tipoDocumento: "DNI",
-        }));
-      } else {
-        console.error(
-          "❌ Error al cargar datos del empleado - Status:",
-          response.status
-        );
-        const errorData = await response.json().catch(() => ({}));
-        console.error("❌ Error data:", errorData);
+      interface Empleado {
+        nombre?: string;
+        apellido?: string;
+        dni?: string;
+        legajo?: string;
       }
+      let empleado: Empleado = {};
+      if (responseEmpleado.ok) {
+        empleado = await responseEmpleado.json();
+      } else {
+        console.error("❌ Error al cargar datos del empleado - Status:", responseEmpleado.status);
+        empleado = {};
+      }
+
+      // Obtener la categoría real desde licencias, si no hay, usar la del empleado
+      const responseLicencias = await fetch(
+        `http://localhost:4000/api/licencias/mis-licencias/${encodeURIComponent(documento)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      let categoria = "";
+      if (responseLicencias.ok) {
+        const licencias = await responseLicencias.json();
+        if (Array.isArray(licencias) && licencias.length > 0) {
+          categoria = licencias[0].Categoria || "";
+        } else {
+          // Si no hay licencias, intentar obtener la categoría del empleado
+          if (empleado && typeof empleado === "object") {
+            // Puede venir como categoria, Categoria, o Nombre_Categoria
+            categoria = (empleado as any).categoria || (empleado as any).Categoria || (empleado as any).Nombre_Categoria || "";
+          }
+        }
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        nombre: empleado?.nombre || "",
+        apellido: empleado?.apellido || "",
+        documento: empleado?.dni || "",
+        legajo: empleado?.legajo || "",
+        categoria: categoria || "",
+        tipoDocumento: "DNI",
+      }));
     } catch (error) {
       console.error("Error al cargar datos del empleado:", error);
     } finally {
@@ -680,13 +699,10 @@ export default function SolicitarLicencia() {
                         }}
                       >
                         {
-                          // Buscar el nombre de la categoría por ID
-                          categorias.find(
-                            (c) =>
-                              String(c.Id_Categoria) === String(form.categoria)
-                          )?.Nombre_Categoria ||
-                            form.categoria ||
-                            "N/A"
+                          // Mostrar la categoría correctamente
+                          form.categoria && form.categoria !== "N/A"
+                            ? form.categoria
+                            : "N/A"
                         }
                       </Typography>
                     </Box>
