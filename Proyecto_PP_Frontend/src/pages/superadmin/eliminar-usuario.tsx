@@ -25,10 +25,11 @@ type BuscarFormData = z.infer<typeof buscarSchema>;
 
 interface Usuario {
   id: number;
-  username: string;
-  email: string;
+  nombre: string;
+  apellido: string;
   dni: string;
-  role: string;
+  legajo: string;
+  categoria: string;
 }
 
 const EliminarUsuario: React.FC = () => {
@@ -72,19 +73,21 @@ const EliminarUsuario: React.FC = () => {
         const user = result[0];
         setUsuario({
           id: user.id,
-          username: `${user.apellido}, ${user.nombre}`,
-          email: user.email || "No especificado",
+          nombre: user.nombre || "",
+          apellido: user.apellido || "",
           dni: user.dni,
-          role: user.categoria || "No especificado",
+          legajo: user.legajo || "No especificado",
+          categoria: user.categoria || user.categoria_nombre || "No especificado",
         });
       } else {
         // Es un objeto único
         setUsuario({
           id: result.id,
-          username: `${result.apellido}, ${result.nombre}`,
-          email: result.email || "No especificado",
+          nombre: result.nombre || "",
+          apellido: result.apellido || "",
           dni: result.dni,
-          role: result.categoria || "No especificado",
+          legajo: result.legajo || "No especificado",
+          categoria: result.categoria || result.categoria_nombre || "No especificado",
         });
       }
     } catch (err: any) {
@@ -269,16 +272,19 @@ const EliminarUsuario: React.FC = () => {
               Usuario encontrado:
             </Typography>
             <Typography sx={{ mb: 1 }}>
-              <b>Nombre de usuario:</b> {usuario.username}
+              <b>Nombre:</b> {usuario.nombre}
             </Typography>
             <Typography sx={{ mb: 1 }}>
-              <b>Email:</b> {usuario.email}
+              <b>Apellido:</b> {usuario.apellido}
             </Typography>
             <Typography sx={{ mb: 1 }}>
               <b>DNI:</b> {usuario.dni}
             </Typography>
-            <Typography sx={{ mb: 2 }}>
-              <b>Rol:</b> {usuario.role}
+            <Typography sx={{ mb: 1 }}>
+              <b>Legajo:</b> {usuario.legajo}
+            </Typography>
+            <Typography sx={{ mb: 1 }}>
+              <b>Categoría:</b> {usuario.categoria}
             </Typography>
             <Button
               variant="contained"
