@@ -109,7 +109,7 @@ export default function RecibosSueldo() {
   const handleDescargarPDF = async (idLiquidacion: number) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
+      let response = await fetch(
         `http://localhost:4000/api/liquidacion/${idLiquidacion}/pdf`,
         {
           headers: {
@@ -128,6 +128,52 @@ export default function RecibosSueldo() {
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
+      } else if (response.status === 404) {
+        // Si no existe, intentar generarlo
+        const genResponse = await fetch(
+          `http://localhost:4000/api/liquidacion/${idLiquidacion}/generar-pdf`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (genResponse.ok) {
+          // Esperar un momento para que se escriba el archivo
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          // Intentar descargar de nuevo
+          response = await fetch(
+            `http://localhost:4000/api/liquidacion/${idLiquidacion}/pdf`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `recibo_${idLiquidacion}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            setSnackbarMessage("PDF generado y descargado correctamente");
+            setSnackbarSeverity("success");
+            setSnackbarOpen(true);
+          } else {
+            setSnackbarMessage("No se pudo descargar el PDF después de generarlo");
+            setSnackbarSeverity("error");
+            setSnackbarOpen(true);
+          }
+        } else {
+          setSnackbarMessage("No se pudo generar el PDF");
+          setSnackbarSeverity("error");
+          setSnackbarOpen(true);
+        }
       } else {
         const errorData = await response.json();
         setSnackbarMessage(errorData.message || "Error al descargar el PDF");

@@ -204,7 +204,6 @@ const Liquidacion = () => {
           },
           body: JSON.stringify({
             dni: employeeFound.dni,
-            sueldoBasico: sueldoBasico.toString(),
             tipoJornada,
             periodo,
             asistenciaActiva,
@@ -942,7 +941,7 @@ const Liquidacion = () => {
                   .filter((c) => c.nombre.toLowerCase() === "sueldo básico")
                   .map((c, index) => {
                     return (
-                      <React.Fragment key={index}>
+                      <Box key={index}>
                         <Card
                           sx={{
                             background: "#fff",
@@ -957,9 +956,7 @@ const Liquidacion = () => {
                             },
                           }}
                         >
-                          <CardContent
-                            sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}
-                          >
+                          <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
                             <Box
                               sx={{
                                 display: "flex",
@@ -971,11 +968,7 @@ const Liquidacion = () => {
                               <Box sx={{ flex: 1 }}>
                                 <Typography
                                   variant="h6"
-                                  sx={{
-                                    fontWeight: 600,
-                                    color: "#000",
-                                    fontSize: 19,
-                                  }}
+                                  sx={{ fontWeight: 600, color: "#000", fontSize: 19 }}
                                 >
                                   {c.nombre}
                                 </Typography>
@@ -997,7 +990,7 @@ const Liquidacion = () => {
                                     display: "block",
                                   }}
                                 >
-                                  Ingrese monto
+                                  Sueldo básico (solo lectura)
                                 </Typography>
                                 <Box
                                   sx={{
@@ -1007,117 +1000,28 @@ const Liquidacion = () => {
                                   }}
                                 >
                                   <Typography
-                                    sx={{
-                                      fontWeight: 700,
-                                      color: "#000",
-                                      fontSize: 20,
-                                    }}
+                                    sx={{ fontWeight: 700, color: "#000", fontSize: 20 }}
                                   >
                                     $
                                   </Typography>
                                   <input
                                     type="text"
-                                    value={
-                                      editingSueldo
-                                        ? valores[c.nombre] || ""
-                                        : sueldoDisplay
-                                    }
-                                    inputMode="decimal"
-                                    pattern="[0-9.,]*"
-                                    maxLength={14}
-                                    onChange={(
-                                      e: React.ChangeEvent<HTMLInputElement>
-                                    ) => {
-                                      const typed = e.target.value;
-                                      // Solo permitir números, punto y coma
-                                      let cleaned = typed.replace(/[^0-9.,]/g, "");
-                                      
-                                      // Contar puntos y comas
-                                      const commaCount = (cleaned.match(/,/g) || []).length;
-                                      const dotCount = (cleaned.match(/\./g) || []).length;
-                                      
-                                      // Si tiene coma, usarla como decimal y eliminar puntos (miles)
-                                      if (commaCount > 0) {
-                                        cleaned = cleaned.replace(/\./g, "").replace(",", ".");
-                                      }
-                                      
-                                      // Validar formato: solo un punto decimal
-                                      const parts = cleaned.split(".");
-                                      if (parts.length > 2) {
-                                        return; // No permitir más de un punto decimal
-                                      }
-                                      
-                                      let intPart = parts[0] ? parts[0].slice(0, 8) : "";
-                                      let decPart = parts[1] ? parts[1].slice(0, 2) : "";
-                                      
-                                      let cleanVal = intPart + (parts.length > 1 ? "." + decPart : "");
-                                      
-                                      setValores((prev) => ({
-                                        ...prev,
-                                        [c.nombre]: cleanVal,
-                                      }));
-                                      if (editingSueldo) {
-                                        setSueldoDisplay(cleanVal);
-                                      }
-                                    }}
-                                    onFocus={() => {
-                                      setEditingSueldo(true);
-                                      setSueldoDisplay(valores[c.nombre] || "");
-                                    }}
-                                    onBlur={(
-                                      e: React.FocusEvent<HTMLInputElement>
-                                    ) => {
-                                      setEditingSueldo(false);
-                                      let raw = valores[c.nombre] || "";
-                                      let formatted = "";
-                                      let newRaw = raw;
-                                      if (raw) {
-                                        let num = Number(raw);
-                                        if (!isNaN(num)) {
-                                          if (num > 99999999.98) {
-                                            newRaw = "99999999.98";
-                                            num = 99999999.98;
-                                          }
-                                          formatted =
-                                            num.toLocaleString("es-AR");
-                                        } else {
-                                          formatted = "";
-                                          newRaw = "";
-                                        }
-                                      }
-                                      if (newRaw !== raw) {
-                                        setValores((prev) => ({
-                                          ...prev,
-                                          [c.nombre]: newRaw,
-                                        }));
-                                      }
-                                      setSueldoDisplay(formatted);
-                                    }}
-                                    onWheel={(
-                                      e: React.WheelEvent<HTMLInputElement>
-                                    ) => e.currentTarget.blur()}
-                                    onKeyDown={(
-                                      e: React.KeyboardEvent<HTMLInputElement>
-                                    ) => {
-                                      if (
-                                        e.key === "ArrowUp" ||
-                                        e.key === "ArrowDown"
-                                      )
-                                        e.preventDefault();
-                                    }}
+                                    value={sueldoDisplay}
+                                    readOnly
+                                    disabled
                                     style={{
                                       width: "140px",
                                       padding: "10px 12px",
-                                      border: "2px solid #000",
+                                      border: "2px solid #aaa",
                                       outline: "none",
-                                      background: "#fff",
+                                      background: "#f5f5f5",
                                       fontSize: "18px",
                                       fontWeight: 700,
                                       textAlign: "right",
                                       borderRadius: "8px",
-                                      color: "#000",
-                                      boxShadow:
-                                        "0 2px 4px rgba(0, 0, 0, 0.15)",
+                                      color: "#888",
+                                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.10)",
+                                      cursor: "not-allowed",
                                     }}
                                   />
                                 </Box>
@@ -1125,7 +1029,6 @@ const Liquidacion = () => {
                             </Box>
                           </CardContent>
                         </Card>
-
                         {/* Suma Fija No Remunerativa */}
                         <Card
                           sx={{
@@ -1140,9 +1043,7 @@ const Liquidacion = () => {
                             },
                           }}
                         >
-                          <CardContent
-                            sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}
-                          >
+                          <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
                             <Box
                               sx={{
                                 display: "flex",
@@ -1154,11 +1055,7 @@ const Liquidacion = () => {
                               <Box sx={{ flex: 1 }}>
                                 <Typography
                                   variant="h6"
-                                  sx={{
-                                    fontWeight: 600,
-                                    color: "#000",
-                                    fontSize: 19,
-                                  }}
+                                  sx={{ fontWeight: 600, color: "#000", fontSize: 19 }}
                                 >
                                   Suma Fija No Remunerativa
                                 </Typography>
@@ -1190,11 +1087,7 @@ const Liquidacion = () => {
                                   }}
                                 >
                                   <Typography
-                                    sx={{
-                                      fontWeight: 700,
-                                      color: "#000",
-                                      fontSize: 20,
-                                    }}
+                                    sx={{ fontWeight: 700, color: "#000", fontSize: 20 }}
                                   >
                                     $
                                   </Typography>
@@ -1214,27 +1107,20 @@ const Liquidacion = () => {
                                       const typed = e.target.value;
                                       // Solo permitir números, punto y coma
                                       let cleaned = typed.replace(/[^0-9.,]/g, "");
-                                      
                                       // Contar puntos y comas
                                       const commaCount = (cleaned.match(/,/g) || []).length;
-                                      const dotCount = (cleaned.match(/\./g) || []).length;
-                                      
                                       // Si tiene coma, usarla como decimal y eliminar puntos (miles)
                                       if (commaCount > 0) {
                                         cleaned = cleaned.replace(/\./g, "").replace(",", ".");
                                       }
-                                      
                                       // Validar formato: solo un punto decimal
                                       const parts = cleaned.split(".");
                                       if (parts.length > 2) {
                                         return; // No permitir más de un punto decimal
                                       }
-                                      
                                       let intPart = parts[0] ? parts[0].slice(0, 8) : "";
                                       let decPart = parts[1] ? parts[1].slice(0, 2) : "";
-                                      
                                       let cleanVal = intPart + (parts.length > 1 ? "." + decPart : "");
-                                      
                                       setSumaFijaNoRemunerativa(cleanVal);
                                       if (editingSumaFija) {
                                         setSumaFijaDisplay(cleanVal);
@@ -1242,13 +1128,9 @@ const Liquidacion = () => {
                                     }}
                                     onFocus={() => {
                                       setEditingSumaFija(true);
-                                      setSumaFijaDisplay(
-                                        sumaFijaNoRemunerativa
-                                      );
+                                      setSumaFijaDisplay(sumaFijaNoRemunerativa);
                                     }}
-                                    onBlur={(
-                                      e: React.FocusEvent<HTMLInputElement>
-                                    ) => {
+                                    onBlur={() => {
                                       setEditingSumaFija(false);
                                       let raw = sumaFijaNoRemunerativa;
                                       let formatted = "";
@@ -1260,8 +1142,7 @@ const Liquidacion = () => {
                                             newRaw = "99999999.98";
                                             num = 99999999.98;
                                           }
-                                          formatted =
-                                            num.toLocaleString("es-AR");
+                                          formatted = num.toLocaleString("es-AR");
                                         } else {
                                           formatted = "";
                                           newRaw = "";
@@ -1272,17 +1153,9 @@ const Liquidacion = () => {
                                       }
                                       setSumaFijaDisplay(formatted);
                                     }}
-                                    onWheel={(
-                                      e: React.WheelEvent<HTMLInputElement>
-                                    ) => e.currentTarget.blur()}
-                                    onKeyDown={(
-                                      e: React.KeyboardEvent<HTMLInputElement>
-                                    ) => {
-                                      if (
-                                        e.key === "ArrowUp" ||
-                                        e.key === "ArrowDown"
-                                      )
-                                        e.preventDefault();
+                                    onWheel={(e) => e.currentTarget.blur()}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "ArrowUp" || e.key === "ArrowDown") e.preventDefault();
                                     }}
                                     style={{
                                       width: "140px",
@@ -1295,8 +1168,7 @@ const Liquidacion = () => {
                                       textAlign: "right",
                                       borderRadius: "8px",
                                       color: "#000",
-                                      boxShadow:
-                                        "0 2px 4px rgba(0, 0, 0, 0.15)",
+                                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
                                     }}
                                   />
                                 </Box>
@@ -1304,7 +1176,7 @@ const Liquidacion = () => {
                             </Box>
                           </CardContent>
                         </Card>
-                      </React.Fragment>
+                      </Box>
                     );
                   })}
               </Box>

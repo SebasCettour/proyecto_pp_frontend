@@ -450,7 +450,6 @@ const AltaNuevo: React.FC = () => {
                         <MenuItem value="" disabled>
                           Seleccione un rol...
                         </MenuItem>
-                        <MenuItem value="1">Superadmin</MenuItem>
                         <MenuItem value="2">RRHH</MenuItem>
                         <MenuItem value="3">Contador</MenuItem>
                         <MenuItem value="4">Empleado</MenuItem>
