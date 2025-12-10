@@ -119,7 +119,11 @@ router.post(
       console.log("✅ Contraseña correcta");
 
       // ✅ MAPEAR ROL USANDO EL NOMBRE REAL DEL ROL
-      let roleFrontend = (user.Nombre_Rol || "").toLowerCase();
+        let roleFrontend = (user.Nombre_Rol || "").toLowerCase();
+        // Refuerzo de mapeo por Id_Rol
+        if (user.Id_Rol === 2) {
+          roleFrontend = "empleado";
+        }
 
       console.log("🎭 Rol asignado:", roleFrontend);
 

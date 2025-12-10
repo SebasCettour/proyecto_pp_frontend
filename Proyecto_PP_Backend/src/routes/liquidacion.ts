@@ -93,7 +93,7 @@ router.post(
 // Obtener todas las liquidaciones (para contadores)
 router.get("/todas", authenticateToken, async (req: Request, res: Response) => {
   try {
-    // ✅ CONSULTA CORREGIDA CON LOS CAMPOS REALES
+
     const [liquidaciones] = await pool.execute(
       `SELECT 
           l.Id_Liquidacion,
@@ -151,9 +151,9 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
   try {
     console.log("🔍 Datos recibidos en /calcular:", JSON.stringify(req.body));
     
+
     const {
       dni,
-      sueldoBasico,
       tipoJornada,
       periodo,
       asistenciaActiva,
@@ -165,21 +165,22 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
       esAfiliadoSindicato,
     } = req.body;
 
-    if (!dni || !sueldoBasico || !tipoJornada) {
+    if (!dni || !tipoJornada) {
       console.log("❌ Faltan campos obligatorios");
       return res.status(400).json({
-        message: "Faltan campos obligatorios: dni, sueldoBasico, tipoJornada",
+        message: "Faltan campos obligatorios: dni, tipoJornada",
       });
     }
 
     console.log("✅ Campos obligatorios OK");
     
-    // Obtener datos del empleado
+    // Obtener datos del empleado y su categoría (JOIN por ID de categoría)
     console.log("📋 Buscando empleado con DNI:", dni);
     const [empleados] = await pool.execute(
-      `SELECT Id_Empleado, Nombre, Apellido, Fecha_Desde 
-       FROM Empleado 
-       WHERE Numero_Documento = ?`,
+      `SELECT e.Id_Empleado, e.Nombre, e.Apellido, e.Fecha_Desde, e.Categoria, c.Sueldo_Basico
+       FROM Empleado e
+       JOIN Categoria c ON e.Categoria = c.Id_Categoria
+       WHERE e.Numero_Documento = ?`,
       [dni]
     );
 
@@ -190,6 +191,7 @@ router.post("/calcular", authenticateToken, async (req: Request, res: Response) 
     }
 
     const empleado = empleados[0] as any;
+    const sueldoBasico = empleado.Sueldo_Basico;
     const fechaIngreso = new Date(empleado.Fecha_Desde);
     const hoy = new Date();
     let antiguedad = hoy.getFullYear() - fechaIngreso.getFullYear();
@@ -738,20 +740,21 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
     const writeStream = fs.createWriteStream(filePath);
     doc.pipe(writeStream);
 
-    // ENCABEZADO
-    doc.fontSize(18).font("Helvetica-Bold").text("RECIBO DE SUELDO", { align: "center" });
+    // MEMBRETE EMPRESA MEJORADO
+    // Fondo azul claro para el encabezado
+    const encabezadoY = doc.y;
+    doc.save();
+    doc.rect(40, encabezadoY, 515, 70).fill('#e3f2fd');
+    doc.restore();
+    doc.fontSize(22).font("Helvetica-Bold").fillColor("#1976d2").text(liquidacion.Nombre_Empresa || "Empresa", 40, encabezadoY + 10, { align: "center", width: 515 });
+    doc.fontSize(12).font("Helvetica-Bold").fillColor("#333").text(`CUIT: ${liquidacion.CUIL_CUIT || "N/A"}`, 40, encabezadoY + 38, { align: "center", width: 515 });
+    doc.fontSize(12).font("Helvetica-Bold").fillColor("#333").text(`Domicilio: ${liquidacion.Direccion || "N/A"}`, 40, encabezadoY + 54, { align: "center", width: 515 });
+    doc.moveDown(3.5);
+    doc.fontSize(18).font("Helvetica-Bold").fillColor("#000").text("RECIBO DE SUELDO", { align: "center" });
     doc.moveDown(0.5);
-    doc.fontSize(10).font("Helvetica").text(`Período: ${liquidacion.Periodo}`, { align: "center" });
-    doc.fontSize(9).text(`Fecha de liquidación: ${new Date(liquidacion.FechaLiquidacion).toLocaleDateString("es-AR")}`, { align: "center" });
+    doc.fontSize(10).font("Helvetica").fillColor("#000").text(`Período: ${liquidacion.Periodo}`, { align: "center" });
+    doc.fontSize(9).fillColor("#000").text(`Fecha de liquidación: ${new Date(liquidacion.FechaLiquidacion).toLocaleDateString("es-AR")}`, { align: "center" });
     doc.moveDown(1.5);
-
-    // DATOS DEL EMPLEADOR
-    doc.fontSize(11).font("Helvetica-Bold").text("EMPLEADOR", { underline: true });
-    doc.fontSize(9).font("Helvetica");
-    doc.text(`Razón Social: ${liquidacion.Nombre_Empresa || "N/A"}`);
-    doc.text(`CUIT: ${liquidacion.CUIL_CUIT || "N/A"}`);
-    doc.text(`Domicilio: ${liquidacion.Direccion || "N/A"}`);
-    doc.moveDown(1);
 
     // DATOS DEL EMPLEADO
     doc.fontSize(11).font("Helvetica-Bold").text("EMPLEADO", { underline: true });
@@ -803,8 +806,17 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
     // HABERES
     let totalHaberes = 0;
     conceptosHaberes.forEach((detalle: any) => {
-      doc.text(detalle.Concepto, colConcepto, currentY);
-      doc.text(`$ ${parseFloat(detalle.Monto).toFixed(2)}`, colMonto, currentY);
+      // Justificado con puntos y formato de número
+      const concepto = detalle.Concepto;
+      const monto = `$ ${Number(detalle.Monto).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const maxConcepto = 45; // caracteres máximo para concepto
+      let puntos = "";
+      const conceptoLength = concepto.length;
+      if (conceptoLength < maxConcepto) {
+        puntos = ".".repeat(maxConcepto - conceptoLength);
+      }
+      doc.text(`${concepto} ${puntos}`, colConcepto, currentY, { width: colMonto - colConcepto - 10, align: "left" });
+      doc.text(monto, colMonto, currentY, { align: "right" });
       totalHaberes += parseFloat(detalle.Monto);
       currentY += rowHeight;
     });
@@ -820,8 +832,17 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
     doc.font("Helvetica");
 
     conceptosDescuentos.forEach((detalle: any) => {
-      doc.text(detalle.Concepto, colConcepto, currentY);
-      doc.text(`$ ${Math.abs(parseFloat(detalle.Monto)).toFixed(2)}`, colMonto, currentY);
+      // Justificado con puntos
+      const concepto = detalle.Concepto;
+      const monto = `$ ${Math.abs(Number(detalle.Monto)).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const maxConcepto = 45;
+      let puntos = "";
+      const conceptoLength = concepto.length;
+      if (conceptoLength < maxConcepto) {
+        puntos = ".".repeat(maxConcepto - conceptoLength);
+      }
+      doc.text(`${concepto} ${puntos}`, colConcepto, currentY, { width: colMonto - colConcepto - 10, align: "left" });
+      doc.text(monto, colMonto, currentY, { align: "right" });
       totalDescuentos += Math.abs(parseFloat(detalle.Monto));
       currentY += rowHeight;
     });
@@ -833,19 +854,19 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
     // TOTALES
     doc.fontSize(10).font("Helvetica-Bold");
     doc.text("Total Remunerativo:", colConcepto, currentY);
-    doc.text(`$ ${parseFloat(liquidacion.TotalRemunerativo || 0).toFixed(2)}`, colMonto, currentY);
+    doc.text(`$ ${Number(liquidacion.TotalRemunerativo || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, colMonto, currentY);
     currentY += rowHeight;
 
     doc.text("Total No Remunerativo:", colConcepto, currentY);
-    doc.text(`$ ${parseFloat(liquidacion.TotalNoRemunerativo || 0).toFixed(2)}`, colMonto, currentY);
+    doc.text(`$ ${Number(liquidacion.TotalNoRemunerativo || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, colMonto, currentY);
     currentY += rowHeight;
 
     doc.text("Total Haberes:", colConcepto, currentY);
-    doc.text(`$ ${parseFloat(liquidacion.TotalHaberes || 0).toFixed(2)}`, colMonto, currentY);
+    doc.text(`$ ${Number(liquidacion.TotalHaberes || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, colMonto, currentY);
     currentY += rowHeight;
 
     doc.text("Total Descuentos:", colConcepto, currentY);
-    doc.text(`$ ${parseFloat(liquidacion.TotalDescuentos || 0).toFixed(2)}`, colMonto, currentY);
+    doc.text(`$ ${Number(liquidacion.TotalDescuentos || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, colMonto, currentY);
     currentY += rowHeight + 5;
 
     // NETO A COBRAR (destacado)
@@ -853,7 +874,7 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
     doc.rect(colConcepto - 10, currentY - 5, 500, 30).fill("#e3f2fd");
     doc.fillColor("#000000");
     doc.text("NETO A COBRAR:", colConcepto, currentY);
-    doc.text(`$ ${parseFloat(liquidacion.NetoAPagar || 0).toFixed(2)}`, colMonto, currentY);
+    doc.text(`$ ${Number(liquidacion.NetoAPagar || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, colMonto, currentY);
 
     // FOOTER
     doc.fontSize(7).font("Helvetica").fillColor("#666666");
@@ -943,11 +964,11 @@ router.get("/:id/pdf", authenticateToken, async (req: Request, res: Response) =>
 router.get("/empleado/:dni/sueldo-basico", authenticateToken, async (req: Request, res: Response) => {
   try {
     const { dni } = req.params;
-    // JOIN por nombre de categoría y campos correctos
+    // JOIN por ID de categoría
     const [rows] = await pool.execute(
       `SELECT c.Nombre_Categoria, c.Sueldo_Basico
          FROM Empleado e
-         JOIN Categoria c ON e.Categoria = c.Nombre_Categoria
+         JOIN Categoria c ON e.Categoria = c.Id_Categoria
         WHERE e.Numero_Documento = ?`,
       [dni]
     );
