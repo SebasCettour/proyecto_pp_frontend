@@ -361,11 +361,34 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
     Telefono,
     Tipo_Documento,
     Numero_Documento,
+    Id_Sindicato,
+    Id_ObraSocial,
+    id_convenio,
   } = req.body;
 
+  // Si Categoria es un string (nombre), buscar el ID
+  let categoriaId = Categoria;
+  if (typeof Categoria === "string" && isNaN(Number(Categoria))) {
+    const [catRows]: any = await db.query(
+      "SELECT Id_Categoria FROM Categoria WHERE Nombre_Categoria = ? LIMIT 1",
+      [Categoria]
+    );
+    categoriaId = catRows.length > 0 ? catRows[0].Id_Categoria : null;
+  }
+
   try {
-    // ✅ ACTUALIZAR CON NOMBRES CORRECTOS
-    const [result]: any = await db.query(
+    // Buscar el Id_Empleado por el DNI
+    const [rows]: any = await db.query(
+      "SELECT Id_Empleado FROM Empleado WHERE Numero_Documento = ?",
+      [dni]
+    );
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: "Empleado no encontrado" });
+    }
+    const idEmpleado = rows[0].Id_Empleado;
+
+    // Actualizar usando Id_Empleado y el ID de la categoría, sindicato, obra social y convenio
+    await db.query(
       `UPDATE Empleado SET
         Nombre = ?,
         Apellido = ?,
@@ -378,12 +401,15 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
         Legajo = ?,
         Telefono = ?,
         Tipo_Documento = ?,
-        Numero_Documento = ?
-      WHERE Numero_Documento = ?`,
+        Numero_Documento = ?,
+        Id_Sindicato = ?,
+        Id_ObraSocial = ?,
+        id_convenio = ?
+      WHERE Id_Empleado = ?`,
       [
         Nombre,
         Apellido,
-        Categoria,
+        categoriaId,
         Correo_Electronico,
         Domicilio,
         Estado_Civil,
@@ -393,21 +419,35 @@ router.put("/editar-usuario-dni/:dni", async (req: Request, res: Response) => {
         Telefono,
         Tipo_Documento,
         Numero_Documento,
-        dni,
+        Id_Sindicato,
+        Id_ObraSocial,
+        id_convenio,
+        idEmpleado,
       ]
     );
 
-    // Actualizar en Usuarios (si existe)
-    await db.query(
-      `UPDATE Usuarios SET
-        Nombre_Usuario = ?,
-        Correo_Electronico = ?,
-        Numero_Documento = ?
-      WHERE Numero_Documento = ?`,
-      [`${Nombre} ${Apellido}`, Correo_Electronico, Numero_Documento, dni]
+    // Actualizar en Usuarios solo el registro vinculado al Id_Empleado
+    // Buscar el Id_Usuario correspondiente
+    const [usuarioRows]: any = await db.query(
+      `SELECT u.Id_Usuario
+         FROM Usuarios u
+         JOIN Empleado e ON u.Numero_Documento = e.Numero_Documento
+        WHERE e.Id_Empleado = ? LIMIT 1`,
+      [idEmpleado]
     );
+    if (usuarioRows.length > 0) {
+      const idUsuario = usuarioRows[0].Id_Usuario;
+      await db.query(
+        `UPDATE Usuarios SET
+          Nombre_Usuario = ?,
+          Correo_Electronico = ?,
+          Numero_Documento = ?
+        WHERE Id_Usuario = ?`,
+        [`${Nombre} ${Apellido}`, Correo_Electronico, Numero_Documento, idUsuario]
+      );
+    }
 
-  res.json({ message: "Usuario actualizado correctamente" });
+    res.json({ message: "Usuario actualizado correctamente" });
   } catch (err: unknown) {
     const error = err as Error;
     console.error("Error al actualizar usuario:", error);
