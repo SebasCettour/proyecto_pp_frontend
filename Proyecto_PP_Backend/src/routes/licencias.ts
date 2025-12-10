@@ -251,9 +251,11 @@ router.get(
           l.*, 
           e.Nombre, 
           e.Apellido, 
-          e.Numero_Documento as Documento
+          e.Numero_Documento as Documento,
+          c.Nombre_Categoria AS Categoria
         FROM Licencia l
         INNER JOIN Empleado e ON l.Id_Empleado = e.Id_Empleado
+        LEFT JOIN Categoria c ON e.Categoria = c.Id_Categoria
         WHERE e.Numero_Documento = ? 
         ORDER BY l.FechaSolicitud DESC`,
         [documento]
