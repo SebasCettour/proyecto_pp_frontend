@@ -117,6 +117,7 @@ export default function SolicitarLicencia() {
 
     // Cargar datos del empleado
     cargarDatosEmpleado();
+    cargarVacaciones();
   }, []);
 
   const cargarDatosEmpleado = async () => {
@@ -195,6 +196,40 @@ export default function SolicitarLicencia() {
       setLoadingEmpleado(false);
     }
   };
+
+  const cargarVacaciones = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const documento = localStorage.getItem("documento");
+      if (!documento) return;
+      const response = await fetch(
+        `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(documento)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.ok) {
+        const empleado = await response.json();
+        setVacaciones(empleado.vacaciones || null);
+      } else {
+        setVacaciones(null);
+      }
+    } catch {
+      setVacaciones(null);
+    }
+  };
+
+  const [vacaciones, setVacaciones] = useState<{
+    antiguedad: number;
+    diasVacaciones: number;
+    diasTomados: number;
+    diasDisponibles: number;
+  } | null>(null);
+
+  const [errorVacaciones, setErrorVacaciones] = useState<string | null>(null);
 
   // Función para buscar diagnósticos CIE-10
   const buscarDiagnosticosCIE10 = async (query: string) => {
@@ -330,6 +365,21 @@ export default function SolicitarLicencia() {
   };
 
   const handleSubmit = async () => {
+    // Calcula los días solicitados por fechas
+    const diasSolicitadosPorFechas = (() => {
+      if (form.fechaInicio && form.fechaFin) {
+        const inicio = new Date(form.fechaInicio);
+        const fin = new Date(form.fechaFin);
+        return Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      }
+      return 0;
+    })();
+    const diasTomados = vacaciones ? vacaciones.diasTomados : 0;
+    const diasVacaciones = vacaciones ? vacaciones.diasVacaciones : 0;
+    const excedeMaximoVacaciones = form.motivo === "Vacaciones" && (diasTomados + diasSolicitadosPorFechas) > diasVacaciones;
+
+    setErrorVacaciones(null);
+
     const newErrors = {
       nombre: form.nombre.trim() === "",
       apellido: form.apellido.trim() === "",
@@ -449,6 +499,195 @@ export default function SolicitarLicencia() {
       }
     }
   };
+
+  const handleSolicitar = async () => {
+    // Calcula los días solicitados por fechas
+    const diasSolicitadosPorFechas = (() => {
+      if (form.fechaInicio && form.fechaFin) {
+        const inicio = new Date(form.fechaInicio);
+        const fin = new Date(form.fechaFin);
+        return Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      }
+      return 0;
+    })();
+    const diasTomados = vacaciones ? vacaciones.diasTomados : 0;
+    const diasVacaciones = vacaciones ? vacaciones.diasVacaciones : 0;
+    const excedeMaximoVacaciones = form.motivo === "Vacaciones" && (diasTomados + diasSolicitadosPorFechas) > diasVacaciones;
+
+    setErrorVacaciones(null);
+
+    const newErrors = {
+      nombre: form.nombre.trim() === "",
+      apellido: form.apellido.trim() === "",
+      documento: form.documento.trim() === "",
+      motivo: form.motivo === "",
+      fechaInicio: form.fechaInicio === "",
+      fechaFin: form.fechaFin === "",
+      fechaReincorporacion: form.fechaReincorporacion === "",
+      archivo: form.motivo === "Enfermedad" && !form.archivo,
+      diagnosticoCIE10: form.motivo === "Enfermedad" && !form.diagnosticoCIE10,
+    };
+    setErrors(newErrors);
+
+    // Validar que fechaFin sea posterior a fechaInicio
+    if (
+      form.fechaInicio &&
+      form.fechaFin &&
+      form.fechaFin <= form.fechaInicio
+    ) {
+      setSnackbarMessage(
+        "La fecha de fin debe ser posterior a la fecha de inicio"
+      );
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    // Validar que fechaReincorporacion sea igual o posterior a fechaFin
+    if (
+      form.fechaFin &&
+      form.fechaReincorporacion &&
+      form.fechaReincorporacion < form.fechaFin
+    ) {
+      setSnackbarMessage(
+        "La fecha de reincorporación debe ser igual o posterior a la fecha de fin de licencia"
+      );
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+      setErrors((prev) => ({ ...prev, fechaReincorporacion: true }));
+      return;
+    }
+
+    const hasErrors = Object.values(newErrors).some((error) => error);
+    if (!hasErrors) {
+      try {
+        const token = localStorage.getItem("token");
+        const formData = new FormData();
+
+        // Agregar campos del formulario
+        formData.append("nombre", form.nombre);
+        formData.append("apellido", form.apellido);
+        formData.append("documento", form.documento);
+        formData.append("motivo", form.motivo);
+        formData.append("fechaInicio", form.fechaInicio);
+        formData.append("fechaFin", form.fechaFin);
+        formData.append("fechaReincorporacion", form.fechaReincorporacion);
+        formData.append("observaciones", form.observaciones);
+
+        // Agregar archivo si existe
+        if (form.archivo) {
+          formData.append("certificadoMedico", form.archivo);
+        }
+
+        // Agregar diagnóstico CIE-10 si existe
+        if (form.diagnosticoCIE10) {
+          formData.append(
+            "diagnosticoCIE10_codigo",
+            form.diagnosticoCIE10.codigo
+          );
+          formData.append(
+            "diagnosticoCIE10_descripcion",
+            form.diagnosticoCIE10.descripcion
+          );
+        }
+
+        const response = await fetch(
+          "http://localhost:4000/api/licencias/solicitar",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+          }
+        );
+
+        if (response.ok) {
+          setSnackbarMessage("Solicitud enviada correctamente");
+          setSnackbarSeverity("success");
+          setSnackbarOpen(true);
+          // Limpiar formulario
+          setForm({
+            nombre: form.nombre,
+            apellido: form.apellido,
+            documento: form.documento,
+            legajo: form.legajo,
+            categoria: form.categoria,
+            tipoDocumento: form.tipoDocumento,
+            motivo: "",
+            observaciones: "",
+            fechaInicio: "",
+            fechaFin: "",
+            fechaReincorporacion: "",
+            archivo: null,
+            diagnosticoCIE10: null,
+          });
+        } else {
+          const errorData = await response.json();
+          setSnackbarMessage(`Error: ${errorData.message}`);
+          setSnackbarSeverity("error");
+          setSnackbarOpen(true);
+        }
+      } catch (error) {
+        setSnackbarMessage("Error enviando la solicitud");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+      }
+    }
+  };
+
+  const [diasSolicitados, setDiasSolicitados] = useState(1);
+  const diasDisponibles = vacaciones ? Math.max(0, vacaciones.diasDisponibles) : 0;
+  const diasTomados = vacaciones ? vacaciones.diasTomados : 0;
+  const diasVacaciones = vacaciones ? vacaciones.diasVacaciones : 0;
+  const diasSolicitadosPorFechas = (() => {
+    if (form.fechaInicio && form.fechaFin) {
+      const inicio = new Date(form.fechaInicio);
+      const fin = new Date(form.fechaFin);
+      return Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    }
+    return 0;
+  })();
+  const excedeMaximoVacaciones = form.motivo === "Vacaciones" && (diasTomados + diasSolicitadosPorFechas) > diasVacaciones;
+
+  // Solo mostrar input y botón para vacaciones
+  {form.motivo === "Vacaciones" && (
+    <FormControl fullWidth sx={{ mb: 2 }}>
+      <TextField
+        label="Días a solicitar"
+        type="number"
+        value={diasSolicitados}
+        onChange={e => {
+          let value = Number(e.target.value);
+          if (value > diasDisponibles) {
+            value = diasDisponibles;
+          }
+          if (value < 1) {
+            value = 1;
+          }
+          setDiasSolicitados(value);
+        }}
+        inputProps={{
+          min: 1,
+          max: diasDisponibles,
+        }}
+        disabled={diasDisponibles === 0}
+      />
+    </FormControl>
+  )}
+  {form.motivo === "Vacaciones" && (
+    <Button
+      variant="contained"
+      color="primary"
+      onClick={handleSolicitar}
+      disabled={diasDisponibles === 0 || diasSolicitados > diasDisponibles || excedeMaximoVacaciones}
+    >
+      Solicitar Vacaciones
+    </Button>
+  )}
+  {errorVacaciones && (
+    <Alert severity="error" sx={{ mb: 2 }}>{errorVacaciones}</Alert>
+  )}
 
   return (
     <Box
@@ -580,7 +819,16 @@ export default function SolicitarLicencia() {
                   >
                     Datos del Empleado
                   </Typography>
-
+                  {vacaciones && (
+                    <Box sx={{ mb: 2, p: 2, background: '#e3f2fd', borderRadius: 2 }}>
+                      <Typography sx={{ fontWeight: 600, color: '#1976d2', fontSize: '1rem' }}>
+                        Días de vacaciones disponibles: {Math.max(0, vacaciones.diasDisponibles)} / {vacaciones.diasVacaciones}
+                      </Typography>
+                      <Typography sx={{ fontSize: '0.95rem', color: '#333' }}>
+                        Tomados: {vacaciones.diasTomados} &nbsp;|&nbsp; Antigüedad: {vacaciones.antiguedad} años
+                      </Typography>
+                    </Box>
+                  )}
                   <Box
                     sx={{
                       display: "grid",
@@ -931,6 +1179,9 @@ export default function SolicitarLicencia() {
                 <Button
                   variant="contained"
                   onClick={handleSubmit}
+                  disabled={
+                    (form.motivo === "Vacaciones" && (diasDisponibles <= 0 || diasSolicitados > diasDisponibles || excedeMaximoVacaciones))
+                  }
                   sx={{
                     mt: 3,
                     py: 1.5,
@@ -946,8 +1197,18 @@ export default function SolicitarLicencia() {
                     "&:hover": { backgroundColor: "#115293" },
                   }}
                 >
-                  Enviar Solicitud
+                  ENVIAR SOLICITUD
                 </Button>
+                {form.motivo === "Vacaciones" && diasSolicitadosPorFechas > diasDisponibles && (
+                  <Alert severity="error" sx={{ mt: 2 }}>
+                    No puedes solicitar más de {diasDisponibles} días de vacaciones.
+                  </Alert>
+                )}
+                {excedeMaximoVacaciones && (
+                  <Alert severity="error" sx={{ mt: 2 }}>
+                    No puedes tomar más de {diasVacaciones} días de vacaciones en total.
+                  </Alert>
+                )}
               </>
             )}
           </Box>

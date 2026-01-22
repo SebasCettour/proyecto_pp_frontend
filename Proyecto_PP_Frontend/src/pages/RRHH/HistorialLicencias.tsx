@@ -47,18 +47,21 @@ export default function GestionarLicencias() {
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [searched, setSearched] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  // Estado para vacaciones
+  const [vacaciones, setVacaciones] = useState<{
+    antiguedad: number;
+    diasVacaciones: number;
+    diasTomados: number;
+    diasDisponibles: number;
+  } | null>(null);
+  const [empleadosEncontrados, setEmpleadosEncontrados] = useState<any[]>([]);
+  const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState<any | null>(null);
 
-
-  // mostrar nombre del empleado si el historial contiene datos
   const empleadoNombre =
     historial.length > 0
-      ? `${
-          historial[0].NombreEmpleado || historial[0].Nombre || ''
-        } ${
-          historial[0].ApellidoEmpleado || historial[0].Apellido || ''
-        }`.trim() || searchTerm
-      : searchTerm;
-  const empleadoDocumento = historial.length > 0 ? historial[0].Documento || '' : '';
+      ? `${historial[0].NombreEmpleado || historial[0].Nombre || ''} ${historial[0].ApellidoEmpleado || historial[0].Apellido || ''}`.trim() || searchTerm
+      : empleadoSeleccionado?.nombre || searchTerm;
+  const empleadoDocumento = historial.length > 0 ? historial[0].Documento || '' : empleadoSeleccionado?.dni || '';
 
   const userName =
     localStorage.getItem("nombre") ||
@@ -86,11 +89,9 @@ export default function GestionarLicencias() {
     setSearched(true);
     setLoadingHistorial(true);
     setSearchError(null);
-    
+    setVacaciones(null);
     try {
       const token = localStorage.getItem("token");
-      
-      // Primero buscar el empleado por DNI o nombre
       const searchRes = await fetch(
         `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(search)}`,
         {
@@ -100,36 +101,47 @@ export default function GestionarLicencias() {
           },
         }
       );
-      
       if (!searchRes.ok) {
         setSearchError("Empleado no encontrado");
         setHistorial([]);
+        setVacaciones(null);
+        setEmpleadosEncontrados([]);
+        setEmpleadoSeleccionado(null);
         setLoadingHistorial(false);
         return;
       }
-      
       const empleadoData = await searchRes.json();
-      
-      // Si es un array, verificar cantidad de resultados
       let dni: string;
+      let vacacionesData = null;
       if (Array.isArray(empleadoData)) {
         if (empleadoData.length === 0) {
           setSearchError("No se encontraron empleados");
           setHistorial([]);
+          setVacaciones(null);
+          setEmpleadosEncontrados([]);
+          setEmpleadoSeleccionado(null);
           setLoadingHistorial(false);
           return;
         } else if (empleadoData.length > 1) {
-          setSearchError(`Se encontraron ${empleadoData.length} empleados. Por favor, sea más específico.`);
+          setEmpleadosEncontrados(empleadoData);
           setHistorial([]);
+          setVacaciones(null);
+          setEmpleadoSeleccionado(null);
+          setSearchError(null);
           setLoadingHistorial(false);
           return;
         }
         dni = empleadoData[0].dni;
+        vacacionesData = empleadoData[0].vacaciones || null;
+        setEmpleadoSeleccionado(empleadoData[0]);
+        setEmpleadosEncontrados([]);
       } else {
         dni = empleadoData.dni;
+        vacacionesData = empleadoData.vacaciones || null;
+        setEmpleadoSeleccionado(empleadoData);
+        setEmpleadosEncontrados([]);
       }
-      
-      // Ahora buscar el historial con el DNI
+      setVacaciones(vacacionesData);
       const res = await fetch(
         `http://localhost:4000/api/licencias/historial/${encodeURIComponent(dni)}`,
         {
@@ -139,7 +151,6 @@ export default function GestionarLicencias() {
           },
         }
       );
-      
       if (res.ok) {
         const data = await res.json();
         setHistorial(data);
@@ -149,6 +160,7 @@ export default function GestionarLicencias() {
     } catch (error) {
       setSearchError("Error al buscar el historial");
       setHistorial([]);
+      setVacaciones(null);
     } finally {
       setLoadingHistorial(false);
     }
@@ -281,6 +293,9 @@ export default function GestionarLicencias() {
                 setHistorial([]);
                 setSearched(false);
                 setSearchError(null);
+                setEmpleadosEncontrados([]);
+                setEmpleadoSeleccionado(null);
+                setVacaciones(null);
               }}
               sx={{
                 mt: 1,
@@ -299,6 +314,72 @@ export default function GestionarLicencias() {
           <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
             <CircularProgress />
           </Box>
+        ) : empleadosEncontrados.length > 0 ? (
+          <TableContainer
+            component={Paper}
+            sx={{
+              mt: 2,
+              mx: 4,
+              mb: 3,
+              maxWidth: 900,
+              alignSelf: "center",
+              borderRadius: 3,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              overflow: "hidden",
+            }}
+          >
+            <Typography sx={{ fontWeight: 700, fontSize: { xs: '1rem', sm: '1.15rem' }, p: 2 }}>
+              Seleccione un empleado:
+            </Typography>
+            <Table size="small">
+              <TableHead sx={{ backgroundColor: "#1976d2" }}>
+                <TableRow>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Nombre</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Apellido</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700 }}>DNI</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Categoría</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Antigüedad</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Vacaciones</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700 }}></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {empleadosEncontrados.map((emp) => (
+                  <TableRow key={emp.id}>
+                    <TableCell>{emp.nombre}</TableCell>
+                    <TableCell>{emp.apellido}</TableCell>
+                    <TableCell>{emp.dni}</TableCell>
+                    <TableCell>{emp.categoria}</TableCell>
+                    <TableCell>{emp.vacaciones?.antiguedad ?? '-'}</TableCell>
+                    <TableCell>{emp.vacaciones ? `${emp.vacaciones.diasDisponibles} / ${emp.vacaciones.diasVacaciones}` : '-'}</TableCell>
+                    <TableCell>
+                      <Button variant="contained" size="small" onClick={async () => {
+                        setEmpleadoSeleccionado(emp);
+                        setVacaciones(emp.vacaciones || null);
+                        setEmpleadosEncontrados([]);
+                        setLoadingHistorial(true);
+                        setHistorial([]);
+                        const token = localStorage.getItem("token");
+                        const res = await fetch(`http://localhost:4000/api/licencias/historial/${encodeURIComponent(emp.dni)}`, {
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                            "Content-Type": "application/json",
+                          },
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setHistorial(data);
+                        } else {
+                          setHistorial([]);
+                        }
+                        setLoadingHistorial(false);
+                      }}>Ver historial</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         ) : historial.length > 0 ? (
           <TableContainer
             component={Paper}
@@ -313,21 +394,42 @@ export default function GestionarLicencias() {
               overflow: "hidden",
             }}
           >
-            <Typography
-              sx={{
-                p: 2,
-                fontWeight: 700,
-                fontSize: { xs: "1rem", sm: "1.25rem" },
-                backgroundColor: "#f8f9fb",
-                borderTopLeftRadius: 12,
-                borderTopRightRadius: 12,
-                width: "100%",
-                boxSizing: "border-box",
-                color: "#333",
-              }}
-            >
-              Historial de licencias de: {empleadoNombre}
-            </Typography>
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              p: 2,
+              backgroundColor: '#f8f9fb',
+              borderTopLeftRadius: 12,
+              borderTopRightRadius: 12,
+              width: '100%',
+              boxSizing: 'border-box',
+              color: '#333',
+              gap: 2
+            }}>
+              <Typography sx={{ fontWeight: 700, fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                Historial de licencias de: {empleadoNombre}
+              </Typography>
+              {vacaciones && (
+                <Box sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-end',
+                  background: '#e3f2fd',
+                  borderRadius: 2,
+                  px: 2,
+                  py: 1,
+                  minWidth: 180
+                }}>
+                  <Typography sx={{ fontWeight: 600, color: '#1976d2', fontSize: '1rem' }}>
+                    Vacaciones: {vacaciones.diasDisponibles} / {vacaciones.diasVacaciones} días
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.95rem', color: '#333' }}>
+                    Tomados: {vacaciones.diasTomados}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
             <Table size="small">
               <TableHead sx={{ backgroundColor: "#6c757d" }}>
                 <TableRow>
@@ -341,13 +443,7 @@ export default function GestionarLicencias() {
               </TableHead>
               <TableBody>
                 {historial.map((lic: Licencia) => (
-                  <TableRow
-                    key={lic.Id_Licencia}
-                    sx={{
-                      "&:nth-of-type(odd)": { backgroundColor: "#fbfcfd" },
-                      "&:hover": { backgroundColor: "#eaf4ff" },
-                    }}
-                  >
+                  <TableRow key={lic.Id_Licencia} sx={{ "&:nth-of-type(odd)": { backgroundColor: "#fbfcfd" }, "&:hover": { backgroundColor: "#eaf4ff" } }}>
                     <TableCell align="center" sx={{ fontSize: { xs: "0.9rem", sm: "0.95rem" }, py: 1.25 }}>
                       {formatDate(lic.FechaSolicitud)}
                     </TableCell>
@@ -372,10 +468,7 @@ export default function GestionarLicencias() {
                       {lic.CertificadoMedico ? (
                         <Button
                           component="a"
-                          href={
-                            (lic as any).CertificadoMedicoUrl ||
-                            `/uploads/certificados/${lic.CertificadoMedico}`
-                          }
+                          href={(lic as any).CertificadoMedicoUrl || `/uploads/certificados/${lic.CertificadoMedico}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           size="small"
@@ -384,11 +477,7 @@ export default function GestionarLicencias() {
                           Ver
                         </Button>
                       ) : (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontSize: "0.9rem" }}
-                        >
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.9rem" }}>
                           No
                         </Typography>
                       )}
