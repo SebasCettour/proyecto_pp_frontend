@@ -424,6 +424,12 @@ const MisLicencias: React.FC = () => {
                       align="center"
                       sx={{ color: "#fff", fontWeight: 600 }}
                     >
+                      Días Pedidos
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{ color: "#fff", fontWeight: 600 }}
+                    >
                       Estado
                     </TableCell>
                     <TableCell
@@ -461,6 +467,9 @@ const MisLicencias: React.FC = () => {
                       </TableCell>
                       <TableCell align="center">
                         {formatDate(lic.FechaFin)}
+                      </TableCell>
+                      <TableCell align="center">
+                        {lic.diasPedidos ?? "-"}
                       </TableCell>
                       <TableCell align="center">
                         <Chip
