@@ -260,7 +260,21 @@ router.get(
         ORDER BY l.FechaSolicitud DESC`,
         [documento]
       );
-      res.json(licencias);
+      // Calcular diasPedidos para cada licencia
+      const licenciasConDias = (licencias as any[]).map((lic) => {
+        let diasPedidos = null;
+        if (lic.FechaInicio && lic.FechaFin) {
+          try {
+            const inicio = new Date(lic.FechaInicio);
+            const fin = new Date(lic.FechaFin);
+            diasPedidos = Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          } catch {
+            diasPedidos = null;
+          }
+        }
+        return { ...lic, diasPedidos };
+      });
+      res.json(licenciasConDias);
     } catch (error) {
       console.error("Error obteniendo licencias del empleado:", error);
       res.status(500).json({ message: "Error interno del servidor" });
