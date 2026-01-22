@@ -541,10 +541,39 @@ router.get("/empleado-buscar/:searchTerm", async (req: Request, res: Response) =
       return res.status(404).json({ message: "Empleado no encontrado" });
     }
 
-    // Si hay múltiples resultados, devolver array; si hay uno solo, devolver objeto
-    if (rows.length === 1) {
-      const empleado = rows[0];
-      const response = {
+    // Para cada empleado, calcular vacaciones
+    const empleadosConVacaciones = await Promise.all(rows.map(async (empleado: any) => {
+      let antiguedad = 0;
+      let diasVacaciones = 14;
+      let diasTomados = 0;
+      let diasDisponibles = 14;
+      if (empleado.fechaIngreso) {
+        const fechaDesde = new Date(empleado.fechaIngreso);
+        const hoy = new Date();
+        antiguedad = hoy.getFullYear() - fechaDesde.getFullYear();
+        if (
+          hoy.getMonth() < fechaDesde.getMonth() ||
+          (hoy.getMonth() === fechaDesde.getMonth() && hoy.getDate() < fechaDesde.getDate())
+        ) {
+          antiguedad--;
+        }
+        if (antiguedad > 5 && antiguedad <= 10) diasVacaciones = 21;
+        else if (antiguedad > 10 && antiguedad <= 20) diasVacaciones = 28;
+        else if (antiguedad > 20) diasVacaciones = 35;
+      }
+      // Consultar licencias de vacaciones aprobadas
+      const licenciasVacResult: any = await db.query(
+        "SELECT FechaInicio, FechaFin FROM Licencia WHERE Id_Empleado = ? AND Motivo = 'Vacaciones' AND Estado = 'Aprobada'",
+        [empleado.id]
+      );
+      const licenciasVac = licenciasVacResult[0] || [];
+      licenciasVac.forEach((lic: any) => {
+        const inicio = new Date(lic.FechaInicio);
+        const fin = new Date(lic.FechaFin);
+        diasTomados += Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      });
+      diasDisponibles = diasVacaciones - diasTomados;
+      return {
         id: empleado.id,
         dni: empleado.dni,
         nombre: empleado.nombre,
@@ -554,24 +583,20 @@ router.get("/empleado-buscar/:searchTerm", async (req: Request, res: Response) =
         fechaIngreso: empleado.fechaIngreso
           ? empleado.fechaIngreso.toISOString?.().split("T")[0] : empleado.fechaIngreso || "",
         legajo: empleado.legajo || "",
-        categoria: empleado.categoria || null
+        categoria: empleado.categoria || null,
+        vacaciones: {
+          antiguedad,
+          diasVacaciones,
+          diasTomados,
+          diasDisponibles
+        }
       };
-      res.json(response);
+    }));
+    // Si solo hay uno, devolver objeto, si hay varios, array
+    if (empleadosConVacaciones.length === 1) {
+      res.json(empleadosConVacaciones[0]);
     } else {
-      // Múltiples resultados - devolver array
-      const response = rows.map((empleado: any) => ({
-        id: empleado.id,
-        dni: empleado.dni,
-        nombre: empleado.nombre,
-        apellido: empleado.apellido,
-        cuil: empleado.dni,
-        rol: empleado.rol || "No especificado",
-        fechaIngreso: empleado.fechaIngreso
-          ? empleado.fechaIngreso.toISOString?.().split("T")[0] : empleado.fechaIngreso || "",
-        legajo: empleado.legajo || "",
-        categoria: empleado.categoria || null
-      }));
-      res.json(response);
+      res.json(empleadosConVacaciones);
     }
   } catch (err: unknown) {
     const error = err as Error;
