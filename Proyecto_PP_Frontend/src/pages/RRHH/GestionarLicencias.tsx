@@ -47,6 +47,9 @@ interface Licencia {
   FechaRespuesta?: string;
   MotivoRechazo?: string;
   Categoria?: string;
+  FechaInicio?: string;
+  FechaFin?: string;
+  FechaReincorporacion?: string;
 }
 
 export default function GestionarLicencias() {
@@ -336,11 +339,14 @@ export default function GestionarLicencias() {
           <Table>
             <TableHead sx={{ backgroundColor: "#858789ff" }}>
               <TableRow>
-                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Fecha</TableCell>
+                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Fecha Solicitud</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Documento</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Nombre y Apellido</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Categoría</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Motivo</TableCell>
+                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Fecha desde</TableCell>
+                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Fecha hasta</TableCell>
+                <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Reincorporación</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Certificado</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Estado</TableCell>
                 <TableCell sx={{ color: "#fff", fontWeight: 600, fontFamily: "Tektur, sans-serif", textAlign: "center" }}>Acciones</TableCell>
@@ -381,6 +387,16 @@ export default function GestionarLicencias() {
                       {licencia.Categoria || <span style={{ color: '#888' }}>N/A</span>}
                     </TableCell>
                     <TableCell align="center">{licencia.Motivo}</TableCell>
+                    {/* Fechas solo si es Vacaciones, si no, celda vacía */}
+                    <TableCell align="center">
+                      {licencia.Motivo === "Vacaciones" && licencia.FechaInicio ? formatDate(licencia.FechaInicio) : ''}
+                    </TableCell>
+                    <TableCell align="center">
+                      {licencia.Motivo === "Vacaciones" && licencia.FechaFin ? formatDate(licencia.FechaFin) : ''}
+                    </TableCell>
+                    <TableCell align="center">
+                      {licencia.Motivo === "Vacaciones" && licencia.FechaReincorporacion ? formatDate(licencia.FechaReincorporacion) : ''}
+                    </TableCell>
                     <TableCell align="center">
                       {licencia.CertificadoMedico ? (
                         <Tooltip title="Descargar certificado médico">
@@ -469,23 +485,39 @@ export default function GestionarLicencias() {
           {selectedLicencia && (
             <Box sx={{ mb: 3 }}>
               <Typography variant="body1" sx={{ mb: 1 }}>
-                <strong>Solicitante:</strong> {selectedLicencia.Nombre}{" "}
-                {selectedLicencia.Apellido}
+                <strong>Solicitante:</strong> {selectedLicencia.Nombre} {selectedLicencia.Apellido}
               </Typography>
               <Typography variant="body1" sx={{ mb: 1 }}>
                 <strong>Motivo:</strong> {selectedLicencia.Motivo}
               </Typography>
+              {/* Mostrar fechas si el motivo es Vacaciones */}
+              {selectedLicencia.Motivo === "Vacaciones" && (
+                <>
+                  {selectedLicencia.FechaInicio && (
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Fecha desde:</strong> {formatDate(selectedLicencia.FechaInicio)}
+                    </Typography>
+                  )}
+                  {selectedLicencia.FechaFin && (
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Fecha hasta:</strong> {formatDate(selectedLicencia.FechaFin)}
+                    </Typography>
+                  )}
+                  {selectedLicencia.FechaReincorporacion && (
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Fecha de reincorporación:</strong> {formatDate(selectedLicencia.FechaReincorporacion)}
+                    </Typography>
+                  )}
+                </>
+              )}
               {selectedLicencia.Observaciones && (
                 <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Observaciones:</strong>{" "}
-                  {selectedLicencia.Observaciones}
+                  <strong>Observaciones:</strong> {selectedLicencia.Observaciones}
                 </Typography>
               )}
               {selectedLicencia.DiagnosticoCIE10_Codigo && (
                 <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>Diagnóstico CIE-10:</strong>{" "}
-                  {selectedLicencia.DiagnosticoCIE10_Codigo} -{" "}
-                  {selectedLicencia.DiagnosticoCIE10_Descripcion}
+                  <strong>Diagnóstico CIE-10:</strong> {selectedLicencia.DiagnosticoCIE10_Codigo} - {selectedLicencia.DiagnosticoCIE10_Descripcion}
                 </Typography>
               )}
             </Box>
