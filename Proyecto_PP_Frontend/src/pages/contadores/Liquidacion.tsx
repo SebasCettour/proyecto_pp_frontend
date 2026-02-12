@@ -21,6 +21,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  InputAdornment,
   Snackbar,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -83,7 +84,9 @@ const Liquidacion = () => {
   // Estados para Snackbar
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("info");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    "success" | "error" | "warning" | "info"
+  >("info");
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
@@ -96,7 +99,6 @@ const Liquidacion = () => {
   const [tipoJornada, setTipoJornada] = useState<
     "completa" | "dos_tercios" | "media"
   >("completa");
-
 
   // Estados para el input de sueldo básico
   const [sueldoDisplay, setSueldoDisplay] = useState<string>("");
@@ -114,7 +116,7 @@ const Liquidacion = () => {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
               },
-            }
+            },
           );
           if (response.ok) {
             const data = await response.json();
@@ -123,6 +125,18 @@ const Liquidacion = () => {
                 ...prev,
                 ["Sueldo básico"]: data.sueldoBasico.toString(),
               }));
+
+              const sumaFijaNumber = Number(data.sumaFijaNoRemunerativa ?? 0);
+              const sumaFijaSafe = Number.isFinite(sumaFijaNumber)
+                ? sumaFijaNumber
+                : 0;
+              const sumaFijaFormatted = sumaFijaSafe.toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              });
+
+              setSumaFijaNoRemunerativa(sumaFijaFormatted);
+              setSumaFijaDisplay(sumaFijaFormatted);
             }
           }
         } catch (error) {
@@ -181,7 +195,7 @@ const Liquidacion = () => {
 
   const calcularLiquidacion = useCallback(async () => {
     const sueldoBasicoKey = Object.keys(valores).find(
-      (k) => k.toLowerCase() === "sueldo básico"
+      (k) => k.toLowerCase() === "sueldo básico",
     );
     const sueldoBasico = sueldoBasicoKey
       ? parseFloat(valores[sueldoBasicoKey]) || 0
@@ -214,7 +228,7 @@ const Liquidacion = () => {
             adicionalTrasladoSeleccionado: adicionalTrasladoSeleccionado || "",
             esAfiliadoSindicato,
           }),
-        }
+        },
       );
 
       if (response.ok) {
@@ -265,7 +279,7 @@ const Liquidacion = () => {
     try {
       // Calcular totales
       const sueldoBasicoKey = Object.keys(valores).find(
-        (k) => k.toLowerCase() === "sueldo básico"
+        (k) => k.toLowerCase() === "sueldo básico",
       );
       const sueldoBasico = sueldoBasicoKey
         ? parseFloat(valores[sueldoBasicoKey]) || 0
@@ -273,13 +287,13 @@ const Liquidacion = () => {
 
       const sumaFija = sumaFijaNoRemunerativa
         ? parseFloat(
-            sumaFijaNoRemunerativa.replace(/\./g, "").replace(",", ".")
+            sumaFijaNoRemunerativa.replace(/\./g, "").replace(",", "."),
           )
         : 0;
 
       // Obtener otros conceptos filtrados
       const otrosConceptos = conceptos.filter(
-        (c) => !c.nombre.toLowerCase().includes("horas extras")
+        (c) => !c.nombre.toLowerCase().includes("horas extras"),
       );
 
       const totalOtrosConceptos = otrosConceptos
@@ -387,16 +401,18 @@ const Liquidacion = () => {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify(body),
-        }
+        },
       );
 
       if (response.ok) {
         const data = await response.json();
         setLiquidacionGuardada(true);
-        setSnackbarMessage(`Liquidación guardada exitosamente. ID: ${data.idLiquidacion}`);
+        setSnackbarMessage(
+          `Liquidación guardada exitosamente. ID: ${data.idLiquidacion}`,
+        );
         setSnackbarSeverity("success");
         setSnackbarOpen(true);
-        
+
         setTimeout(() => {
           navigate("/contadores");
         }, 100);
@@ -460,8 +476,8 @@ const Liquidacion = () => {
     try {
       const response = await fetch(
         `http://localhost:4000/api/empresa/buscar/${encodeURIComponent(
-          searchEmpresa
-        )}`
+          searchEmpresa,
+        )}`,
       );
 
       if (response.ok) {
@@ -497,8 +513,8 @@ const Liquidacion = () => {
     try {
       const response = await fetch(
         `http://localhost:4000/api/usuario/empleado-buscar/${encodeURIComponent(
-          searchDni
-        )}`
+          searchDni,
+        )}`,
       );
 
       if (response.ok) {
@@ -508,7 +524,7 @@ const Liquidacion = () => {
         if (Array.isArray(data)) {
           setMultipleEmployees(data);
           setSearchError(
-            `Se encontraron ${data.length} empleados. Seleccione uno:`
+            `Se encontraron ${data.length} empleados. Seleccione uno:`,
           );
         } else {
           setEmployeeFound(data);
@@ -811,8 +827,8 @@ const Liquidacion = () => {
                   {tipoJornada === "completa"
                     ? "Completa"
                     : tipoJornada === "dos_tercios"
-                    ? "2/3 Jornada"
-                    : "Media Jornada"}
+                      ? "2/3 Jornada"
+                      : "Media Jornada"}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -911,7 +927,7 @@ const Liquidacion = () => {
                     <Typography sx={{ fontSize: 15, color: "text.secondary" }}>
                       Fecha Ingreso:{" "}
                       {new Date(
-                        employeeFound.fechaIngreso
+                        employeeFound.fechaIngreso,
                       ).toLocaleDateString()}
                     </Typography>
                   </CardContent>
@@ -956,7 +972,9 @@ const Liquidacion = () => {
                             },
                           }}
                         >
-                          <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+                          <CardContent
+                            sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}
+                          >
                             <Box
                               sx={{
                                 display: "flex",
@@ -968,7 +986,11 @@ const Liquidacion = () => {
                               <Box sx={{ flex: 1 }}>
                                 <Typography
                                   variant="h6"
-                                  sx={{ fontWeight: 600, color: "#000", fontSize: 19 }}
+                                  sx={{
+                                    fontWeight: 600,
+                                    color: "#000",
+                                    fontSize: 19,
+                                  }}
                                 >
                                   {c.nombre}
                                 </Typography>
@@ -990,7 +1012,7 @@ const Liquidacion = () => {
                                     display: "block",
                                   }}
                                 >
-                                  Sueldo básico (solo lectura)
+                                  Monto
                                 </Typography>
                                 <Box
                                   sx={{
@@ -999,29 +1021,136 @@ const Liquidacion = () => {
                                     gap: 0.5,
                                   }}
                                 >
-                                  <Typography
-                                    sx={{ fontWeight: 700, color: "#000", fontSize: 20 }}
-                                  >
-                                    $
-                                  </Typography>
-                                  <input
-                                    type="text"
+                                  <MuiTextField
                                     value={sueldoDisplay}
-                                    readOnly
-                                    disabled
-                                    style={{
-                                      width: "140px",
-                                      padding: "10px 12px",
-                                      border: "2px solid #aaa",
-                                      outline: "none",
-                                      background: "#f5f5f5",
-                                      fontSize: "18px",
-                                      fontWeight: 700,
-                                      textAlign: "right",
-                                      borderRadius: "8px",
-                                      color: "#888",
-                                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.10)",
-                                      cursor: "not-allowed",
+                                    onFocus={() => {
+                                      setEditingSueldo(true);
+                                      const raw = sueldoDisplay || "";
+                                      const normalized = raw
+                                        .toString()
+                                        .replace(/\./g, "")
+                                        .replace(",", ".");
+                                      setSueldoDisplay(normalized);
+                                    }}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      setSueldoDisplay(value);
+                                      setValores((prev) => ({
+                                        ...prev,
+                                        ["Sueldo básico"]: value,
+                                      }));
+                                    }}
+                                    onBlur={async () => {
+                                      setEditingSueldo(false);
+                                      const raw = sueldoDisplay || "";
+                                      if (!raw) {
+                                        setSueldoDisplay("");
+                                        return;
+                                      }
+                                      const normalized = raw
+                                        .toString()
+                                        .replace(/\./g, "")
+                                        .replace(",", ".");
+                                      const num = Number(normalized);
+                                      if (isNaN(num)) {
+                                        setSueldoDisplay(raw);
+                                        return;
+                                      }
+                                      const formatted = num.toLocaleString(
+                                        "es-AR",
+                                        {
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2,
+                                        },
+                                      );
+                                      setValores((prev) => ({
+                                        ...prev,
+                                        ["Sueldo básico"]: formatted,
+                                      }));
+                                      // Recargar suma fija del backend después de guardar cambios
+                                      setTimeout(async () => {
+                                        if (
+                                          employeeFound &&
+                                          employeeFound.dni
+                                        ) {
+                                          try {
+                                            const response = await fetch(
+                                              `http://localhost:4000/api/liquidacion/empleado/${employeeFound.dni}/sueldo-basico`,
+                                              {
+                                                headers: {
+                                                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+                                                },
+                                              },
+                                            );
+                                            if (response.ok) {
+                                              const data =
+                                                await response.json();
+                                              if (
+                                                data &&
+                                                typeof data.sumaFijaNoRemunerativa !==
+                                                  "undefined"
+                                              ) {
+                                                const sumaFijaNumber = Number(
+                                                  data.sumaFijaNoRemunerativa ??
+                                                    0,
+                                                );
+                                                const sumaFijaSafe =
+                                                  Number.isFinite(
+                                                    sumaFijaNumber,
+                                                  )
+                                                    ? sumaFijaNumber
+                                                    : 0;
+                                                const sumaFijaFormatted =
+                                                  sumaFijaSafe.toLocaleString(
+                                                    "es-AR",
+                                                    {
+                                                      minimumFractionDigits: 2,
+                                                      maximumFractionDigits: 2,
+                                                    },
+                                                  );
+                                                setSumaFijaNoRemunerativa(
+                                                  sumaFijaFormatted,
+                                                );
+                                                setSumaFijaDisplay(
+                                                  sumaFijaFormatted,
+                                                );
+                                              }
+                                            }
+                                          } catch (error) {
+                                            console.error(
+                                              "Error recargando suma fija:",
+                                              error,
+                                            );
+                                          }
+                                        }
+                                      }, 300);
+                                    }}
+                                    size="small"
+                                    variant="standard"
+                                    InputProps={{
+                                      startAdornment: (
+                                        <InputAdornment position="start">
+                                          $
+                                        </InputAdornment>
+                                      ),
+                                      disableUnderline: true,
+                                      inputProps: {
+                                        style: {
+                                          textAlign: "right",
+                                          fontWeight: 600,
+                                        },
+                                      },
+                                    }}
+                                    sx={{
+                                      minWidth: 180,
+                                      "& .MuiInputBase-input": {
+                                        fontSize: 20,
+                                        lineHeight: 1.2,
+                                        padding: 0,
+                                      },
+                                      "& .MuiInputBase-root": {
+                                        padding: 0,
+                                      },
                                     }}
                                   />
                                 </Box>
@@ -1043,7 +1172,9 @@ const Liquidacion = () => {
                             },
                           }}
                         >
-                          <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
+                          <CardContent
+                            sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}
+                          >
                             <Box
                               sx={{
                                 display: "flex",
@@ -1055,7 +1186,11 @@ const Liquidacion = () => {
                               <Box sx={{ flex: 1 }}>
                                 <Typography
                                   variant="h6"
-                                  sx={{ fontWeight: 600, color: "#000", fontSize: 19 }}
+                                  sx={{
+                                    fontWeight: 600,
+                                    color: "#000",
+                                    fontSize: 19,
+                                  }}
                                 >
                                   Suma Fija No Remunerativa
                                 </Typography>
@@ -1077,7 +1212,7 @@ const Liquidacion = () => {
                                     display: "block",
                                   }}
                                 >
-                                  Ingrese monto
+                                  Monto
                                 </Typography>
                                 <Box
                                   sx={{
@@ -1086,89 +1221,131 @@ const Liquidacion = () => {
                                     gap: 0.5,
                                   }}
                                 >
-                                  <Typography
-                                    sx={{ fontWeight: 700, color: "#000", fontSize: 20 }}
-                                  >
-                                    $
-                                  </Typography>
-                                  <input
-                                    type="text"
-                                    value={
-                                      editingSumaFija
-                                        ? sumaFijaNoRemunerativa
-                                        : sumaFijaDisplay
-                                    }
-                                    inputMode="decimal"
-                                    pattern="[0-9.,]*"
-                                    maxLength={14}
-                                    onChange={(
-                                      e: React.ChangeEvent<HTMLInputElement>
-                                    ) => {
-                                      const typed = e.target.value;
-                                      // Solo permitir números, punto y coma
-                                      let cleaned = typed.replace(/[^0-9.,]/g, "");
-                                      // Contar puntos y comas
-                                      const commaCount = (cleaned.match(/,/g) || []).length;
-                                      // Si tiene coma, usarla como decimal y eliminar puntos (miles)
-                                      if (commaCount > 0) {
-                                        cleaned = cleaned.replace(/\./g, "").replace(",", ".");
-                                      }
-                                      // Validar formato: solo un punto decimal
-                                      const parts = cleaned.split(".");
-                                      if (parts.length > 2) {
-                                        return; // No permitir más de un punto decimal
-                                      }
-                                      let intPart = parts[0] ? parts[0].slice(0, 8) : "";
-                                      let decPart = parts[1] ? parts[1].slice(0, 2) : "";
-                                      let cleanVal = intPart + (parts.length > 1 ? "." + decPart : "");
-                                      setSumaFijaNoRemunerativa(cleanVal);
-                                      if (editingSumaFija) {
-                                        setSumaFijaDisplay(cleanVal);
-                                      }
-                                    }}
+                                  <MuiTextField
+                                    value={sumaFijaDisplay}
                                     onFocus={() => {
                                       setEditingSumaFija(true);
-                                      setSumaFijaDisplay(sumaFijaNoRemunerativa);
+                                      const raw = sumaFijaNoRemunerativa || "";
+                                      const normalized = raw
+                                        .toString()
+                                        .replace(/\./g, "")
+                                        .replace(",", ".");
+                                      setSumaFijaDisplay(normalized);
                                     }}
-                                    onBlur={() => {
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      setSumaFijaDisplay(value);
+                                      setSumaFijaNoRemunerativa(value);
+                                    }}
+                                    onBlur={async () => {
                                       setEditingSumaFija(false);
-                                      let raw = sumaFijaNoRemunerativa;
-                                      let formatted = "";
-                                      let newRaw = raw;
-                                      if (raw) {
-                                        let num = Number(raw);
-                                        if (!isNaN(num)) {
-                                          if (num > 99999999.98) {
-                                            newRaw = "99999999.98";
-                                            num = 99999999.98;
-                                          }
-                                          formatted = num.toLocaleString("es-AR");
-                                        } else {
-                                          formatted = "";
-                                          newRaw = "";
-                                        }
+                                      const raw = sumaFijaNoRemunerativa || "";
+                                      if (!raw) {
+                                        setSumaFijaDisplay("");
+                                        return;
                                       }
-                                      if (newRaw !== raw) {
-                                        setSumaFijaNoRemunerativa(newRaw);
+                                      const normalized = raw
+                                        .toString()
+                                        .replace(/\./g, "")
+                                        .replace(",", ".");
+                                      const num = Number(normalized);
+                                      if (isNaN(num)) {
+                                        setSumaFijaDisplay(raw);
+                                        return;
                                       }
+                                      const formatted = num.toLocaleString(
+                                        "es-AR",
+                                        {
+                                          minimumFractionDigits: 2,
+                                          maximumFractionDigits: 2,
+                                        },
+                                      );
+                                      setSumaFijaNoRemunerativa(formatted);
                                       setSumaFijaDisplay(formatted);
+                                      // Recargar suma fija del backend después de guardar cambios
+                                      setTimeout(async () => {
+                                        if (
+                                          employeeFound &&
+                                          employeeFound.dni
+                                        ) {
+                                          try {
+                                            const response = await fetch(
+                                              `http://localhost:4000/api/liquidacion/empleado/${employeeFound.dni}/sueldo-basico`,
+                                              {
+                                                headers: {
+                                                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+                                                },
+                                              },
+                                            );
+                                            if (response.ok) {
+                                              const data =
+                                                await response.json();
+                                              if (
+                                                data &&
+                                                typeof data.sumaFijaNoRemunerativa !==
+                                                  "undefined"
+                                              ) {
+                                                const sumaFijaNumber = Number(
+                                                  data.sumaFijaNoRemunerativa ??
+                                                    0,
+                                                );
+                                                const sumaFijaSafe =
+                                                  Number.isFinite(
+                                                    sumaFijaNumber,
+                                                  )
+                                                    ? sumaFijaNumber
+                                                    : 0;
+                                                const sumaFijaFormatted =
+                                                  sumaFijaSafe.toLocaleString(
+                                                    "es-AR",
+                                                    {
+                                                      minimumFractionDigits: 2,
+                                                      maximumFractionDigits: 2,
+                                                    },
+                                                  );
+                                                setSumaFijaNoRemunerativa(
+                                                  sumaFijaFormatted,
+                                                );
+                                                setSumaFijaDisplay(
+                                                  sumaFijaFormatted,
+                                                );
+                                              }
+                                            }
+                                          } catch (error) {
+                                            console.error(
+                                              "Error recargando suma fija:",
+                                              error,
+                                            );
+                                          }
+                                        }
+                                      }, 300);
                                     }}
-                                    onWheel={(e) => e.currentTarget.blur()}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "ArrowUp" || e.key === "ArrowDown") e.preventDefault();
+                                    size="small"
+                                    variant="standard"
+                                    InputProps={{
+                                      startAdornment: (
+                                        <InputAdornment position="start">
+                                          $
+                                        </InputAdornment>
+                                      ),
+                                      disableUnderline: true,
+                                      inputProps: {
+                                        style: {
+                                          textAlign: "right",
+                                          fontWeight: 600,
+                                        },
+                                      },
                                     }}
-                                    style={{
-                                      width: "140px",
-                                      padding: "10px 12px",
-                                      border: "2px solid #000",
-                                      outline: "none",
-                                      background: "#fff",
-                                      fontSize: "18px",
-                                      fontWeight: 700,
-                                      textAlign: "right",
-                                      borderRadius: "8px",
-                                      color: "#000",
-                                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.15)",
+                                    sx={{
+                                      minWidth: 180,
+                                      "& .MuiInputBase-input": {
+                                        fontSize: 20,
+                                        lineHeight: 1.2,
+                                        padding: 0,
+                                      },
+                                      "& .MuiInputBase-root": {
+                                        padding: 0,
+                                      },
                                     }}
                                   />
                                 </Box>
@@ -1186,7 +1363,7 @@ const Liquidacion = () => {
                 (c) =>
                   c.tipo !== "descuento" &&
                   !c.nombre.toLowerCase().includes("sac") &&
-                  c.nombre.toLowerCase() !== "sueldo básico"
+                  c.nombre.toLowerCase() !== "sueldo básico",
               ) && (
                 <Box sx={{ mb: 3 }}>
                   <Typography
@@ -1208,7 +1385,7 @@ const Liquidacion = () => {
                   >
                     {/* Selector de Adicional de Traslado */}
                     {otrosConceptos.some((c) =>
-                      c.nombre.toLowerCase().includes("adicional traslado")
+                      c.nombre.toLowerCase().includes("adicional traslado"),
                     ) && (
                       <Card
                         sx={{
@@ -1240,7 +1417,7 @@ const Liquidacion = () => {
                                 label="Seleccionar distancia"
                                 onChange={(e) =>
                                   setAdicionalTrasladoSeleccionado(
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 sx={{
@@ -1257,7 +1434,7 @@ const Liquidacion = () => {
                                   .filter((c) =>
                                     c.nombre
                                       .toLowerCase()
-                                      .includes("adicional traslado")
+                                      .includes("adicional traslado"),
                                   )
                                   .map((c) => (
                                     <MenuItem key={c.id} value={c.nombre}>
@@ -1288,7 +1465,8 @@ const Liquidacion = () => {
                                 {(() => {
                                   const concepto = otrosConceptos.find(
                                     (c) =>
-                                      c.nombre === adicionalTrasladoSeleccionado
+                                      c.nombre ===
+                                      adicionalTrasladoSeleccionado,
                                   );
                                   if (concepto && concepto.porcentaje) {
                                     return (
@@ -1334,7 +1512,9 @@ const Liquidacion = () => {
                           c.tipo !== "descuento" &&
                           !c.nombre.toLowerCase().includes("sac") &&
                           c.nombre.toLowerCase() !== "sueldo básico" &&
-                          !c.nombre.toLowerCase().includes("adicional traslado")
+                          !c.nombre
+                            .toLowerCase()
+                            .includes("adicional traslado"),
                       )
                       .map((c, index) => {
                         let porcentaje = "-";
@@ -1520,7 +1700,7 @@ const Liquidacion = () => {
                               c.nombre.toLowerCase() !== "sueldo básico" &&
                               !c.nombre
                                 .toLowerCase()
-                                .includes("adicional traslado")
+                                .includes("adicional traslado"),
                           )
                           .reduce((sum, c) => {
                             return sum + (valoresCalculados[c.nombre] || 0);
@@ -1544,7 +1724,7 @@ const Liquidacion = () => {
 
               {/* Sección: SAC*/}
               {otrosConceptos.some((c) =>
-                c.nombre.toLowerCase().includes("sac")
+                c.nombre.toLowerCase().includes("sac"),
               ) && (
                 <Box sx={{ mb: 3 }}>
                   <Typography
@@ -1748,15 +1928,15 @@ const Liquidacion = () => {
                       30
                         ? "⚠️ Total de horas extras no puede superar 30"
                         : valorHoraNormal > 0 && horasExtras50
-                        ? `Valor: $${(
-                            parseFloat(horasExtras50) *
-                            valorHoraNormal *
-                            1.5
-                          ).toLocaleString("es-AR", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}`
-                        : "Ingrese cantidad de horas"
+                          ? `Valor: $${(
+                              parseFloat(horasExtras50) *
+                              valorHoraNormal *
+                              1.5
+                            ).toLocaleString("es-AR", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}`
+                          : "Ingrese cantidad de horas"
                     }
                   />
                 </Box>
@@ -1809,15 +1989,15 @@ const Liquidacion = () => {
                       30
                         ? "⚠️ Total de horas extras no puede superar 30"
                         : valorHoraNormal > 0 && horasExtras100
-                        ? `Valor: $${(
-                            parseFloat(horasExtras100) *
-                            valorHoraNormal *
-                            2
-                          ).toLocaleString("es-AR", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}`
-                        : "Ingrese cantidad de horas"
+                          ? `Valor: $${(
+                              parseFloat(horasExtras100) *
+                              valorHoraNormal *
+                              2
+                            ).toLocaleString("es-AR", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}`
+                          : "Ingrese cantidad de horas"
                     }
                   />
                 </Box>
@@ -2347,7 +2527,7 @@ const Liquidacion = () => {
                   $
                   {(() => {
                     const sueldoBasicoKey = Object.keys(valores).find(
-                      (k) => k.toLowerCase() === "sueldo básico"
+                      (k) => k.toLowerCase() === "sueldo básico",
                     );
                     const sueldoBasico = sueldoBasicoKey
                       ? parseFloat(valores[sueldoBasicoKey]) || 0
@@ -2357,7 +2537,8 @@ const Liquidacion = () => {
                     const totalOtrosConceptos = otrosConceptos
                       .filter(
                         (c) =>
-                          c.tipo !== "descuento" && !c.suma_fija_no_remunerativa
+                          c.tipo !== "descuento" &&
+                          !c.suma_fija_no_remunerativa,
                       )
                       .reduce((sum, c) => {
                         return sum + (valoresCalculados[c.nombre] || 0);
@@ -2414,13 +2595,13 @@ const Liquidacion = () => {
                       ? parseFloat(
                           sumaFijaNoRemunerativa
                             .replace(/\./g, "")
-                            .replace(",", ".")
+                            .replace(",", "."),
                         )
                       : 0;
                     const totalNoRemunerativo = otrosConceptos
                       .filter(
                         (c) =>
-                          c.tipo !== "descuento" && c.suma_fija_no_remunerativa
+                          c.tipo !== "descuento" && c.suma_fija_no_remunerativa,
                       )
                       .reduce((sum, c) => {
                         return sum + (valoresCalculados[c.nombre] || 0);
@@ -2462,7 +2643,7 @@ const Liquidacion = () => {
                   $
                   {(() => {
                     const sueldoBasicoKey = Object.keys(valores).find(
-                      (k) => k.toLowerCase() === "sueldo básico"
+                      (k) => k.toLowerCase() === "sueldo básico",
                     );
                     const sueldoBasico = sueldoBasicoKey
                       ? parseFloat(valores[sueldoBasicoKey]) || 0
@@ -2471,7 +2652,7 @@ const Liquidacion = () => {
                       ? parseFloat(
                           sumaFijaNoRemunerativa
                             .replace(/\./g, "")
-                            .replace(",", ".")
+                            .replace(",", "."),
                         )
                       : 0;
 
@@ -2574,7 +2755,7 @@ const Liquidacion = () => {
                   $
                   {(() => {
                     const sueldoBasicoKey = Object.keys(valores).find(
-                      (k) => k.toLowerCase() === "sueldo básico"
+                      (k) => k.toLowerCase() === "sueldo básico",
                     );
                     const sueldoBasico = sueldoBasicoKey
                       ? parseFloat(valores[sueldoBasicoKey]) || 0
@@ -2583,7 +2764,7 @@ const Liquidacion = () => {
                       ? parseFloat(
                           sumaFijaNoRemunerativa
                             .replace(/\./g, "")
-                            .replace(",", ".")
+                            .replace(",", "."),
                         )
                       : 0;
 
@@ -2627,7 +2808,7 @@ const Liquidacion = () => {
       case 3:
         // Paso 4: Revisión Final y Confirmación
         const sueldoBasicoKey = Object.keys(valores).find(
-          (k) => k.toLowerCase() === "sueldo básico"
+          (k) => k.toLowerCase() === "sueldo básico",
         );
         const sueldoBasico = sueldoBasicoKey
           ? parseFloat(valores[sueldoBasicoKey]) || 0
@@ -2635,7 +2816,7 @@ const Liquidacion = () => {
 
         const sumaFija = sumaFijaNoRemunerativa
           ? parseFloat(
-              sumaFijaNoRemunerativa.replace(/\./g, "").replace(",", ".")
+              sumaFijaNoRemunerativa.replace(/\./g, "").replace(",", "."),
             )
           : 0;
 
@@ -2664,7 +2845,7 @@ const Liquidacion = () => {
           sueldoBasico +
           otrosConceptos
             .filter(
-              (c) => c.tipo !== "descuento" && !c.suma_fija_no_remunerativa
+              (c) => c.tipo !== "descuento" && !c.suma_fija_no_remunerativa,
             )
             .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0) +
           horasExtras50Val +
@@ -2674,7 +2855,7 @@ const Liquidacion = () => {
           sumaFija +
           otrosConceptos
             .filter(
-              (c) => c.tipo !== "descuento" && c.suma_fija_no_remunerativa
+              (c) => c.tipo !== "descuento" && c.suma_fija_no_remunerativa,
             )
             .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
 
@@ -2768,7 +2949,7 @@ const Liquidacion = () => {
                         {periodo
                           ? new Date(periodo + "-01").toLocaleDateString(
                               "es-AR",
-                              { month: "long", year: "numeric" }
+                              { month: "long", year: "numeric" },
                             )
                           : "-"}
                       </Typography>
@@ -2783,8 +2964,8 @@ const Liquidacion = () => {
                         {tipoJornada === "completa"
                           ? "Completa"
                           : tipoJornada === "dos_tercios"
-                          ? "2/3 Jornada"
-                          : "Media Jornada"}
+                            ? "2/3 Jornada"
+                            : "Media Jornada"}
                       </Typography>
                     </Box>
                   </Box>
@@ -2843,7 +3024,7 @@ const Liquidacion = () => {
                   .filter(
                     (c) =>
                       c.tipo !== "descuento" &&
-                      (valoresCalculados[c.nombre] || 0) > 0
+                      (valoresCalculados[c.nombre] || 0) > 0,
                   )
                   .map((c, index) => (
                     <Box
@@ -2938,7 +3119,7 @@ const Liquidacion = () => {
                   .filter(
                     (c) =>
                       c.tipo === "descuento" &&
-                      (valoresCalculados[c.nombre] || 0) > 0
+                      (valoresCalculados[c.nombre] || 0) > 0,
                   )
                   .map((c, index) => (
                     <Box
@@ -3091,8 +3272,8 @@ const Liquidacion = () => {
                 {guardandoLiquidacion
                   ? "Guardando..."
                   : liquidacionGuardada
-                  ? "✓ Liquidación Guardada"
-                  : "Confirmar y Guardar Liquidación"}
+                    ? "✓ Liquidación Guardada"
+                    : "Confirmar y Guardar Liquidación"}
               </Button>
             </Box>
           </Box>
@@ -3168,20 +3349,20 @@ const Liquidacion = () => {
         open={snackbarOpen}
         autoHideDuration={5000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbarSeverity} 
-          sx={{ 
-            width: '100%',
-            minWidth: '400px',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbarSeverity}
+          sx={{
+            width: "100%",
+            minWidth: "400px",
+            fontSize: "1.1rem",
+            fontWeight: "bold",
             boxShadow: 6,
-            '& .MuiAlert-message': {
-              fontSize: '1.1rem'
-            }
+            "& .MuiAlert-message": {
+              fontSize: "1.1rem",
+            },
           }}
         >
           {snackbarMessage}

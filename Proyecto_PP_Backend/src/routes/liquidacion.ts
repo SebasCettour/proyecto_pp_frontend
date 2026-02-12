@@ -652,7 +652,7 @@ router.get("/buscar", authenticateToken, async (req: Request, res: Response) => 
       INNER JOIN Empleado e ON l.Id_Empleado = e.Id_Empleado
       WHERE 
         e.Numero_Documento LIKE ? OR
-        CONCAT(e.Nombre, ' ', e.Apellido) LIKE ? OR
+        CONCAT(e Nombre, ' ', e.Apellido) LIKE ? OR
         CONCAT(e.Apellido, ' ', e.Nombre) LIKE ? OR
         e.Nombre LIKE ? OR
         e.Apellido LIKE ?
@@ -966,7 +966,7 @@ router.get("/empleado/:dni/sueldo-basico", authenticateToken, async (req: Reques
     const { dni } = req.params;
     // JOIN por ID de categoría
     const [rows] = await pool.execute(
-      `SELECT c.Nombre_Categoria, c.Sueldo_Basico
+      `SELECT c.Nombre_Categoria, c.Sueldo_Basico, c.Suma_Fija_No_Remunerativa
          FROM Empleado e
          JOIN Categoria c ON e.Categoria = c.Id_Categoria
         WHERE e.Numero_Documento = ?`,
@@ -974,7 +974,10 @@ router.get("/empleado/:dni/sueldo-basico", authenticateToken, async (req: Reques
     );
     const result = Array.isArray(rows) ? rows as any[] : [];
     if (result.length > 0) {
-      res.json({ sueldoBasico: result[0].Sueldo_Basico });
+      res.json({
+        sueldoBasico: result[0].Sueldo_Basico,
+        sumaFijaNoRemunerativa: result[0].Suma_Fija_No_Remunerativa ?? 0,
+      });
     } else {
       res.status(404).json({ message: "Empleado o categoría no encontrada" });
     }

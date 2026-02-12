@@ -330,13 +330,13 @@ const Historial: React.FC = () => {
                         <TableCell>{liq.EmpleadoDNI}</TableCell>
                         <TableCell>{liq.Periodo}</TableCell>
                         <TableCell align="right">
-                          ${liq.TotalHaberes.toLocaleString("es-AR")}
+                          {`$ ${liq.TotalHaberes.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         </TableCell>
                         <TableCell align="right">
-                          ${liq.TotalDescuentos.toLocaleString("es-AR")}
+                          {`$ ${liq.TotalDescuentos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         </TableCell>
                         <TableCell align="right" sx={{ fontWeight: 700, color: "#1565C0" }}>
-                          ${liq.NetoAPagar.toLocaleString("es-AR")}
+                          {`$ ${liq.NetoAPagar.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -395,7 +395,7 @@ const Historial: React.FC = () => {
                                     Total Remunerativo
                                   </Typography>
                                   <Typography variant="h6" color="primary">
-                                    ${liq.TotalRemunerativo.toLocaleString("es-AR")}
+                                    {`$ ${liq.TotalRemunerativo.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                                   </Typography>
                                 </Paper>
                                 <Paper sx={{ p: 2 }}>
@@ -403,7 +403,7 @@ const Historial: React.FC = () => {
                                     Total No Remunerativo
                                   </Typography>
                                   <Typography variant="h6" color="secondary">
-                                    ${liq.TotalNoRemunerativo.toLocaleString("es-AR")}
+                                    {`$ ${liq.TotalNoRemunerativo.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                                   </Typography>
                                 </Paper>
                                 <Paper sx={{ p: 2 }}>
@@ -442,7 +442,7 @@ const Historial: React.FC = () => {
                                         <TableRow key={det.Id_DetalleLiquidacion}>
                                           <TableCell>{det.Concepto}</TableCell>
                                           <TableCell align="right">
-                                            ${det.Monto.toLocaleString("es-AR")}
+                                            {`$ ${det.Monto.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                                           </TableCell>
                                         </TableRow>
                                       ))}

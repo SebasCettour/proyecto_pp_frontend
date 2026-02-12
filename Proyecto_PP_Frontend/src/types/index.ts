@@ -95,6 +95,7 @@ export interface Categoria {
   Sueldo_Basico: number;
   Ultimo_Sueldo_Basico: number;
   Fecha_Actualizacion: string | null;
+  Suma_Fija_No_Remunerativa?: number | null;
 }
 
 export interface Convenio {
