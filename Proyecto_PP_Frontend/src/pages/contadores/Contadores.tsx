@@ -264,7 +264,7 @@ export const Contadores = () => {
               "&:hover": { backgroundColor: "#115293" },
             }}
           >
-            Actualizar Salario Básico
+            Actualizar Salario Básico y Suma no Remunerativa
           </Button>
         </Box>
       </Container>
