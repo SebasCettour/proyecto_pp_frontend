@@ -652,7 +652,7 @@ router.get("/buscar", authenticateToken, async (req: Request, res: Response) => 
       INNER JOIN Empleado e ON l.Id_Empleado = e.Id_Empleado
       WHERE 
         e.Numero_Documento LIKE ? OR
-        CONCAT(e Nombre, ' ', e.Apellido) LIKE ? OR
+        CONCAT(e.Nombre, ' ', e.Apellido) LIKE ? OR
         CONCAT(e.Apellido, ' ', e.Nombre) LIKE ? OR
         e.Nombre LIKE ? OR
         e.Apellido LIKE ?

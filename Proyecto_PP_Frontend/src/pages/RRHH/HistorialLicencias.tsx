@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -38,6 +38,10 @@ interface Licencia {
   MotivoRechazo?: string;
   NombreEmpleado?: string;
   ApellidoEmpleado?: string;
+  FechaInicio?: string;
+  FechaFin?: string;
+  diasPedidos?: number | null;
+  diasRestantes?: number | null;
 }
 
 export default function GestionarLicencias() {
@@ -68,8 +72,91 @@ export default function GestionarLicencias() {
     localStorage.getItem("username") ||
     "Usuario";
 
-  const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString("es-ES");
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "-";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split("-").map(Number);
+      return new Date(year, month - 1, day).toLocaleDateString("es-ES");
+    }
+    return new Date(dateString).toLocaleDateString("es-ES");
+  };
+
+  const esMotivoConDescuento = (motivo?: string) => {
+    const normalizado = String(motivo || "").trim().toLowerCase();
+    return normalizado === "vacaciones" || normalizado === "personal";
+  };
+
+  const calcularDiasPedidos = (lic: Licencia): number | null => {
+    if (typeof lic.diasPedidos === "number" && lic.diasPedidos > 0) {
+      return lic.diasPedidos;
+    }
+
+    if (!lic.FechaInicio || !lic.FechaFin) return null;
+
+    const inicio = new Date(lic.FechaInicio);
+    const fin = new Date(lic.FechaFin);
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return null;
+
+    const dias =
+      Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return dias > 0 ? dias : null;
+  };
+
+  const historialConCalculos = useMemo(() => {
+    if (!historial.length) return [];
+
+    const calculadoPorId = new Map<
+      number,
+      { diasPedidosView: number | null; diasRestantesView: number | null }
+    >();
+
+    const ordenCronologico = [...historial].sort((a, b) => {
+      const fechaA = new Date(a.FechaSolicitud || 0).getTime();
+      const fechaB = new Date(b.FechaSolicitud || 0).getTime();
+      return fechaA - fechaB;
+    });
+
+    let restantesAcumulados =
+      typeof vacaciones?.diasVacaciones === "number"
+        ? vacaciones.diasVacaciones
+        : null;
+
+    ordenCronologico.forEach((lic) => {
+      if (!esMotivoConDescuento(lic.Motivo)) {
+        calculadoPorId.set(lic.Id_Licencia, {
+          diasPedidosView: null,
+          diasRestantesView: null,
+        });
+        return;
+      }
+
+      const diasPedidosView = calcularDiasPedidos(lic);
+
+      let diasRestantesView: number | null = null;
+      if (typeof lic.diasRestantes === "number") {
+        diasRestantesView = lic.diasRestantes;
+      } else if (
+        restantesAcumulados !== null &&
+        diasPedidosView !== null
+      ) {
+        restantesAcumulados = Math.max(restantesAcumulados - diasPedidosView, 0);
+        diasRestantesView = restantesAcumulados;
+      }
+
+      calculadoPorId.set(lic.Id_Licencia, {
+        diasPedidosView,
+        diasRestantesView,
+      });
+    });
+
+    return historial.map((lic) => ({
+      ...lic,
+      ...(calculadoPorId.get(lic.Id_Licencia) || {
+        diasPedidosView: null,
+        diasRestantesView: null,
+      }),
+    }));
+  }, [historial, vacaciones?.diasVacaciones]);
 
   const getEstadoColor = (estado: string) => {
     switch (estado) {
@@ -437,12 +524,14 @@ export default function GestionarLicencias() {
                   <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Nombre</TableCell>
                   <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Documento</TableCell>
                   <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Motivo</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Días Pedidos</TableCell>
+                  <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Días Restantes</TableCell>
                   <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Estado</TableCell>
                   <TableCell sx={{ color: "#fff", fontWeight: 700, textAlign: "center", fontSize: { xs: "0.85rem", sm: "0.95rem" }, py: 1.25 }}>Certificado</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {historial.map((lic: Licencia) => (
+                {historialConCalculos.map((lic: any) => (
                   <TableRow key={lic.Id_Licencia} sx={{ "&:nth-of-type(odd)": { backgroundColor: "#fbfcfd" }, "&:hover": { backgroundColor: "#eaf4ff" } }}>
                     <TableCell align="center" sx={{ fontSize: { xs: "0.9rem", sm: "0.95rem" }, py: 1.25 }}>
                       {formatDate(lic.FechaSolicitud)}
@@ -455,6 +544,12 @@ export default function GestionarLicencias() {
                     </TableCell>
                     <TableCell align="center" sx={{ fontSize: { xs: "0.9rem", sm: "0.95rem" }, py: 1.25 }}>
                       {lic.Motivo}
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontSize: { xs: "0.9rem", sm: "0.95rem" }, py: 1.25 }}>
+                      {lic.diasPedidosView ?? "-"}
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontSize: { xs: "0.9rem", sm: "0.95rem" }, py: 1.25 }}>
+                      {lic.diasRestantesView ?? "-"}
                     </TableCell>
                     <TableCell align="center" sx={{ py: 1.25 }}>
                       <Chip

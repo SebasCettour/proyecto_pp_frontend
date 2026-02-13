@@ -146,7 +146,7 @@ router.post(
 
       // Buscar el Id_Empleado real usando el documento
       const [empleadoRows] = await pool.execute(
-        "SELECT Id_Empleado FROM Empleado WHERE Numero_Documento = ?",
+        "SELECT Id_Empleado, Fecha_Desde FROM Empleado WHERE Numero_Documento = ?",
         [documento]
       );
 
@@ -154,27 +154,125 @@ router.post(
         return res.status(400).json({ message: "Empleado no encontrado" });
       }
 
-      const idEmpleado = (empleadoRows[0] as any).Id_Empleado;
+      const empleado = empleadoRows[0] as any;
+      const idEmpleado = empleado.Id_Empleado;
 
-      const [result] = await pool.execute(
-        `INSERT INTO Licencia (
-          Id_Empleado, FechaInicio, FechaFin, FechaReincorporacion, Motivo, 
-          Observaciones, CertificadoMedico, DiagnosticoCIE10_Codigo, 
-          DiagnosticoCIE10_Descripcion, Estado
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          idEmpleado,
-          fechaInicio,
-          fechaFin,
-          fechaReincorporacion,
-          motivo,
-          observaciones || null,
-          certificadoMedico,
-          diagnosticoCIE10_codigo || null,
-          diagnosticoCIE10_descripcion || null,
-          "Pendiente",
-        ]
-      );
+      const inicio = new Date(fechaInicio);
+      const fin = new Date(fechaFin);
+      const diasPedidosCalculados =
+        Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+      if (isNaN(diasPedidosCalculados) || diasPedidosCalculados <= 0) {
+        return res.status(400).json({
+          message: "Rango de fechas inválido para calcular días solicitados",
+        });
+      }
+
+      let diasPedidos: number | null = null;
+      let diasRestantes: number | null = null;
+
+      const controlaDias = motivo === "Vacaciones" || motivo === "Personal";
+
+      if (controlaDias) {
+        let antiguedad = 0;
+        let diasVacaciones = 14;
+        let diasTomados = 0;
+
+        if (empleado.Fecha_Desde) {
+          const fechaDesde = new Date(empleado.Fecha_Desde);
+          const hoy = new Date();
+          antiguedad = hoy.getFullYear() - fechaDesde.getFullYear();
+          if (
+            hoy.getMonth() < fechaDesde.getMonth() ||
+            (hoy.getMonth() === fechaDesde.getMonth() &&
+              hoy.getDate() < fechaDesde.getDate())
+          ) {
+            antiguedad--;
+          }
+
+          if (antiguedad > 5 && antiguedad <= 10) diasVacaciones = 21;
+          else if (antiguedad > 10 && antiguedad <= 20) diasVacaciones = 28;
+          else if (antiguedad > 20) diasVacaciones = 35;
+        }
+
+        const [licenciasAprobadas] = await pool.execute(
+          `SELECT FechaInicio, FechaFin
+           FROM Licencia
+           WHERE Id_Empleado = ?
+             AND Motivo IN ('Vacaciones', 'Personal')
+             AND Estado = 'Aprobada'`,
+          [idEmpleado]
+        );
+
+        (licenciasAprobadas as any[]).forEach((lic) => {
+          const inicioLic = new Date(lic.FechaInicio);
+          const finLic = new Date(lic.FechaFin);
+          diasTomados +=
+            Math.floor(
+              (finLic.getTime() - inicioLic.getTime()) / (1000 * 60 * 60 * 24)
+            ) + 1;
+        });
+
+        const diasDisponibles = Math.max(diasVacaciones - diasTomados, 0);
+
+        if (diasPedidosCalculados > diasDisponibles) {
+          return res.status(400).json({
+            message: `No puedes solicitar más de ${diasDisponibles} días disponibles.`,
+          });
+        }
+
+        diasPedidos = diasPedidosCalculados;
+        diasRestantes = Math.max(diasDisponibles - diasPedidosCalculados, 0);
+      }
+
+      let result: any;
+      try {
+        [result] = await pool.execute(
+          `INSERT INTO Licencia (
+            Id_Empleado, FechaInicio, FechaFin, FechaReincorporacion, Motivo,
+            Observaciones, CertificadoMedico, DiagnosticoCIE10_Codigo,
+            DiagnosticoCIE10_Descripcion, Estado, diasPedidos, diasRestantes
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            idEmpleado,
+            fechaInicio,
+            fechaFin,
+            fechaReincorporacion,
+            motivo,
+            observaciones || null,
+            certificadoMedico,
+            diagnosticoCIE10_codigo || null,
+            diagnosticoCIE10_descripcion || null,
+            "Pendiente",
+            diasPedidos,
+            diasRestantes,
+          ]
+        );
+      } catch (insertError: any) {
+        if (insertError?.code !== "ER_BAD_FIELD_ERROR") {
+          throw insertError;
+        }
+
+        [result] = await pool.execute(
+          `INSERT INTO Licencia (
+            Id_Empleado, FechaInicio, FechaFin, FechaReincorporacion, Motivo,
+            Observaciones, CertificadoMedico, DiagnosticoCIE10_Codigo,
+            DiagnosticoCIE10_Descripcion, Estado
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            idEmpleado,
+            fechaInicio,
+            fechaFin,
+            fechaReincorporacion,
+            motivo,
+            observaciones || null,
+            certificadoMedico,
+            diagnosticoCIE10_codigo || null,
+            diagnosticoCIE10_descripcion || null,
+            "Pendiente",
+          ]
+        );
+      }
 
       console.log("Licencia creada con ID:", (result as any).insertId);
 

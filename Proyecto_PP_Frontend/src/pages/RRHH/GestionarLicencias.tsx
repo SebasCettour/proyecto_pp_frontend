@@ -27,7 +27,6 @@ import {
 } from "@mui/material";
 import { Settings, Visibility, VisibilityOff } from "@mui/icons-material";
 import DownloadIcon from "@mui/icons-material/Download";
-import { Link as RouterLink } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import BackButton from "../../components/BackButton";
@@ -160,6 +159,10 @@ export default function GestionarLicencias() {
   };
 
   const formatDate = (dateString: string) => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split("-").map(Number);
+      return new Date(year, month - 1, day).toLocaleDateString("es-ES");
+    }
     return new Date(dateString).toLocaleDateString("es-ES");
   };
 
@@ -355,13 +358,13 @@ export default function GestionarLicencias() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={11} align="center">
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : licencias.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={11} align="center">
                     <Typography variant="h6" color="text.secondary">
                       No hay solicitudes pendientes
                     </Typography>
@@ -387,15 +390,16 @@ export default function GestionarLicencias() {
                       {licencia.Categoria || <span style={{ color: '#888' }}>N/A</span>}
                     </TableCell>
                     <TableCell align="center">{licencia.Motivo}</TableCell>
-                    {/* Fechas solo si es Vacaciones, si no, celda vacía */}
                     <TableCell align="center">
-                      {licencia.Motivo === "Vacaciones" && licencia.FechaInicio ? formatDate(licencia.FechaInicio) : ''}
+                      {licencia.FechaInicio ? formatDate(licencia.FechaInicio) : ""}
                     </TableCell>
                     <TableCell align="center">
-                      {licencia.Motivo === "Vacaciones" && licencia.FechaFin ? formatDate(licencia.FechaFin) : ''}
+                      {licencia.FechaFin ? formatDate(licencia.FechaFin) : ""}
                     </TableCell>
                     <TableCell align="center">
-                      {licencia.Motivo === "Vacaciones" && licencia.FechaReincorporacion ? formatDate(licencia.FechaReincorporacion) : ''}
+                      {licencia.FechaReincorporacion
+                        ? formatDate(licencia.FechaReincorporacion)
+                        : ""}
                     </TableCell>
                     <TableCell align="center">
                       {licencia.CertificadoMedico ? (
@@ -490,8 +494,9 @@ export default function GestionarLicencias() {
               <Typography variant="body1" sx={{ mb: 1 }}>
                 <strong>Motivo:</strong> {selectedLicencia.Motivo}
               </Typography>
-              {/* Mostrar fechas si el motivo es Vacaciones */}
-              {selectedLicencia.Motivo === "Vacaciones" && (
+              {(selectedLicencia.FechaInicio ||
+                selectedLicencia.FechaFin ||
+                selectedLicencia.FechaReincorporacion) && (
                 <>
                   {selectedLicencia.FechaInicio && (
                     <Typography variant="body1" sx={{ mb: 1 }}>

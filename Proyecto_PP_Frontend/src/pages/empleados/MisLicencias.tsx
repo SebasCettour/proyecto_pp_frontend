@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -33,6 +33,7 @@ import MenuUsuario from "../../components/MenuUsuario";
 
 const MisLicencias: React.FC = () => {
   const [licencias, setLicencias] = useState<any[]>([]);
+  const [diasVacacionesTotales, setDiasVacacionesTotales] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,8 +85,32 @@ const MisLicencias: React.FC = () => {
         if (!res.ok) throw new Error("Error al obtener licencias");
         const data = await res.json();
         setLicencias(data);
+
+        const empleadoRes = await fetch(
+          `http://localhost:4000/api/usuario/empleado-buscar/${documento}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (empleadoRes.ok) {
+          const empleadoData = await empleadoRes.json();
+          const vacaciones = Array.isArray(empleadoData)
+            ? empleadoData[0]?.vacaciones
+            : empleadoData?.vacaciones;
+          const diasTotales = vacaciones?.diasVacaciones;
+          setDiasVacacionesTotales(
+            typeof diasTotales === "number" ? diasTotales : null
+          );
+        } else {
+          setDiasVacacionesTotales(null);
+        }
       } catch (err) {
         setError("No se pudieron cargar las licencias");
+        setDiasVacacionesTotales(null);
       } finally {
         setLoading(false);
       }
@@ -108,8 +133,69 @@ const MisLicencias: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "-";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      const [year, month, day] = dateString.split("-").map(Number);
+      return new Date(year, month - 1, day).toLocaleDateString("es-ES");
+    }
     return new Date(dateString).toLocaleDateString("es-ES");
   };
+
+  const calcularDiasPedidos = (lic: any): number | null => {
+    const diasPedidosNumero = Number(lic?.diasPedidos);
+    if (!isNaN(diasPedidosNumero) && diasPedidosNumero > 0) {
+      return diasPedidosNumero;
+    }
+
+    if (!lic?.FechaInicio || !lic?.FechaFin) return null;
+
+    const inicio = new Date(lic.FechaInicio);
+    const fin = new Date(lic.FechaFin);
+
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return null;
+
+    const diffDias =
+      Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) +
+      1;
+
+    return diffDias > 0 ? diffDias : null;
+  };
+
+  const diasRestantesPorLicencia = useMemo(() => {
+    const resultado: Record<number, number | "-"> = {};
+
+    if (diasVacacionesTotales === null) {
+      return resultado;
+    }
+
+    const licenciasOrdenadas = [...licencias].sort((a, b) => {
+      const fechaA = new Date(a?.FechaSolicitud || 0).getTime();
+      const fechaB = new Date(b?.FechaSolicitud || 0).getTime();
+      return fechaA - fechaB;
+    });
+
+    let restantes = diasVacacionesTotales;
+
+    licenciasOrdenadas.forEach((lic) => {
+      const motivo = String(lic?.Motivo || "")
+        .trim()
+        .toLowerCase();
+      if (motivo !== "vacaciones" && motivo !== "personal") {
+        resultado[lic.Id_Licencia] = "-";
+        return;
+      }
+
+      const diasPedidos = calcularDiasPedidos(lic);
+      if (diasPedidos === null) {
+        resultado[lic.Id_Licencia] = "-";
+        return;
+      }
+
+      restantes = Math.max(restantes - diasPedidos, 0);
+      resultado[lic.Id_Licencia] = restantes;
+    });
+
+    return resultado;
+  }, [licencias, diasVacacionesTotales]);
 
   // Abrir modal de edición
   const handleEditar = (lic: any) => {
@@ -430,6 +516,12 @@ const MisLicencias: React.FC = () => {
                       align="center"
                       sx={{ color: "#fff", fontWeight: 600 }}
                     >
+                      Días Restantes
+                    </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{ color: "#fff", fontWeight: 600 }}
+                    >
                       Estado
                     </TableCell>
                     <TableCell
@@ -470,6 +562,9 @@ const MisLicencias: React.FC = () => {
                       </TableCell>
                       <TableCell align="center">
                         {lic.diasPedidos ?? "-"}
+                      </TableCell>
+                      <TableCell align="center">
+                        {diasRestantesPorLicencia[lic.Id_Licencia] ?? "-"}
                       </TableCell>
                       <TableCell align="center">
                         <Chip

@@ -376,6 +376,13 @@ export default function SolicitarLicencia() {
     })();
     const diasTomados = vacaciones ? vacaciones.diasTomados : 0;
     const diasVacaciones = vacaciones ? vacaciones.diasVacaciones : 0;
+    const diasDisponiblesActuales = vacaciones
+      ? Math.max(0, vacaciones.diasDisponibles)
+      : 0;
+    const aplicaControlDias =
+      form.motivo === "Vacaciones" || form.motivo === "Personal";
+    const excedeDiasDisponibles =
+      aplicaControlDias && diasSolicitadosPorFechas > diasDisponiblesActuales;
     const excedeMaximoVacaciones = form.motivo === "Vacaciones" && (diasTomados + diasSolicitadosPorFechas) > diasVacaciones;
 
     setErrorVacaciones(null);
@@ -397,10 +404,10 @@ export default function SolicitarLicencia() {
     if (
       form.fechaInicio &&
       form.fechaFin &&
-      form.fechaFin <= form.fechaInicio
+      form.fechaFin < form.fechaInicio
     ) {
       setSnackbarMessage(
-        "La fecha de fin debe ser posterior a la fecha de inicio"
+        "La fecha de fin debe ser igual o posterior a la fecha de inicio"
       );
       setSnackbarSeverity("warning");
       setSnackbarOpen(true);
@@ -419,6 +426,15 @@ export default function SolicitarLicencia() {
       setSnackbarSeverity("warning");
       setSnackbarOpen(true);
       setErrors((prev) => ({ ...prev, fechaReincorporacion: true }));
+      return;
+    }
+
+    if (excedeDiasDisponibles) {
+      setSnackbarMessage(
+        `No puedes solicitar más de ${diasDisponiblesActuales} días disponibles.`
+      );
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
       return;
     }
 
@@ -512,6 +528,13 @@ export default function SolicitarLicencia() {
     })();
     const diasTomados = vacaciones ? vacaciones.diasTomados : 0;
     const diasVacaciones = vacaciones ? vacaciones.diasVacaciones : 0;
+    const diasDisponiblesActuales = vacaciones
+      ? Math.max(0, vacaciones.diasDisponibles)
+      : 0;
+    const aplicaControlDias =
+      form.motivo === "Vacaciones" || form.motivo === "Personal";
+    const excedeDiasDisponibles =
+      aplicaControlDias && diasSolicitadosPorFechas > diasDisponiblesActuales;
     const excedeMaximoVacaciones = form.motivo === "Vacaciones" && (diasTomados + diasSolicitadosPorFechas) > diasVacaciones;
 
     setErrorVacaciones(null);
@@ -533,10 +556,10 @@ export default function SolicitarLicencia() {
     if (
       form.fechaInicio &&
       form.fechaFin &&
-      form.fechaFin <= form.fechaInicio
+      form.fechaFin < form.fechaInicio
     ) {
       setSnackbarMessage(
-        "La fecha de fin debe ser posterior a la fecha de inicio"
+        "La fecha de fin debe ser igual o posterior a la fecha de inicio"
       );
       setSnackbarSeverity("warning");
       setSnackbarOpen(true);
@@ -555,6 +578,15 @@ export default function SolicitarLicencia() {
       setSnackbarSeverity("warning");
       setSnackbarOpen(true);
       setErrors((prev) => ({ ...prev, fechaReincorporacion: true }));
+      return;
+    }
+
+    if (excedeDiasDisponibles) {
+      setSnackbarMessage(
+        `No puedes solicitar más de ${diasDisponiblesActuales} días disponibles.`
+      );
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
       return;
     }
 
@@ -640,6 +672,8 @@ export default function SolicitarLicencia() {
   const diasDisponibles = vacaciones ? Math.max(0, vacaciones.diasDisponibles) : 0;
   const diasTomados = vacaciones ? vacaciones.diasTomados : 0;
   const diasVacaciones = vacaciones ? vacaciones.diasVacaciones : 0;
+  const aplicaControlDias =
+    form.motivo === "Vacaciones" || form.motivo === "Personal";
   const diasSolicitadosPorFechas = (() => {
     if (form.fechaInicio && form.fechaFin) {
       const inicio = new Date(form.fechaInicio);
@@ -648,6 +682,8 @@ export default function SolicitarLicencia() {
     }
     return 0;
   })();
+  const excedeDiasDisponibles =
+    aplicaControlDias && diasSolicitadosPorFechas > diasDisponibles;
   const excedeMaximoVacaciones = form.motivo === "Vacaciones" && (diasTomados + diasSolicitadosPorFechas) > diasVacaciones;
 
   // Solo mostrar input y botón para vacaciones
@@ -1180,7 +1216,10 @@ export default function SolicitarLicencia() {
                   variant="contained"
                   onClick={handleSubmit}
                   disabled={
-                    (form.motivo === "Vacaciones" && (diasDisponibles <= 0 || diasSolicitados > diasDisponibles || excedeMaximoVacaciones))
+                    aplicaControlDias &&
+                    (diasDisponibles <= 0 ||
+                      excedeDiasDisponibles ||
+                      (form.motivo === "Vacaciones" && excedeMaximoVacaciones))
                   }
                   sx={{
                     mt: 3,
@@ -1199,9 +1238,9 @@ export default function SolicitarLicencia() {
                 >
                   ENVIAR SOLICITUD
                 </Button>
-                {form.motivo === "Vacaciones" && diasSolicitadosPorFechas > diasDisponibles && (
+                {excedeDiasDisponibles && (
                   <Alert severity="error" sx={{ mt: 2 }}>
-                    No puedes solicitar más de {diasDisponibles} días de vacaciones.
+                    No puedes solicitar más de {diasDisponibles} días disponibles.
                   </Alert>
                 )}
                 {excedeMaximoVacaciones && (
