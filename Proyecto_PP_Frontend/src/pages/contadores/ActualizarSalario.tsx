@@ -240,18 +240,22 @@ const ActualizarSalario: React.FC = () => {
               textShadow: "0 2px 8px rgba(21,101,192,0.08)",
             }}
           >
-            Actualización salarial
+            Actualizaciones
           </Typography>
           <Box
-            display="flex"
-            flexWrap="wrap"
-            gap={2}
-            width="100%"
-            alignItems="center"
-            justifyContent="center"
-            mb={2}
+            sx={{
+              width: "100%",
+              maxWidth: 760,
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, minmax(260px, 1fr))",
+              },
+              gap: 2,
+              mb: 2,
+            }}
           >
-            <FormControl fullWidth sx={{ minWidth: 220, maxWidth: 300 }}>
+            <FormControl fullWidth sx={{ width: "100%" }}>
               <InputLabel id="convenio-label">Convenio</InputLabel>
               <Select
                 labelId="convenio-label"
@@ -290,7 +294,7 @@ const ActualizarSalario: React.FC = () => {
               inputProps={{ min: 0, max: 100, step: 0.01 }}
               error={!!porcentajeError}
               helperText={porcentajeError}
-              sx={{ minWidth: 220, maxWidth: 300 }}
+              sx={{ width: "100%" }}
             />
             <TextField
               label="Suma Fija no Remunerativa"
@@ -309,7 +313,7 @@ const ActualizarSalario: React.FC = () => {
               inputProps={{ min: 0, step: 0.01 }}
               error={!!sumaFijaError}
               helperText={sumaFijaError}
-              sx={{ minWidth: 220, maxWidth: 300 }}
+              sx={{ width: "100%" }}
             />
             <TextField
               label="Fecha"
@@ -329,16 +333,23 @@ const ActualizarSalario: React.FC = () => {
               inputProps={{ max: today }}
               error={!!fechaError}
               helperText={fechaError}
-              sx={{ minWidth: 220, maxWidth: 300 }}
+              sx={{ width: "100%" }}
             />
           </Box>
-          <Box width="100%" display="flex" justifyContent="center">
+          <Box
+            sx={{
+              width: "100%",
+              maxWidth: 760,
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
             <Button
               variant="contained"
               color="primary"
               sx={{
                 width: "100%",
-                maxWidth: 300,
+                maxWidth: 320,
                 height: 56,
                 fontSize: 18,
                 fontWeight: 600,
