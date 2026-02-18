@@ -6,6 +6,56 @@ import { pool } from "../models/db.js";
 import { authenticateToken } from "../middleware/auth.js";
 const router = express.Router();
 
+const pad2 = (value: number) => String(value).padStart(2, "0");
+
+const toDateOnlyString = (value: any): string | null => {
+  if (!value) return null;
+
+  if (typeof value === "string") {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (isNaN(date.getTime())) return null;
+
+  return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(
+    date.getUTCDate()
+  )}`;
+};
+
+const parseDateOnly = (value: any): Date | null => {
+  const dateOnly = toDateOnlyString(value);
+  if (!dateOnly) return null;
+  const [year, month, day] = dateOnly.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (isNaN(date.getTime())) return null;
+  return date;
+};
+
+const diffDaysInclusive = (start: any, end: any): number | null => {
+  const startDate = parseDateOnly(start);
+  const endDate = parseDateOnly(end);
+  if (!startDate || !endDate) return null;
+
+  const diff =
+    Math.floor(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    ) + 1;
+
+  return diff > 0 ? diff : null;
+};
+
+const normalizeLicenciaDateFields = (lic: any) => ({
+  ...lic,
+  FechaSolicitud: toDateOnlyString(lic?.FechaSolicitud) || lic?.FechaSolicitud,
+  FechaRespuesta: toDateOnlyString(lic?.FechaRespuesta) || lic?.FechaRespuesta,
+  FechaInicio: toDateOnlyString(lic?.FechaInicio) || lic?.FechaInicio,
+  FechaFin: toDateOnlyString(lic?.FechaFin) || lic?.FechaFin,
+  FechaReincorporacion:
+    toDateOnlyString(lic?.FechaReincorporacion) || lic?.FechaReincorporacion,
+});
+
 // Crear carpeta si no existe
 const createUploadDir = () => {
   if (!fs.existsSync("uploads/certificados")) {
@@ -157,12 +207,9 @@ router.post(
       const empleado = empleadoRows[0] as any;
       const idEmpleado = empleado.Id_Empleado;
 
-      const inicio = new Date(fechaInicio);
-      const fin = new Date(fechaFin);
-      const diasPedidosCalculados =
-        Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const diasPedidosCalculados = diffDaysInclusive(fechaInicio, fechaFin);
 
-      if (isNaN(diasPedidosCalculados) || diasPedidosCalculados <= 0) {
+      if (!diasPedidosCalculados) {
         return res.status(400).json({
           message: "Rango de fechas inválido para calcular días solicitados",
         });
@@ -205,12 +252,10 @@ router.post(
         );
 
         (licenciasAprobadas as any[]).forEach((lic) => {
-          const inicioLic = new Date(lic.FechaInicio);
-          const finLic = new Date(lic.FechaFin);
-          diasTomados +=
-            Math.floor(
-              (finLic.getTime() - inicioLic.getTime()) / (1000 * 60 * 60 * 24)
-            ) + 1;
+          const diasLicencia = diffDaysInclusive(lic.FechaInicio, lic.FechaFin);
+          if (diasLicencia) {
+            diasTomados += diasLicencia;
+          }
         });
 
         const diasDisponibles = Math.max(diasVacaciones - diasTomados, 0);
@@ -307,7 +352,7 @@ router.get(
         WHERE l.Estado = 'Pendiente' 
         ORDER BY l.FechaSolicitud DESC`
       );
-      res.json(licencias);
+      res.json((licencias as any[]).map(normalizeLicenciaDateFields));
     } catch (error) {
       console.error("Error obteniendo licencias:", error);
       res.status(500).json({ message: "Error interno del servidor" });
@@ -360,17 +405,8 @@ router.get(
       );
       // Calcular diasPedidos para cada licencia
       const licenciasConDias = (licencias as any[]).map((lic) => {
-        let diasPedidos = null;
-        if (lic.FechaInicio && lic.FechaFin) {
-          try {
-            const inicio = new Date(lic.FechaInicio);
-            const fin = new Date(lic.FechaFin);
-            diasPedidos = Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-          } catch {
-            diasPedidos = null;
-          }
-        }
-        return { ...lic, diasPedidos };
+        const diasPedidos = diffDaysInclusive(lic.FechaInicio, lic.FechaFin);
+        return { ...normalizeLicenciaDateFields(lic), diasPedidos };
       });
       res.json(licenciasConDias);
     } catch (error) {
@@ -473,7 +509,7 @@ router.get(
 
       // Añadir URL pública para el certificado si existe
       const licencias = (rows as any[]).map((l) => ({
-        ...l,
+        ...normalizeLicenciaDateFields(l),
         CertificadoMedicoUrl: l.CertificadoMedico
           ? `${req.protocol}://${req.get("host")}/uploads/certificados/${l.CertificadoMedico}`
           : null,
