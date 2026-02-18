@@ -242,16 +242,17 @@ router.post(
           else if (antiguedad > 20) diasVacaciones = 35;
         }
 
-        const [licenciasAprobadas] = await pool.execute(
+        const [licenciasConsumidas] = await pool.execute(
           `SELECT FechaInicio, FechaFin
            FROM Licencia
            WHERE Id_Empleado = ?
              AND Motivo IN ('Vacaciones', 'Personal')
-             AND Estado = 'Aprobada'`,
+             AND Estado IN ('Pendiente', 'Aprobada')
+             AND (YEAR(FechaInicio) = YEAR(CURDATE()) OR YEAR(FechaFin) = YEAR(CURDATE()))`,
           [idEmpleado]
         );
 
-        (licenciasAprobadas as any[]).forEach((lic) => {
+        (licenciasConsumidas as any[]).forEach((lic) => {
           const diasLicencia = diffDaysInclusive(lic.FechaInicio, lic.FechaFin);
           if (diasLicencia) {
             diasTomados += diasLicencia;
@@ -259,6 +260,15 @@ router.post(
         });
 
         const diasDisponibles = Math.max(diasVacaciones - diasTomados, 0);
+
+        console.log("[LICENCIAS][DEBUG_DIAS]", {
+          idEmpleado,
+          motivo,
+          diasVacaciones,
+          diasTomados,
+          diasDisponibles,
+          diasPedidosCalculados,
+        });
 
         if (diasPedidosCalculados > diasDisponibles) {
           return res.status(400).json({

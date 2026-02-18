@@ -4,6 +4,46 @@ import bcrypt from "bcrypt";
 
 const router = express.Router();
 
+const pad2 = (value: number) => String(value).padStart(2, "0");
+
+const toDateOnlyString = (value: any): string | null => {
+  if (!value) return null;
+
+  if (typeof value === "string") {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (isNaN(date.getTime())) return null;
+
+  return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(
+    date.getUTCDate()
+  )}`;
+};
+
+const parseDateOnly = (value: any): Date | null => {
+  const dateOnly = toDateOnlyString(value);
+  if (!dateOnly) return null;
+  const [year, month, day] = dateOnly.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (isNaN(date.getTime())) return null;
+  return date;
+};
+
+const diffDaysInclusive = (start: any, end: any): number | null => {
+  const startDate = parseDateOnly(start);
+  const endDate = parseDateOnly(end);
+  if (!startDate || !endDate) return null;
+
+  const diff =
+    Math.floor(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    ) + 1;
+
+  return diff > 0 ? diff : null;
+};
+
 // ✅ INTERFACE PARA EL ERROR DE MYSQL
 interface MySQLError extends Error {
   code?: string;
@@ -561,18 +601,24 @@ router.get("/empleado-buscar/:searchTerm", async (req: Request, res: Response) =
         else if (antiguedad > 10 && antiguedad <= 20) diasVacaciones = 28;
         else if (antiguedad > 20) diasVacaciones = 35;
       }
-      // Consultar licencias de vacaciones aprobadas
+      // Consultar licencias consumidas del año actual
       const licenciasVacResult: any = await db.query(
-        "SELECT FechaInicio, FechaFin FROM Licencia WHERE Id_Empleado = ? AND Motivo = 'Vacaciones' AND Estado = 'Aprobada'",
+        `SELECT FechaInicio, FechaFin
+         FROM Licencia
+         WHERE Id_Empleado = ?
+           AND Motivo IN ('Vacaciones', 'Personal')
+           AND Estado IN ('Pendiente', 'Aprobada')
+           AND (YEAR(FechaInicio) = YEAR(CURDATE()) OR YEAR(FechaFin) = YEAR(CURDATE()))`,
         [empleado.id]
       );
       const licenciasVac = licenciasVacResult[0] || [];
       licenciasVac.forEach((lic: any) => {
-        const inicio = new Date(lic.FechaInicio);
-        const fin = new Date(lic.FechaFin);
-        diasTomados += Math.floor((fin.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        const diasLicencia = diffDaysInclusive(lic.FechaInicio, lic.FechaFin);
+        if (diasLicencia) {
+          diasTomados += diasLicencia;
+        }
       });
-      diasDisponibles = diasVacaciones - diasTomados;
+      diasDisponibles = Math.max(diasVacaciones - diasTomados, 0);
       return {
         id: empleado.id,
         dni: empleado.dni,
