@@ -88,7 +88,7 @@ export const Contadores = () => {
     navigate("/");
   };
   const handleIrALiquidacion = () => navigate("/liquidacion");
-  const handleIrAHistorial = () => navigate("/historial");
+  const handleIrAHistoriales = () => navigate("/historiales");
   const handleIrAtras = () => navigate("/superadmin");
 
   return (
@@ -228,7 +228,7 @@ export const Contadores = () => {
           </Button>
 
           <Button
-            onClick={handleIrAHistorial}
+            onClick={handleIrAHistoriales}
             variant="contained"
             fullWidth
             sx={{
@@ -244,7 +244,7 @@ export const Contadores = () => {
               "&:hover": { backgroundColor: "#115293" },
             }}
           >
-            Ir a Historial de liquidaciones
+            Ir a Historiales
           </Button>
 
           <Button

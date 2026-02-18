@@ -12,6 +12,8 @@ import RecibosSueldo from "../pages/empleados/Ver-Recibos";
 import { Contadores } from "../pages/contadores/Contadores";
 import Liquidacion from "../pages/contadores/Liquidacion";
 import Historial from "../pages/contadores/Historial";
+import Historiales from "../pages/contadores/Historiales";
+import HistorialSalarios from "../pages/contadores/HistorialSalarios";
 import { SuperAdminView } from "../pages/superadmin/superAdmin";
 import AltaNuevo from "../pages/superadmin/alta-nuevo";
 import PrivateRoute from "../components/PrivateRoute";
@@ -134,6 +136,22 @@ export function AppRoutes() {
         element={
           <PrivateRoute role="contador">
             <Historial />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/historiales"
+        element={
+          <PrivateRoute role="contador">
+            <Historiales />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/historial-salarios"
+        element={
+          <PrivateRoute role="contador">
+            <HistorialSalarios />
           </PrivateRoute>
         }
       />

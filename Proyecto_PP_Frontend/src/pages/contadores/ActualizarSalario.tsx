@@ -90,6 +90,7 @@ const ActualizarSalario: React.FC = () => {
   };
 
   const handleActualizarGeneral = async () => {
+    const token = localStorage.getItem("token");
     const porcentajeNumber = porcentaje !== "" ? Number(porcentaje) : null;
     const sumaFijaNumber = sumaFija !== "" ? Number(sumaFija) : null;
 
@@ -102,15 +103,24 @@ const ActualizarSalario: React.FC = () => {
 
     setLoading(true);
 
-    const body: { idConvenio: number; porcentaje?: number; sumaFija?: number } = {
+    const body: {
+      idConvenio: number;
+      porcentaje?: number;
+      sumaFija?: number;
+      fecha?: string;
+    } = {
       idConvenio: convenioSeleccionado,
     };
     if (porcentajeValido) body.porcentaje = porcentajeNumber as number;
     if (sumaFijaValida) body.sumaFija = sumaFijaNumber as number;
+    if (fecha) body.fecha = fecha;
 
     await fetch(`${API_BASE_URL}/api/categorias/actualizar-general`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify(body),
     });
 
@@ -135,12 +145,16 @@ const ActualizarSalario: React.FC = () => {
 
   const handleConfirmReset = async () => {
     if (resetId == null) return;
+    const token = localStorage.getItem("token");
     setOpenReset(false);
     setLoading(true);
     await fetch(`${API_BASE_URL}/api/categorias/${resetId}/actualizar-sueldo`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nuevoSueldo: 0 }),
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ nuevoSueldo: 0, fecha: fecha || today }),
     });
     setLoading(false);
     if (convenioSeleccionado) {
@@ -507,6 +521,7 @@ const ActualizarSalario: React.FC = () => {
                                 isNaN(Number(sumaFijaInputs[cat.Id_Categoria])))
                             }
                             onClick={async () => {
+                              const token = localStorage.getItem("token");
                               const sueldoRaw = inputs[cat.Id_Categoria] ?? "";
                               const sumaRaw =
                                 sumaFijaInputs[cat.Id_Categoria] ?? "";
@@ -543,9 +558,13 @@ const ActualizarSalario: React.FC = () => {
                                     method: "PUT",
                                     headers: {
                                       "Content-Type": "application/json",
+                                      ...(token
+                                        ? { Authorization: `Bearer ${token}` }
+                                        : {}),
                                     },
                                     body: JSON.stringify({
                                       nuevoSueldo: sueldoParsed,
+                                      fecha: fecha || today,
                                     }),
                                   },
                                 );
@@ -558,9 +577,13 @@ const ActualizarSalario: React.FC = () => {
                                     method: "PUT",
                                     headers: {
                                       "Content-Type": "application/json",
+                                      ...(token
+                                        ? { Authorization: `Bearer ${token}` }
+                                        : {}),
                                     },
                                     body: JSON.stringify({
                                       sumaFija: sumaParsed,
+                                      fecha: fecha || today,
                                     }),
                                   },
                                 );

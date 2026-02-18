@@ -20,6 +20,7 @@ import {
   Snackbar,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import DownloadIcon from "@mui/icons-material/Download";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -114,6 +115,59 @@ const Historial: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const escapeCsv = (value: string | number | null | undefined) => {
+    const stringValue = value === null || value === undefined ? "" : String(value);
+    const escaped = stringValue.replace(/"/g, '""');
+    return `"${escaped}"`;
+  };
+
+  const handleExportarCsv = () => {
+    if (!liquidaciones.length) return;
+
+    const headers = [
+      "Empleado",
+      "DNI",
+      "Periodo",
+      "Total_Haberes",
+      "Total_Descuentos",
+      "Neto_A_Pagar",
+      "Estado",
+      "Fecha_Liquidacion",
+      "Fecha_Generacion",
+    ];
+
+    const rows = liquidaciones.map((liq) => [
+      `${liq.EmpleadoApellido}, ${liq.EmpleadoNombre}`,
+      liq.EmpleadoDNI,
+      liq.Periodo,
+      Number(liq.TotalHaberes || 0).toFixed(2),
+      Number(liq.TotalDescuentos || 0).toFixed(2),
+      Number(liq.NetoAPagar || 0).toFixed(2),
+      liq.Estado,
+      liq.FechaLiquidacion || "",
+      liq.FechaGeneracion || "",
+    ]);
+
+    const csvBody = [headers, ...rows]
+      .map((row) => row.map((cell) => escapeCsv(cell)).join(";"))
+      .join("\r\n");
+
+    const csv = `sep=;\r\n${csvBody}`;
+
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = window.URL.createObjectURL(blob);
+    const fechaArchivo = new Date().toISOString().slice(0, 10);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `historial_liquidaciones_${fechaArchivo}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
   const handleExpandRow = async (idLiquidacion: number) => {
@@ -286,6 +340,15 @@ const Historial: React.FC = () => {
               }}
             >
               {loading ? <CircularProgress size={24} color="inherit" /> : "Buscar"}
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={handleExportarCsv}
+              disabled={loading || liquidaciones.length === 0}
+              sx={{ minWidth: 170, height: 56 }}
+            >
+              Exportar CSV
             </Button>
           </Box>
 
