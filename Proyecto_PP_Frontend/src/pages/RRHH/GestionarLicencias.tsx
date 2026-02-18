@@ -159,11 +159,19 @@ export default function GestionarLicencias() {
   };
 
   const formatDate = (dateString: string) => {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-      const [year, month, day] = dateString.split("-").map(Number);
+    if (!dateString) return "-";
+
+    const match = String(dateString).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
       return new Date(year, month - 1, day).toLocaleDateString("es-ES");
     }
-    return new Date(dateString).toLocaleDateString("es-ES");
+
+    const parsed = new Date(dateString);
+    if (isNaN(parsed.getTime())) return "-";
+    return parsed.toLocaleDateString("es-ES");
   };
 
   const getEstadoColor = (estado: string) => {
