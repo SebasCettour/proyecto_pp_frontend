@@ -18,6 +18,7 @@ import {
   IconButton,
   Collapse,
   Snackbar,
+  TablePagination,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -64,6 +65,8 @@ interface DetalleConcepto {
 const Historial: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [liquidaciones, setLiquidaciones] = useState<Liquidacion[]>([]);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
@@ -80,6 +83,17 @@ const Historial: React.FC = () => {
     setSnackbarOpen(false);
   };
 
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+    setExpandedRow(null);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+    setExpandedRow(null);
+  };
+
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
       setError("Por favor ingrese un DNI o Nombre/Apellido");
@@ -89,6 +103,8 @@ const Historial: React.FC = () => {
     setLoading(true);
     setError("");
     setLiquidaciones([]);
+    setPage(0);
+    setExpandedRow(null);
 
     try {
       const response = await fetch(
@@ -274,6 +290,11 @@ const Historial: React.FC = () => {
     }
   };
 
+  const liquidacionesPaginadas = liquidaciones.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
   return (
     <Box
       sx={{
@@ -361,187 +382,203 @@ const Historial: React.FC = () => {
 
           {/* Tabla de resultados */}
           {liquidaciones.length > 0 && (
-            <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #e0e0e0" }}>
-              <Table>
-                <TableHead sx={{ backgroundColor: "#1565C0" }}>
-                  <TableRow>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Empleado</TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }}>DNI</TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Periodo</TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">
-                      Total Haberes
-                    </TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">
-                      Total Descuentos
-                    </TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">
-                      Neto a Pagar
-                    </TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Estado</TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="center">
-                      Acciones
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {liquidaciones.map((liq) => (
-                    <React.Fragment key={liq.Id_Liquidacion}>
-                      <TableRow hover>
-                        <TableCell>
-                          {liq.EmpleadoApellido}, {liq.EmpleadoNombre}
-                        </TableCell>
-                        <TableCell>{liq.EmpleadoDNI}</TableCell>
-                        <TableCell>{liq.Periodo}</TableCell>
-                        <TableCell align="right">
-                          {`$ ${liq.TotalHaberes.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                        </TableCell>
-                        <TableCell align="right">
-                          {`$ ${liq.TotalDescuentos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                        </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 700, color: "#1565C0" }}>
-                          {`$ ${liq.NetoAPagar.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={liq.Estado.toUpperCase()}
-                            color={getEstadoColor(liq.Estado) as any}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleExpandRow(liq.Id_Liquidacion)}
-                            color="primary"
-                            title="Ver detalle"
-                          >
-                            {expandedRow === liq.Id_Liquidacion ? (
-                              <ExpandLessIcon />
-                            ) : (
-                              <ExpandMoreIcon />
-                            )}
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleGenerarPDF(liq.Id_Liquidacion)}
-                            disabled={generandoPDF[liq.Id_Liquidacion]}
-                            color="error"
-                            title="Generar PDF"
-                            sx={{ ml: 1 }}
-                          >
-                            {generandoPDF[liq.Id_Liquidacion] ? (
-                              <CircularProgress size={20} />
-                            ) : (
-                              <PictureAsPdfIcon />
-                            )}
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
+            <Box>
+              <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #e0e0e0" }}>
+                <Table>
+                  <TableHead sx={{ backgroundColor: "#1565C0" }}>
+                    <TableRow>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Empleado</TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }}>DNI</TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Periodo</TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">
+                        Total Haberes
+                      </TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">
+                        Total Descuentos
+                      </TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">
+                        Neto a Pagar
+                      </TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Estado</TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="center">
+                        Acciones
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {liquidacionesPaginadas.map((liq) => (
+                      <React.Fragment key={liq.Id_Liquidacion}>
+                        <TableRow hover>
+                          <TableCell>
+                            {liq.EmpleadoApellido}, {liq.EmpleadoNombre}
+                          </TableCell>
+                          <TableCell>{liq.EmpleadoDNI}</TableCell>
+                          <TableCell>{liq.Periodo}</TableCell>
+                          <TableCell align="right">
+                            {`$ ${liq.TotalHaberes.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                          </TableCell>
+                          <TableCell align="right">
+                            {`$ ${liq.TotalDescuentos.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700, color: "#1565C0" }}>
+                            {`$ ${liq.NetoAPagar.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={liq.Estado.toUpperCase()}
+                              color={getEstadoColor(liq.Estado) as any}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell align="center">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleExpandRow(liq.Id_Liquidacion)}
+                              color="primary"
+                              title="Ver detalle"
+                            >
+                              {expandedRow === liq.Id_Liquidacion ? (
+                                <ExpandLessIcon />
+                              ) : (
+                                <ExpandMoreIcon />
+                              )}
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleGenerarPDF(liq.Id_Liquidacion)}
+                              disabled={generandoPDF[liq.Id_Liquidacion]}
+                              color="error"
+                              title="Generar PDF"
+                              sx={{ ml: 1 }}
+                            >
+                              {generandoPDF[liq.Id_Liquidacion] ? (
+                                <CircularProgress size={20} />
+                              ) : (
+                                <PictureAsPdfIcon />
+                              )}
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
 
-                      {/* Fila expandida con detalles */}
-                      <TableRow>
-                        <TableCell colSpan={8} sx={{ p: 0, borderBottom: "none" }}>
-                          <Collapse
-                            in={expandedRow === liq.Id_Liquidacion}
-                            timeout="auto"
-                            unmountOnExit
-                          >
-                            <Box sx={{ p: 3, backgroundColor: "#f5f5f5" }}>
-                              <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-                                Detalle de Liquidación #{liq.Id_Liquidacion}
-                              </Typography>
+                        {/* Fila expandida con detalles */}
+                        <TableRow>
+                          <TableCell colSpan={8} sx={{ p: 0, borderBottom: "none" }}>
+                            <Collapse
+                              in={expandedRow === liq.Id_Liquidacion}
+                              timeout="auto"
+                              unmountOnExit
+                            >
+                              <Box sx={{ p: 3, backgroundColor: "#f5f5f5" }}>
+                                <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+                                  Detalle de Liquidación #{liq.Id_Liquidacion}
+                                </Typography>
 
-                              {/* Información general */}
-                              <Box sx={{ mb: 3, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}>
-                                <Paper sx={{ p: 2 }}>
-                                  <Typography variant="caption" color="textSecondary">
-                                    Total Remunerativo
-                                  </Typography>
-                                  <Typography variant="h6" color="primary">
-                                    {`$ ${liq.TotalRemunerativo.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                                  </Typography>
-                                </Paper>
-                                <Paper sx={{ p: 2 }}>
-                                  <Typography variant="caption" color="textSecondary">
-                                    Total No Remunerativo
-                                  </Typography>
-                                  <Typography variant="h6" color="secondary">
-                                    {`$ ${liq.TotalNoRemunerativo.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                                  </Typography>
-                                </Paper>
-                                <Paper sx={{ p: 2 }}>
-                                  <Typography variant="caption" color="textSecondary">
-                                    Tipo de Jornada
-                                  </Typography>
-                                  <Typography variant="h6">
-                                    {liq.TipoJornada === "completa" ? "Completa" : 
-                                     liq.TipoJornada === "dos_tercios" ? "2/3" : "Media"}
-                                  </Typography>
-                                </Paper>
-                              </Box>
-
-                              {/* Conceptos detallados */}
-                              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 700 }}>
-                                Conceptos:
-                              </Typography>
-
-                              {loadingDetalles[liq.Id_Liquidacion] ? (
-                                <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
-                                  <CircularProgress />
+                                {/* Información general */}
+                                <Box sx={{ mb: 3, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}>
+                                  <Paper sx={{ p: 2 }}>
+                                    <Typography variant="caption" color="textSecondary">
+                                      Total Remunerativo
+                                    </Typography>
+                                    <Typography variant="h6" color="primary">
+                                      {`$ ${liq.TotalRemunerativo.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                    </Typography>
+                                  </Paper>
+                                  <Paper sx={{ p: 2 }}>
+                                    <Typography variant="caption" color="textSecondary">
+                                      Total No Remunerativo
+                                    </Typography>
+                                    <Typography variant="h6" color="secondary">
+                                      {`$ ${liq.TotalNoRemunerativo.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                    </Typography>
+                                  </Paper>
+                                  <Paper sx={{ p: 2 }}>
+                                    <Typography variant="caption" color="textSecondary">
+                                      Tipo de Jornada
+                                    </Typography>
+                                    <Typography variant="h6">
+                                      {liq.TipoJornada === "completa" ? "Completa" :
+                                       liq.TipoJornada === "dos_tercios" ? "2/3" : "Media"}
+                                    </Typography>
+                                  </Paper>
                                 </Box>
-                              ) : detalles[liq.Id_Liquidacion] ? (
-                                <TableContainer component={Paper}>
-                                  <Table size="small">
-                                    <TableHead>
-                                      <TableRow>
-                                        <TableCell sx={{ fontWeight: 700 }}>Concepto</TableCell>
-                                        <TableCell align="right" sx={{ fontWeight: 700 }}>
-                                          Monto
-                                        </TableCell>
-                                      </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                      {detalles[liq.Id_Liquidacion].map((det) => (
-                                        <TableRow key={det.Id_DetalleLiquidacion}>
-                                          <TableCell>{det.Concepto}</TableCell>
-                                          <TableCell align="right">
-                                            {`$ ${det.Monto.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+
+                                {/* Conceptos detallados */}
+                                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 700 }}>
+                                  Conceptos:
+                                </Typography>
+
+                                {loadingDetalles[liq.Id_Liquidacion] ? (
+                                  <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+                                    <CircularProgress />
+                                  </Box>
+                                ) : detalles[liq.Id_Liquidacion] ? (
+                                  <TableContainer component={Paper}>
+                                    <Table size="small">
+                                      <TableHead>
+                                        <TableRow>
+                                          <TableCell sx={{ fontWeight: 700 }}>Concepto</TableCell>
+                                          <TableCell align="right" sx={{ fontWeight: 700 }}>
+                                            Monto
                                           </TableCell>
                                         </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                </TableContainer>
-                              ) : (
-                                <Alert severity="info">No hay detalles disponibles</Alert>
-                              )}
+                                      </TableHead>
+                                      <TableBody>
+                                        {detalles[liq.Id_Liquidacion].map((det) => (
+                                          <TableRow key={det.Id_DetalleLiquidacion}>
+                                            <TableCell>{det.Concepto}</TableCell>
+                                            <TableCell align="right">
+                                              {`$ ${det.Monto.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </TableContainer>
+                                ) : (
+                                  <Alert severity="info">No hay detalles disponibles</Alert>
+                                )}
 
-                              {/* Información adicional */}
-                              <Box sx={{ mt: 3, display: "flex", gap: 1, flexWrap: "wrap" }}>
-                                {!!liq.SACActivo && <Chip label="SAC Activo" color="primary" size="small" />}
-                                {!!liq.AsistenciaActiva && (
-                                  <Chip label="Con Presentismo" color="success" size="small" />
-                                )}
-                                {!!liq.EsAfiliadoSindicato && (
-                                  <Chip label="Afiliado Sindicato" color="info" size="small" />
-                                )}
-                                {(Number(liq.HorasExtras50) > 0 || Number(liq.HorasExtras100) > 0) && (
-                                  <Chip
-                                    label={`Horas Extras: ${Number(liq.HorasExtras50) + Number(liq.HorasExtras100)}`}
-                                    color="warning"
-                                    size="small"
-                                  />
-                                )}
+                                {/* Información adicional */}
+                                <Box sx={{ mt: 3, display: "flex", gap: 1, flexWrap: "wrap" }}>
+                                  {!!liq.SACActivo && <Chip label="SAC Activo" color="primary" size="small" />}
+                                  {!!liq.AsistenciaActiva && (
+                                    <Chip label="Con Presentismo" color="success" size="small" />
+                                  )}
+                                  {!!liq.EsAfiliadoSindicato && (
+                                    <Chip label="Afiliado Sindicato" color="info" size="small" />
+                                  )}
+                                  {(Number(liq.HorasExtras50) > 0 || Number(liq.HorasExtras100) > 0) && (
+                                    <Chip
+                                      label={`Horas Extras: ${Number(liq.HorasExtras50) + Number(liq.HorasExtras100)}`}
+                                      color="warning"
+                                      size="small"
+                                    />
+                                  )}
+                                </Box>
                               </Box>
-                            </Box>
-                          </Collapse>
-                        </TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                            </Collapse>
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              <TablePagination
+                component="div"
+                count={liquidaciones.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10]}
+                labelRowsPerPage="Registros por página:"
+                labelDisplayedRows={({ from, to, count }) =>
+                  `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+                }
+              />
+            </Box>
           )}
         </Paper>
       </Container>
