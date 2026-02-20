@@ -18,7 +18,6 @@ import {
   IconButton,
   Collapse,
   Snackbar,
-  TablePagination,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -29,6 +28,9 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import BackButton from "../../components/BackButton";
+import ReusableTablePagination from "../../components/ReusableTablePagination";
+import useTablePagination from "../../hooks/useTablePagination";
+import paginate from "../../utils/paginate";
 import { Link } from "react-router-dom";
 
 interface Liquidacion {
@@ -65,8 +67,13 @@ interface DetalleConcepto {
 const Historial: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [liquidaciones, setLiquidaciones] = useState<Liquidacion[]>([]);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const {
+    page,
+    rowsPerPage,
+    handleChangePage: handlePaginationChangePage,
+    handleChangeRowsPerPage: handlePaginationChangeRowsPerPage,
+    resetPagination,
+  } = useTablePagination();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
@@ -84,13 +91,14 @@ const Historial: React.FC = () => {
   };
 
   const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
+    handlePaginationChangePage(_event, newPage);
     setExpandedRow(null);
   };
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    handlePaginationChangeRowsPerPage(event);
     setExpandedRow(null);
   };
 
@@ -103,7 +111,7 @@ const Historial: React.FC = () => {
     setLoading(true);
     setError("");
     setLiquidaciones([]);
-    setPage(0);
+    resetPagination();
     setExpandedRow(null);
 
     try {
@@ -290,10 +298,7 @@ const Historial: React.FC = () => {
     }
   };
 
-  const liquidacionesPaginadas = liquidaciones.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  const liquidacionesPaginadas = paginate(liquidaciones, page, rowsPerPage);
 
   return (
     <Box
@@ -565,18 +570,12 @@ const Historial: React.FC = () => {
                 </Table>
               </TableContainer>
 
-              <TablePagination
-                component="div"
+              <ReusableTablePagination
                 count={liquidaciones.length}
                 page={page}
                 onPageChange={handleChangePage}
                 rowsPerPage={rowsPerPage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
-                rowsPerPageOptions={[5, 10]}
-                labelRowsPerPage="Registros por página:"
-                labelDisplayedRows={({ from, to, count }) =>
-                  `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
-                }
               />
             </Box>
           )}

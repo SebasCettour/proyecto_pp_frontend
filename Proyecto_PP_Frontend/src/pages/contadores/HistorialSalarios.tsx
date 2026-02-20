@@ -24,6 +24,9 @@ import DownloadIcon from "@mui/icons-material/Download";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import BackButton from "../../components/BackButton";
+import ReusableTablePagination from "../../components/ReusableTablePagination";
+import useTablePagination from "../../hooks/useTablePagination";
+import paginate from "../../utils/paginate";
 import { API_BASE_URL } from "../../config/api";
 
 interface CategoriaOption {
@@ -52,6 +55,13 @@ const HistorialSalarios: React.FC = () => {
   const [desde, setDesde] = useState<string>("");
   const [hasta, setHasta] = useState<string>("");
   const [historial, setHistorial] = useState<HistoricoBasico[]>([]);
+  const {
+    page,
+    rowsPerPage,
+    handleChangePage,
+    handleChangeRowsPerPage,
+    resetPagination,
+  } = useTablePagination();
   const [loadingCategorias, setLoadingCategorias] = useState(false);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [error, setError] = useState("");
@@ -108,6 +118,7 @@ const HistorialSalarios: React.FC = () => {
     setError("");
     setLoadingHistorial(true);
     setHistorial([]);
+    resetPagination();
 
     if (desde && hasta && desde > hasta) {
       setError("La fecha desde no puede ser mayor a la fecha hasta");
@@ -197,6 +208,8 @@ const HistorialSalarios: React.FC = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
+  const historialPaginado = paginate(historial, page, rowsPerPage);
 
   return (
     <Box
@@ -298,53 +311,63 @@ const HistorialSalarios: React.FC = () => {
           )}
 
           {historial.length > 0 && (
-            <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #e0e0e0" }}>
-              <Table>
-                <TableHead sx={{ backgroundColor: "#1565C0" }}>
-                  <TableRow>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Categoría</TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">Sueldo Anterior</TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">Sueldo Nuevo</TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Tipo</TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">% Aplicado</TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Fecha Efectiva</TableCell>
-                    <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Usuario</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {historial.map((item) => (
-                    <TableRow key={item.Id_Historico} hover>
-                      <TableCell>{item.Nombre_Categoria}</TableCell>
-                      <TableCell align="right">
-                        {`$ ${Number(item.Sueldo_Anterior || 0).toLocaleString("es-AR", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}`}
-                      </TableCell>
-                      <TableCell align="right">
-                        {`$ ${Number(item.Sueldo_Nuevo || 0).toLocaleString("es-AR", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}`}
-                      </TableCell>
-                      <TableCell>{item.Tipo_Actualizacion}</TableCell>
-                      <TableCell align="right">
-                        {item.Porcentaje_Aplicado !== null && item.Porcentaje_Aplicado !== undefined
-                          ? `${Number(item.Porcentaje_Aplicado).toLocaleString("es-AR", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}%`
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {formatFecha(item.Fecha_Efectiva)}
-                      </TableCell>
-                      <TableCell>{item.Nombre_Usuario || "-"}</TableCell>
+            <Box>
+              <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #e0e0e0" }}>
+                <Table>
+                  <TableHead sx={{ backgroundColor: "#1565C0" }}>
+                    <TableRow>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Categoría</TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">Sueldo Anterior</TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">Sueldo Nuevo</TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Tipo</TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">% Aplicado</TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Fecha Efectiva</TableCell>
+                      <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Usuario</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {historialPaginado.map((item) => (
+                      <TableRow key={item.Id_Historico} hover>
+                        <TableCell>{item.Nombre_Categoria}</TableCell>
+                        <TableCell align="right">
+                          {`$ ${Number(item.Sueldo_Anterior || 0).toLocaleString("es-AR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`}
+                        </TableCell>
+                        <TableCell align="right">
+                          {`$ ${Number(item.Sueldo_Nuevo || 0).toLocaleString("es-AR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`}
+                        </TableCell>
+                        <TableCell>{item.Tipo_Actualizacion}</TableCell>
+                        <TableCell align="right">
+                          {item.Porcentaje_Aplicado !== null && item.Porcentaje_Aplicado !== undefined
+                            ? `${Number(item.Porcentaje_Aplicado).toLocaleString("es-AR", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}%`
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {formatFecha(item.Fecha_Efectiva)}
+                        </TableCell>
+                        <TableCell>{item.Nombre_Usuario || "-"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              <ReusableTablePagination
+                count={historial.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+              />
+            </Box>
           )}
         </Paper>
       </Container>

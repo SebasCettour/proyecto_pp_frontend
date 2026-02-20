@@ -21,6 +21,9 @@ import { Link as RouterLink } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import BackButton from "../../components/BackButton";
+import ReusableTablePagination from "../../components/ReusableTablePagination";
+import useTablePagination from "../../hooks/useTablePagination";
+import paginate from "../../utils/paginate";
 
 interface Licencia {
   Id_Licencia: number;
@@ -48,6 +51,13 @@ export default function GestionarLicencias() {
   // estado para búsqueda por DNI/nombre y resultado de historial
   const [searchTerm, setSearchTerm] = useState("");
   const [historial, setHistorial] = useState<Licencia[]>([]);
+  const {
+    page,
+    rowsPerPage,
+    handleChangePage,
+    handleChangeRowsPerPage,
+    resetPagination,
+  } = useTablePagination();
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [searched, setSearched] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -181,6 +191,7 @@ export default function GestionarLicencias() {
   const fetchHistorial = async (search: string) => {
     if (!search.trim()) return;
     setSearched(true);
+    resetPagination();
     setLoadingHistorial(true);
     setSearchError(null);
     setVacaciones(null);
@@ -259,6 +270,12 @@ export default function GestionarLicencias() {
       setLoadingHistorial(false);
     }
   };
+
+  const historialConCalculosPaginado = paginate(
+    historialConCalculos,
+    page,
+    rowsPerPage
+  );
 
   return (
     <Box
@@ -385,6 +402,7 @@ export default function GestionarLicencias() {
               onClick={() => {
                 setSearchTerm("");
                 setHistorial([]);
+                resetPagination();
                 setSearched(false);
                 setSearchError(null);
                 setEmpleadosEncontrados([]);
@@ -451,6 +469,7 @@ export default function GestionarLicencias() {
                         setEmpleadoSeleccionado(emp);
                         setVacaciones(emp.vacaciones || null);
                         setEmpleadosEncontrados([]);
+                        resetPagination();
                         setLoadingHistorial(true);
                         setHistorial([]);
                         const token = localStorage.getItem("token");
@@ -538,7 +557,7 @@ export default function GestionarLicencias() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {historialConCalculos.map((lic: any) => (
+                {historialConCalculosPaginado.map((lic: any) => (
                   <TableRow key={lic.Id_Licencia} sx={{ "&:nth-of-type(odd)": { backgroundColor: "#fbfcfd" }, "&:hover": { backgroundColor: "#eaf4ff" } }}>
                     <TableCell align="center" sx={{ fontSize: { xs: "0.9rem", sm: "0.95rem" }, py: 1.25 }}>
                       {formatDate(lic.FechaSolicitud)}
@@ -588,6 +607,14 @@ export default function GestionarLicencias() {
                 ))}
               </TableBody>
             </Table>
+
+            <ReusableTablePagination
+              count={historialConCalculos.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+            />
           </TableContainer>
         ) : searched && historial.length === 0 ? (
           <Box sx={{ mx: 4, alignSelf: "center", mb: 3 }}>

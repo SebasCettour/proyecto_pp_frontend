@@ -30,6 +30,9 @@ import DownloadIcon from "@mui/icons-material/Download";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import BackButton from "../../components/BackButton";
+import ReusableTablePagination from "../../components/ReusableTablePagination";
+import useTablePagination from "../../hooks/useTablePagination";
+import paginate from "../../utils/paginate";
 
 interface Licencia {
   Id_Licencia: number;
@@ -53,6 +56,13 @@ interface Licencia {
 
 export default function GestionarLicencias() {
   const [licencias, setLicencias] = useState<Licencia[]>([]);
+  const {
+    page,
+    rowsPerPage,
+    handleChangePage,
+    handleChangeRowsPerPage,
+    resetPagination,
+  } = useTablePagination();
   const [loading, setLoading] = useState(true);
   const [selectedLicencia, setSelectedLicencia] = useState<Licencia | null>(null);
   const [modalRespuestaOpen, setModalRespuestaOpen] = useState(false);
@@ -100,6 +110,7 @@ export default function GestionarLicencias() {
       if (response.ok) {
         const data = await response.json();
         setLicencias(data);
+        resetPagination();
       }
     } catch (error) {
       // Manejo de error
@@ -241,6 +252,8 @@ export default function GestionarLicencias() {
     }
   };
 
+  const licenciasPaginadas = paginate(licencias, page, rowsPerPage);
+
   return (
     <Box
       sx={{
@@ -379,7 +392,7 @@ export default function GestionarLicencias() {
                   </TableCell>
                 </TableRow>
               ) : (
-                licencias.map((licencia) => (
+                licenciasPaginadas.map((licencia) => (
                   <TableRow
                     key={licencia.Id_Licencia}
                     sx={{
@@ -469,6 +482,22 @@ export default function GestionarLicencias() {
             </TableBody>
           </Table>
         </TableContainer>
+
+        {!loading && licencias.length > 0 && (
+          <ReusableTablePagination
+            count={licencias.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            sx={{
+              maxWidth: 1400,
+              width: "100%",
+              alignSelf: "center",
+              px: 2,
+            }}
+          />
+        )}
       </Box>
 
       {/* Modal de respuesta */}
