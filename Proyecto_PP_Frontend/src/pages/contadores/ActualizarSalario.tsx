@@ -27,6 +27,25 @@ import { API_BASE_URL } from "../../config/api";
 import { Categoria, Convenio } from "../../types";
 
 const ActualizarSalario: React.FC = () => {
+  const DECIMAL_INPUT_REGEX = /^\d*(\.\d{0,2})?$/;
+  const MAX_PERCENT_INTEGER_DIGITS = 3;
+  const MAX_AMOUNT_INTEGER_DIGITS = 9;
+
+  const normalizeDecimalInput = (
+    value: string,
+    maxIntegerDigits: number,
+  ): string | null => {
+    if (value === "") return "";
+
+    const normalized = value.replace(",", ".");
+    if (!DECIMAL_INPUT_REGEX.test(normalized)) return null;
+
+    const [integerPart = ""] = normalized.split(".");
+    if (integerPart.length > maxIntegerDigits) return null;
+
+    return normalized;
+  };
+
   const [convenios, setConvenios] = useState<Convenio[]>([]);
   const [convenioSeleccionado, setConvenioSeleccionado] = useState<number | "">(
     "",
@@ -296,9 +315,14 @@ const ActualizarSalario: React.FC = () => {
               type="number"
               value={porcentaje}
               onChange={(e) => {
-                const value = e.target.value;
-                setPorcentaje(value);
-                if (parseFloat(value) > 100) {
+                const normalized = normalizeDecimalInput(
+                  e.target.value,
+                  MAX_PERCENT_INTEGER_DIGITS,
+                );
+                if (normalized === null) return;
+
+                setPorcentaje(normalized);
+                if (parseFloat(normalized) > 100) {
                   setPorcentajeError("El porcentaje no puede ser mayor a 100");
                 } else {
                   setPorcentajeError("");
@@ -308,6 +332,11 @@ const ActualizarSalario: React.FC = () => {
               inputProps={{ min: 0, max: 100, step: 0.01 }}
               error={!!porcentajeError}
               helperText={porcentajeError}
+              onKeyDown={(e) => {
+                if (["e", "E", "+", "-"].includes(e.key)) {
+                  e.preventDefault();
+                }
+              }}
               sx={{ width: "100%" }}
             />
             <TextField
@@ -315,9 +344,14 @@ const ActualizarSalario: React.FC = () => {
               type="number"
               value={sumaFija}
               onChange={(e) => {
-                const value = e.target.value;
-                setSumaFija(value);
-                if (parseFloat(value) < 0) {
+                const normalized = normalizeDecimalInput(
+                  e.target.value,
+                  MAX_AMOUNT_INTEGER_DIGITS,
+                );
+                if (normalized === null) return;
+
+                setSumaFija(normalized);
+                if (parseFloat(normalized) < 0) {
                   setSumaFijaError("El monto no puede ser negativo");
                 } else {
                   setSumaFijaError("");
@@ -327,6 +361,11 @@ const ActualizarSalario: React.FC = () => {
               inputProps={{ min: 0, step: 0.01 }}
               error={!!sumaFijaError}
               helperText={sumaFijaError}
+              onKeyDown={(e) => {
+                if (["e", "E", "+", "-"].includes(e.key)) {
+                  e.preventDefault();
+                }
+              }}
               sx={{ width: "100%" }}
             />
             <TextField
@@ -472,9 +511,19 @@ const ActualizarSalario: React.FC = () => {
                           size="small"
                           type="number"
                           value={inputs[cat.Id_Categoria] || ""}
-                          onChange={(e) =>
-                            handleInputChange(cat.Id_Categoria, e.target.value)
-                          }
+                          onChange={(e) => {
+                            const normalized = normalizeDecimalInput(
+                              e.target.value,
+                              MAX_AMOUNT_INTEGER_DIGITS,
+                            );
+                            if (normalized === null) return;
+                            handleInputChange(cat.Id_Categoria, normalized);
+                          }}
+                          onKeyDown={(e) => {
+                            if (["e", "E", "+", "-"].includes(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
                           inputProps={{ min: 0, step: 0.01 }}
                         />
                       </TableCell>
@@ -483,12 +532,22 @@ const ActualizarSalario: React.FC = () => {
                           size="small"
                           type="number"
                           value={sumaFijaInputs[cat.Id_Categoria] ?? ""}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const normalized = normalizeDecimalInput(
+                              e.target.value,
+                              MAX_AMOUNT_INTEGER_DIGITS,
+                            );
+                            if (normalized === null) return;
                             setSumaFijaInputs((prev) => ({
                               ...prev,
-                              [cat.Id_Categoria]: e.target.value,
-                            }))
-                          }
+                              [cat.Id_Categoria]: normalized,
+                            }));
+                          }}
+                          onKeyDown={(e) => {
+                            if (["e", "E", "+", "-"].includes(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
                           inputProps={{ min: 0, step: 0.01 }}
                         />
                       </TableCell>
