@@ -37,6 +37,9 @@ const steps = [
   "Revisión Final y Confirmación",
 ];
 
+const START_STEP = 1;
+const LAST_STEP = 3;
+
 interface Empresa {
   Id_Empresa: number;
   Nombre_Empresa: string;
@@ -60,7 +63,7 @@ interface Employee {
 const Liquidacion = () => {
   const navigate = useNavigate();
   const [jornadaAccordionOpen, setJornadaAccordionOpen] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(START_STEP);
   const [loading, setLoading] = useState(false);
   const [periodo, setPeriodo] = useState<string>("");
 
@@ -552,8 +555,10 @@ const Liquidacion = () => {
     setSearchError("");
   };
 
-  const handleNext = () => setActiveStep((prev) => prev + 1);
-  const handleBack = () => setActiveStep((prev) => prev - 1);
+  const handleNext = () =>
+    setActiveStep((prev) => Math.min(prev + 1, LAST_STEP));
+  const handleBack = () =>
+    setActiveStep((prev) => Math.max(prev - 1, START_STEP));
 
   // Calcular otrosConceptos para usar en múltiples steps
   const otrosConceptos = conceptos
@@ -3300,8 +3305,8 @@ const Liquidacion = () => {
       <BackButton to="/contadores" />
 
       <Container maxWidth="md" sx={{ mt: 4, mb: 6, flex: 1 }}>
-        <Stepper activeStep={activeStep} alternativeLabel>
-          {steps.map((label) => (
+        <Stepper activeStep={activeStep - START_STEP} alternativeLabel>
+          {steps.slice(START_STEP).map((label) => (
             <Step key={label}>
               <StepLabel>{label}</StepLabel>
             </Step>
@@ -3312,10 +3317,6 @@ const Liquidacion = () => {
           component="form"
           onSubmit={(e) => {
             e.preventDefault();
-            if (activeStep === 0 && !empresaFound) {
-              setEmpresaError("Debe buscar y seleccionar una empresa");
-              return;
-            }
             if (activeStep === 1 && !employeeFound) {
               setSearchError("Debe buscar y seleccionar un empleado");
               return;
@@ -3332,10 +3333,10 @@ const Liquidacion = () => {
           {renderStepContent(activeStep)}
 
           <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
-            <Button disabled={activeStep === 0} onClick={handleBack}>
+            <Button disabled={activeStep === START_STEP} onClick={handleBack}>
               Atrás
             </Button>
-            {activeStep < steps.length - 1 && (
+            {activeStep < LAST_STEP && (
               <Button variant="contained" type="submit">
                 Siguiente
               </Button>

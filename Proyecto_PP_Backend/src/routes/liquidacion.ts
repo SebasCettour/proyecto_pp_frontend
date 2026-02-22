@@ -769,15 +769,73 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
     doc.moveDown(0.5);
 
     const startY = doc.y;
-    const colConcepto = 50;
-    const colMonto = 450;
+    const tableLeft = 50;
+    const tableRight = 550;
+    const colConcepto = tableLeft;
+    const colMonto = 430;
     const rowHeight = 20;
+    const conceptoColumnWidth = colMonto - colConcepto - 10;
+    const montoColumnWidth = tableRight - colMonto;
+
+    const formatCurrency = (value: number) =>
+      `$ ${Number(value).toLocaleString("es-AR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+
+    const drawConceptRow = (
+      concepto: string,
+      monto: number,
+      y: number,
+      options?: { amountBold?: boolean; absAmount?: boolean }
+    ) => {
+      const montoValue = options?.absAmount ? Math.abs(monto) : monto;
+      const montoText = formatCurrency(montoValue);
+
+      const safeConcepto = (concepto || "").trim();
+      const maxConceptoChars = 45;
+      const conceptoCorto =
+        safeConcepto.length > maxConceptoChars
+          ? `${safeConcepto.slice(0, maxConceptoChars - 3)}...`
+          : safeConcepto;
+
+      doc.font("Helvetica").fontSize(8).fillColor("#000");
+      doc.text(conceptoCorto, colConcepto, y, {
+        width: conceptoColumnWidth,
+        align: "left",
+        lineBreak: false,
+      });
+
+      const conceptoWidth = doc.widthOfString(conceptoCorto);
+      const dotsStartX = colConcepto + conceptoWidth + 4;
+      const dotsEndX = colMonto - 8;
+
+      if (dotsEndX > dotsStartX) {
+        const dotWidth = doc.widthOfString(".");
+        const dotsCount = Math.floor((dotsEndX - dotsStartX) / dotWidth);
+        if (dotsCount > 1) {
+          doc.fillColor("#666").text(".".repeat(dotsCount), dotsStartX, y, {
+            lineBreak: false,
+          });
+        }
+      }
+
+      doc
+        .font(options?.amountBold ? "Courier-Bold" : "Courier")
+        .fontSize(8)
+        .fillColor("#000")
+        .text(montoText, colMonto, y, {
+          width: montoColumnWidth,
+          align: "right",
+          lineBreak: false,
+        });
+    };
 
     // Cabecera de tabla
     doc.fontSize(9).font("Helvetica-Bold");
     doc.text("CONCEPTO", colConcepto, startY);
-    doc.text("MONTO", colMonto, startY);
-    doc.moveTo(colConcepto, startY + 15).lineTo(550, startY + 15).stroke();
+    doc.text("MONTO", colMonto, startY, { width: montoColumnWidth, align: "right" });
+    doc.moveTo(colConcepto, startY + 15).lineTo(tableRight, startY + 15).stroke();
 
     let currentY = startY + rowHeight;
     doc.font("Helvetica").fontSize(8);
@@ -806,23 +864,13 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
     // HABERES
     let totalHaberes = 0;
     conceptosHaberes.forEach((detalle: any) => {
-      // Justificado con puntos y formato de número
-      const concepto = detalle.Concepto;
-      const monto = `$ ${Number(detalle.Monto).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      const maxConcepto = 45; // caracteres máximo para concepto
-      let puntos = "";
-      const conceptoLength = concepto.length;
-      if (conceptoLength < maxConcepto) {
-        puntos = ".".repeat(maxConcepto - conceptoLength);
-      }
-      doc.text(`${concepto} ${puntos}`, colConcepto, currentY, { width: colMonto - colConcepto - 10, align: "left" });
-      doc.text(monto, colMonto, currentY, { align: "right" });
+      drawConceptRow(detalle.Concepto, Number(detalle.Monto), currentY);
       totalHaberes += parseFloat(detalle.Monto);
       currentY += rowHeight;
     });
 
     // Línea separadora
-    doc.moveTo(colConcepto, currentY).lineTo(550, currentY).stroke();
+    doc.moveTo(colConcepto, currentY).lineTo(tableRight, currentY).stroke();
     currentY += 10;
 
     // DESCUENTOS
@@ -832,49 +880,65 @@ router.post("/:id/generar-pdf", authenticateToken, async (req: Request, res: Res
     doc.font("Helvetica");
 
     conceptosDescuentos.forEach((detalle: any) => {
-      // Justificado con puntos
-      const concepto = detalle.Concepto;
-      const monto = `$ ${Math.abs(Number(detalle.Monto)).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      const maxConcepto = 45;
-      let puntos = "";
-      const conceptoLength = concepto.length;
-      if (conceptoLength < maxConcepto) {
-        puntos = ".".repeat(maxConcepto - conceptoLength);
-      }
-      doc.text(`${concepto} ${puntos}`, colConcepto, currentY, { width: colMonto - colConcepto - 10, align: "left" });
-      doc.text(monto, colMonto, currentY, { align: "right" });
+      drawConceptRow(detalle.Concepto, Number(detalle.Monto), currentY, {
+        absAmount: true,
+      });
       totalDescuentos += Math.abs(parseFloat(detalle.Monto));
       currentY += rowHeight;
     });
 
     // Línea separadora
-    doc.moveTo(colConcepto, currentY).lineTo(550, currentY).stroke();
+    doc.moveTo(colConcepto, currentY).lineTo(tableRight, currentY).stroke();
     currentY += 15;
 
     // TOTALES
     doc.fontSize(10).font("Helvetica-Bold");
     doc.text("Total Remunerativo:", colConcepto, currentY);
-    doc.text(`$ ${Number(liquidacion.TotalRemunerativo || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, colMonto, currentY);
+    doc.font("Courier-Bold");
+    doc.text(formatCurrency(Number(liquidacion.TotalRemunerativo || 0)), colMonto, currentY, {
+      width: montoColumnWidth,
+      align: "right",
+    });
     currentY += rowHeight;
 
+    doc.font("Helvetica-Bold");
     doc.text("Total No Remunerativo:", colConcepto, currentY);
-    doc.text(`$ ${Number(liquidacion.TotalNoRemunerativo || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, colMonto, currentY);
+    doc.font("Courier-Bold");
+    doc.text(formatCurrency(Number(liquidacion.TotalNoRemunerativo || 0)), colMonto, currentY, {
+      width: montoColumnWidth,
+      align: "right",
+    });
     currentY += rowHeight;
 
+    doc.font("Helvetica-Bold");
     doc.text("Total Haberes:", colConcepto, currentY);
-    doc.text(`$ ${Number(liquidacion.TotalHaberes || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, colMonto, currentY);
+    doc.font("Courier-Bold");
+    doc.text(formatCurrency(Number(liquidacion.TotalHaberes || 0)), colMonto, currentY, {
+      width: montoColumnWidth,
+      align: "right",
+    });
     currentY += rowHeight;
 
+    doc.font("Helvetica-Bold");
     doc.text("Total Descuentos:", colConcepto, currentY);
-    doc.text(`$ ${Number(liquidacion.TotalDescuentos || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, colMonto, currentY);
+    doc.font("Courier-Bold");
+    doc.text(formatCurrency(Number(liquidacion.TotalDescuentos || 0)), colMonto, currentY, {
+      width: montoColumnWidth,
+      align: "right",
+    });
     currentY += rowHeight + 5;
 
     // NETO A COBRAR (destacado)
     doc.fontSize(12).fillColor("#1976d2");
-    doc.rect(colConcepto - 10, currentY - 5, 500, 30).fill("#e3f2fd");
+    doc.rect(colConcepto - 10, currentY - 5, tableRight - colConcepto + 10, 30).fill("#e3f2fd");
     doc.fillColor("#000000");
+    doc.font("Helvetica-Bold");
     doc.text("NETO A COBRAR:", colConcepto, currentY);
-    doc.text(`$ ${Number(liquidacion.NetoAPagar || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, colMonto, currentY);
+    doc.font("Courier-Bold");
+    doc.text(formatCurrency(Number(liquidacion.NetoAPagar || 0)), colMonto, currentY, {
+      width: montoColumnWidth,
+      align: "right",
+    });
 
     // FOOTER
     doc.fontSize(7).font("Helvetica").fillColor("#666666");
