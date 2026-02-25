@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -13,6 +13,7 @@ import {
   Typography,
   Chip,
   TextField,
+  MenuItem,
   Container,
   Link as MuiLink,
   Alert,
@@ -61,6 +62,10 @@ export default function GestionarLicencias() {
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [searched, setSearched] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [filtroMotivo, setFiltroMotivo] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("");
+  const [filtroFechaDesde, setFiltroFechaDesde] = useState("");
+  const [filtroFechaHasta, setFiltroFechaHasta] = useState("");
   // Estado para vacaciones
   const [vacaciones, setVacaciones] = useState<{
     antiguedad: number;
@@ -96,6 +101,23 @@ export default function GestionarLicencias() {
     const parsed = new Date(dateString);
     if (isNaN(parsed.getTime())) return "-";
     return parsed.toLocaleDateString("es-ES");
+  };
+
+  const toDateInputValue = (dateString: string) => {
+    if (!dateString) return "";
+
+    const match = String(dateString).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      return `${match[1]}-${match[2]}-${match[3]}`;
+    }
+
+    const parsed = new Date(dateString);
+    if (isNaN(parsed.getTime())) return "";
+
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, "0");
+    const day = String(parsed.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
   const esMotivoConDescuento = (motivo?: string) => {
@@ -175,6 +197,41 @@ export default function GestionarLicencias() {
     }));
   }, [historial, vacaciones?.diasVacaciones]);
 
+  const motivosDisponibles = useMemo(() => {
+    return Array.from(
+      new Set(
+        historialConCalculos
+          .map((lic) => String(lic.Motivo || "").trim())
+          .filter(Boolean)
+      )
+    ).sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+  }, [historialConCalculos]);
+
+  const rangoFechasInvalido =
+    !!filtroFechaDesde &&
+    !!filtroFechaHasta &&
+    filtroFechaDesde > filtroFechaHasta;
+
+  const historialFiltrado = useMemo(() => {
+    return historialConCalculos.filter((lic) => {
+      if (filtroMotivo && lic.Motivo !== filtroMotivo) return false;
+      if (filtroEstado && lic.Estado !== filtroEstado) return false;
+      if (rangoFechasInvalido) return true;
+      const fechaSolicitud = toDateInputValue(lic.FechaSolicitud);
+      if (filtroFechaDesde && (!fechaSolicitud || fechaSolicitud < filtroFechaDesde)) {
+        return false;
+      }
+      if (filtroFechaHasta && (!fechaSolicitud || fechaSolicitud > filtroFechaHasta)) {
+        return false;
+      }
+      return true;
+    });
+  }, [historialConCalculos, filtroMotivo, filtroEstado, filtroFechaDesde, filtroFechaHasta, rangoFechasInvalido]);
+
+  useEffect(() => {
+    resetPagination();
+  }, [filtroMotivo, filtroEstado, filtroFechaDesde, filtroFechaHasta, resetPagination]);
+
   const getEstadoColor = (estado: string) => {
     switch (estado) {
       case "Pendiente":
@@ -192,6 +249,10 @@ export default function GestionarLicencias() {
     if (!search.trim()) return;
     setSearched(true);
     resetPagination();
+    setFiltroMotivo("");
+    setFiltroEstado("");
+    setFiltroFechaDesde("");
+    setFiltroFechaHasta("");
     setLoadingHistorial(true);
     setSearchError(null);
     setVacaciones(null);
@@ -272,7 +333,7 @@ export default function GestionarLicencias() {
   };
 
   const historialConCalculosPaginado = paginate(
-    historialConCalculos,
+    historialFiltrado,
     page,
     rowsPerPage
   );
@@ -403,6 +464,10 @@ export default function GestionarLicencias() {
                 setSearchTerm("");
                 setHistorial([]);
                 resetPagination();
+                setFiltroMotivo("");
+                setFiltroEstado("");
+                setFiltroFechaDesde("");
+                setFiltroFechaHasta("");
                 setSearched(false);
                 setSearchError(null);
                 setEmpleadosEncontrados([]);
@@ -470,6 +535,10 @@ export default function GestionarLicencias() {
                         setVacaciones(emp.vacaciones || null);
                         setEmpleadosEncontrados([]);
                         resetPagination();
+                        setFiltroMotivo("");
+                        setFiltroEstado("");
+                        setFiltroFechaDesde("");
+                        setFiltroFechaHasta("");
                         setLoadingHistorial(true);
                         setHistorial([]);
                         const token = localStorage.getItem("token");
@@ -543,6 +612,83 @@ export default function GestionarLicencias() {
                 </Box>
               )}
             </Box>
+            <Box
+              sx={{
+                px: 2,
+                py: 1.5,
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 1.5,
+                backgroundColor: "#ffffff",
+                borderBottom: "1px solid #eceff1",
+              }}
+            >
+              <TextField
+                select
+                label="Motivo"
+                value={filtroMotivo}
+                onChange={(e) => setFiltroMotivo(e.target.value)}
+                size="small"
+                sx={{ minWidth: 220 }}
+              >
+                <MenuItem value="">Todos</MenuItem>
+                {motivosDisponibles.map((motivo) => (
+                  <MenuItem key={motivo} value={motivo}>
+                    {motivo}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                select
+                label="Estado"
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value)}
+                size="small"
+                sx={{ minWidth: 200 }}
+              >
+                <MenuItem value="">Todos</MenuItem>
+                <MenuItem value="Pendiente">Pendiente</MenuItem>
+                <MenuItem value="Aprobada">Aprobada</MenuItem>
+                <MenuItem value="Rechazada">Rechazada</MenuItem>
+              </TextField>
+
+              <TextField
+                label="Fecha desde"
+                type="date"
+                value={filtroFechaDesde}
+                onChange={(e) => setFiltroFechaDesde(e.target.value)}
+                size="small"
+                error={rangoFechasInvalido}
+                InputLabelProps={{ shrink: true }}
+                sx={{ minWidth: 180 }}
+              />
+
+              <TextField
+                label="Fecha hasta"
+                type="date"
+                value={filtroFechaHasta}
+                onChange={(e) => setFiltroFechaHasta(e.target.value)}
+                size="small"
+                error={rangoFechasInvalido}
+                helperText={rangoFechasInvalido ? "Debe ser mayor o igual a Fecha desde" : " "}
+                InputLabelProps={{ shrink: true }}
+                sx={{ minWidth: 180 }}
+              />
+
+              <Button
+                variant="text"
+                onClick={() => {
+                  setFiltroMotivo("");
+                  setFiltroEstado("");
+                  setFiltroFechaDesde("");
+                  setFiltroFechaHasta("");
+                }}
+                sx={{ textTransform: "none" }}
+              >
+                Limpiar filtros
+              </Button>
+            </Box>
             <Table size="small">
               <TableHead sx={{ backgroundColor: "#6c757d" }}>
                 <TableRow>
@@ -609,7 +755,7 @@ export default function GestionarLicencias() {
             </Table>
 
             <ReusableTablePagination
-              count={historialConCalculos.length}
+              count={historialFiltrado.length}
               page={page}
               onPageChange={handleChangePage}
               rowsPerPage={rowsPerPage}
