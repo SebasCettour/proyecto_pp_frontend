@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Button,
@@ -83,6 +83,11 @@ export default function GestionarLicencias() {
   const [showNew, setShowNew] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [filtroEmpleado, setFiltroEmpleado] = useState("");
+  const [filtroMotivo, setFiltroMotivo] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("");
+  const [filtroFechaDesde, setFiltroFechaDesde] = useState("");
+  const [filtroFechaHasta, setFiltroFechaHasta] = useState("");
 
   const userRole = localStorage.getItem("role") || "";
   const userName =
@@ -198,6 +203,87 @@ export default function GestionarLicencias() {
     }
   };
 
+  const toDateInputValue = (dateString: string) => {
+    if (!dateString) return "";
+
+    const match = String(dateString).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      return `${match[1]}-${match[2]}-${match[3]}`;
+    }
+
+    const parsed = new Date(dateString);
+    if (isNaN(parsed.getTime())) return "";
+
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, "0");
+    const day = String(parsed.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const motivosDisponibles = useMemo(() => {
+    return Array.from(
+      new Set(
+        licencias
+          .map((lic) => String(lic.Motivo || "").trim())
+          .filter(Boolean)
+      )
+    ).sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+  }, [licencias]);
+
+  const rangoFechasInvalido =
+    !!filtroFechaDesde &&
+    !!filtroFechaHasta &&
+    filtroFechaDesde > filtroFechaHasta;
+
+  const filtroEmpleadoNormalizado = filtroEmpleado.trim();
+  const filtroEmpleadoEsDni = /^\d+$/.test(filtroEmpleadoNormalizado);
+  const filtroEmpleadoLetras = filtroEmpleadoNormalizado
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z]/g, "").length;
+  const filtroApellidoInvalido =
+    !!filtroEmpleadoNormalizado && !filtroEmpleadoEsDni && filtroEmpleadoLetras < 3;
+
+  const licenciasFiltradas = useMemo(() => {
+    return licencias.filter((lic) => {
+      if (filtroEmpleadoNormalizado) {
+        if (filtroEmpleadoEsDni) {
+          if (!String(lic.Documento || "").includes(filtroEmpleadoNormalizado)) {
+            return false;
+          }
+        } else if (!filtroApellidoInvalido) {
+          const apellido = String(lic.Apellido || "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+          const termino = filtroEmpleadoNormalizado
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+          if (!apellido.includes(termino)) return false;
+        }
+      }
+
+      if (filtroMotivo && lic.Motivo !== filtroMotivo) return false;
+      if (filtroEstado && lic.Estado !== filtroEstado) return false;
+      if (rangoFechasInvalido) return true;
+
+      const fechaSolicitud = toDateInputValue(lic.FechaSolicitud);
+      if (filtroFechaDesde && (!fechaSolicitud || fechaSolicitud < filtroFechaDesde)) {
+        return false;
+      }
+      if (filtroFechaHasta && (!fechaSolicitud || fechaSolicitud > filtroFechaHasta)) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [licencias, filtroEmpleadoNormalizado, filtroEmpleadoEsDni, filtroApellidoInvalido, filtroMotivo, filtroEstado, filtroFechaDesde, filtroFechaHasta, rangoFechasInvalido]);
+
+  useEffect(() => {
+    resetPagination();
+  }, [filtroEmpleado, filtroMotivo, filtroEstado, filtroFechaDesde, filtroFechaHasta, resetPagination]);
+
   // Menú usuario
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) =>
     setAnchorEl(event.currentTarget);
@@ -252,7 +338,7 @@ export default function GestionarLicencias() {
     }
   };
 
-  const licenciasPaginadas = paginate(licencias, page, rowsPerPage);
+  const licenciasPaginadas = paginate(licenciasFiltradas, page, rowsPerPage);
 
   return (
     <Box
@@ -360,6 +446,99 @@ export default function GestionarLicencias() {
             overflow: "hidden",
           }}
         >
+          <Box
+            sx={{
+              px: 2,
+              py: 1.5,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1.5,
+              backgroundColor: "#ffffff",
+              borderBottom: "1px solid #eceff1",
+            }}
+          >
+            <TextField
+              label="Apellido o DNI"
+              value={filtroEmpleado}
+              onChange={(e) => setFiltroEmpleado(e.target.value)}
+              size="small"
+              error={filtroApellidoInvalido}
+              helperText={
+                filtroApellidoInvalido
+                  ? "Para apellido, ingrese al menos 3 letras"
+                  : " "
+              }
+              placeholder="Ej: Pérez o 12345678"
+              sx={{ minWidth: 240 }}
+            />
+
+            <TextField
+              select
+              label="Motivo"
+              value={filtroMotivo}
+              onChange={(e) => setFiltroMotivo(e.target.value)}
+              size="small"
+              sx={{ minWidth: 220 }}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              {motivosDisponibles.map((motivo) => (
+                <MenuItem key={motivo} value={motivo}>
+                  {motivo}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <TextField
+              select
+              label="Estado"
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}
+              size="small"
+              sx={{ minWidth: 200 }}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              <MenuItem value="Pendiente">Pendiente</MenuItem>
+              <MenuItem value="Aprobada">Aprobada</MenuItem>
+              <MenuItem value="Rechazada">Rechazada</MenuItem>
+            </TextField>
+
+            <TextField
+              label="Fecha desde"
+              type="date"
+              value={filtroFechaDesde}
+              onChange={(e) => setFiltroFechaDesde(e.target.value)}
+              size="small"
+              error={rangoFechasInvalido}
+              InputLabelProps={{ shrink: true }}
+              sx={{ minWidth: 180 }}
+            />
+
+            <TextField
+              label="Fecha hasta"
+              type="date"
+              value={filtroFechaHasta}
+              onChange={(e) => setFiltroFechaHasta(e.target.value)}
+              size="small"
+              error={rangoFechasInvalido}
+              helperText={rangoFechasInvalido ? "Debe ser mayor o igual a Fecha desde" : " "}
+              InputLabelProps={{ shrink: true }}
+              sx={{ minWidth: 180 }}
+            />
+
+            <Button
+              variant="text"
+              onClick={() => {
+                setFiltroEmpleado("");
+                setFiltroMotivo("");
+                setFiltroEstado("");
+                setFiltroFechaDesde("");
+                setFiltroFechaHasta("");
+              }}
+              sx={{ textTransform: "none" }}
+            >
+              Limpiar filtros
+            </Button>
+          </Box>
           <Table>
             <TableHead sx={{ backgroundColor: "#858789ff" }}>
               <TableRow>
@@ -388,6 +567,14 @@ export default function GestionarLicencias() {
                   <TableCell colSpan={11} align="center">
                     <Typography variant="h6" color="text.secondary">
                       No hay solicitudes pendientes
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : licenciasFiltradas.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={11} align="center">
+                    <Typography variant="h6" color="text.secondary">
+                      No hay resultados para los filtros seleccionados
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -483,9 +670,9 @@ export default function GestionarLicencias() {
           </Table>
         </TableContainer>
 
-        {!loading && licencias.length > 0 && (
+        {!loading && licenciasFiltradas.length > 0 && (
           <ReusableTablePagination
-            count={licencias.length}
+            count={licenciasFiltradas.length}
             page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
