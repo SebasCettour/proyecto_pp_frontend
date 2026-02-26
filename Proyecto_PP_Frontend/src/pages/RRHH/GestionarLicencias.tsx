@@ -526,7 +526,7 @@ export default function GestionarLicencias() {
             />
 
             <Button
-              variant="text"
+              variant="contained"
               onClick={() => {
                 setFiltroEmpleado("");
                 setFiltroMotivo("");
@@ -534,7 +534,30 @@ export default function GestionarLicencias() {
                 setFiltroFechaDesde("");
                 setFiltroFechaHasta("");
               }}
-              sx={{ textTransform: "none" }}
+              disabled={
+                !filtroEmpleado &&
+                !filtroMotivo &&
+                !filtroEstado &&
+                !filtroFechaDesde &&
+                !filtroFechaHasta
+              }
+              sx={{
+                height: 56,
+                px: 3,
+                borderRadius: 2,
+                textTransform: "none",
+                fontFamily: "Tektur, sans-serif",
+                fontWeight: 700,
+                boxShadow: "0 2px 8px rgba(21,101,192,0.16)",
+                background: "linear-gradient(135deg, #1976d2 0%, #1565C0 100%)",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #1565C0 0%, #0d47a1 100%)",
+                },
+                "&.Mui-disabled": {
+                  background: "#b0bec5",
+                  color: "#eceff1",
+                },
+              }}
             >
               Limpiar filtros
             </Button>

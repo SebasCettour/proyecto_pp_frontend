@@ -36,6 +36,9 @@ const MisLicencias: React.FC = () => {
   const [diasVacacionesTotales, setDiasVacacionesTotales] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filtroMotivo, setFiltroMotivo] = useState("");
+  const [filtroFechaInicio, setFiltroFechaInicio] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("");
 
   // Para edición
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -203,6 +206,45 @@ const MisLicencias: React.FC = () => {
 
     return resultado;
   }, [licencias, diasVacacionesTotales]);
+
+  const motivosDisponibles = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          licencias
+            .map((lic) => String(lic?.Motivo || "").trim())
+            .filter((motivo) => motivo.length > 0)
+        )
+      ),
+    [licencias]
+  );
+
+  const estadosDisponibles = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          licencias
+            .map((lic) => String(lic?.Estado || "").trim())
+            .filter((estado) => estado.length > 0)
+        )
+      ),
+    [licencias]
+  );
+
+  const licenciasFiltradas = useMemo(() => {
+    return licencias.filter((lic) => {
+      const motivo = String(lic?.Motivo || "").trim().toLowerCase();
+      const estado = String(lic?.Estado || "").trim().toLowerCase();
+      const fechaInicio =
+        String(lic?.FechaInicio || "").match(/^(\d{4}-\d{2}-\d{2})/)?.[1] || "";
+
+      if (filtroMotivo && motivo !== filtroMotivo.toLowerCase()) return false;
+      if (filtroEstado && estado !== filtroEstado.toLowerCase()) return false;
+      if (filtroFechaInicio && fechaInicio !== filtroFechaInicio) return false;
+
+      return true;
+    });
+  }, [licencias, filtroMotivo, filtroEstado, filtroFechaInicio]);
 
   // Abrir modal de edición
   const handleEditar = (lic: any) => {
@@ -484,134 +526,222 @@ const MisLicencias: React.FC = () => {
           ) : licencias.length === 0 ? (
             <Typography>No tienes licencias registradas.</Typography>
           ) : (
-            <TableContainer
-              component={Paper}
-              sx={{
-                borderRadius: 3,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                overflow: "hidden",
-              }}
-            >
-              <Table>
-                <TableHead sx={{ backgroundColor: "#858789ff" }}>
-                  <TableRow>
-                    <TableCell
-                      align="center"
-                      sx={{ color: "#fff", fontWeight: 600 }}
-                    >
-                      Motivo
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ color: "#fff", fontWeight: 600 }}
-                    >
-                      Fecha Inicio
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ color: "#fff", fontWeight: 600 }}
-                    >
-                      Fecha Fin
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ color: "#fff", fontWeight: 600 }}
-                    >
-                      Días Pedidos
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ color: "#fff", fontWeight: 600 }}
-                    >
-                      Días Restantes
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ color: "#fff", fontWeight: 600 }}
-                    >
-                      Estado
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ color: "#fff", fontWeight: 600 }}
-                    >
-                      Fecha Respuesta
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ color: "#fff", fontWeight: 600 }}
-                    >
-                      Motivo Rechazo
-                    </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ color: "#fff", fontWeight: 600 }}
-                    >
-                      Acciones
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {licencias.map((lic) => (
-                    <TableRow
-                      key={lic.Id_Licencia}
-                      sx={{
-                        "&:nth-of-type(odd)": { backgroundColor: "#f5f5f5" },
-                        "&:hover": { backgroundColor: "#e3f2fd" },
-                      }}
-                    >
-                      <TableCell align="center">{lic.Motivo}</TableCell>
-                      <TableCell align="center">
-                        {formatDate(lic.FechaInicio)}
-                      </TableCell>
-                      <TableCell align="center">
-                        {formatDate(lic.FechaFin)}
-                      </TableCell>
-                      <TableCell align="center">
-                        {lic.diasPedidos ?? "-"}
-                      </TableCell>
-                      <TableCell align="center">
-                        {diasRestantesPorLicencia[lic.Id_Licencia] ?? "-"}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          label={lic.Estado}
-                          color={getEstadoColor(lic.Estado) as any}
-                          size="small"
-                          sx={{ fontWeight: 600 }}
-                        />
-                      </TableCell>
-                      <TableCell align="center">
-                        {lic.FechaRespuesta
-                          ? formatDate(lic.FechaRespuesta)
-                          : lic.Estado === "Pendiente"
-                          ? "Pendiente"
-                          : "-"}
-                      </TableCell>
-                      <TableCell align="center">
-                        {lic.MotivoRechazo || "-"}
-                      </TableCell>
-                      <TableCell align="center">
-                        {lic.Estado === "Pendiente" && (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => handleEditar(lic)}
-                            sx={{
-                              textTransform: "none",
-                              fontSize: 14,
-                              borderRadius: 2,
-                            }}
-                          >
-                            Editar
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <>
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 2,
+                  flexWrap: "wrap",
+                  mb: 2,
+                  justifyContent: "center",
+                }}
+              >
+                <FormControl sx={{ minWidth: 200, bgcolor: "white" }}>
+                  <InputLabel>Motivo</InputLabel>
+                  <Select
+                    value={filtroMotivo}
+                    label="Motivo"
+                    onChange={(e) => setFiltroMotivo(e.target.value)}
+                  >
+                    <MenuItem value="">Todos</MenuItem>
+                    {motivosDisponibles.map((motivo) => (
+                      <MenuItem key={motivo} value={motivo}>
+                        {motivo}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <TextField
+                  label="Fecha Inicio"
+                  type="date"
+                  value={filtroFechaInicio}
+                  onChange={(e) => setFiltroFechaInicio(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ minWidth: 200, bgcolor: "white" }}
+                />
+
+                <FormControl sx={{ minWidth: 200, bgcolor: "white" }}>
+                  <InputLabel>Estado</InputLabel>
+                  <Select
+                    value={filtroEstado}
+                    label="Estado"
+                    onChange={(e) => setFiltroEstado(e.target.value)}
+                  >
+                    <MenuItem value="">Todos</MenuItem>
+                    {estadosDisponibles.map((estado) => (
+                      <MenuItem key={estado} value={estado}>
+                        {estado}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    setFiltroMotivo("");
+                    setFiltroFechaInicio("");
+                    setFiltroEstado("");
+                  }}
+                  disabled={!filtroMotivo && !filtroFechaInicio && !filtroEstado}
+                  sx={{
+                    height: 56,
+                    px: 3,
+                    borderRadius: 2,
+                    textTransform: "none",
+                    fontFamily: "Tektur, sans-serif",
+                    fontWeight: 700,
+                    boxShadow: "0 2px 8px rgba(21,101,192,0.16)",
+                    background: "linear-gradient(135deg, #1976d2 0%, #1565C0 100%)",
+                    "&:hover": {
+                      background: "linear-gradient(135deg, #1565C0 0%, #0d47a1 100%)",
+                    },
+                    "&.Mui-disabled": {
+                      background: "#b0bec5",
+                      color: "#eceff1",
+                    },
+                  }}
+                >
+                  Limpiar filtros
+                </Button>
+              </Box>
+
+              {licenciasFiltradas.length === 0 ? (
+                <Typography align="center" color="text.secondary" sx={{ mt: 2 }}>
+                  No se encontraron licencias con los filtros seleccionados.
+                </Typography>
+              ) : (
+                <TableContainer
+                  component={Paper}
+                  sx={{
+                    borderRadius: 3,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <Table>
+                    <TableHead sx={{ backgroundColor: "#858789ff" }}>
+                      <TableRow>
+                        <TableCell
+                          align="center"
+                          sx={{ color: "#fff", fontWeight: 600 }}
+                        >
+                          Motivo
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{ color: "#fff", fontWeight: 600 }}
+                        >
+                          Fecha Inicio
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{ color: "#fff", fontWeight: 600 }}
+                        >
+                          Fecha Fin
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{ color: "#fff", fontWeight: 600 }}
+                        >
+                          Días Pedidos
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{ color: "#fff", fontWeight: 600 }}
+                        >
+                          Días Restantes
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{ color: "#fff", fontWeight: 600 }}
+                        >
+                          Estado
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{ color: "#fff", fontWeight: 600 }}
+                        >
+                          Fecha Respuesta
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{ color: "#fff", fontWeight: 600 }}
+                        >
+                          Motivo Rechazo
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{ color: "#fff", fontWeight: 600 }}
+                        >
+                          Acciones
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {licenciasFiltradas.map((lic) => (
+                        <TableRow
+                          key={lic.Id_Licencia}
+                          sx={{
+                            "&:nth-of-type(odd)": { backgroundColor: "#f5f5f5" },
+                            "&:hover": { backgroundColor: "#e3f2fd" },
+                          }}
+                        >
+                          <TableCell align="center">{lic.Motivo}</TableCell>
+                          <TableCell align="center">
+                            {formatDate(lic.FechaInicio)}
+                          </TableCell>
+                          <TableCell align="center">
+                            {formatDate(lic.FechaFin)}
+                          </TableCell>
+                          <TableCell align="center">
+                            {lic.diasPedidos ?? "-"}
+                          </TableCell>
+                          <TableCell align="center">
+                            {diasRestantesPorLicencia[lic.Id_Licencia] ?? "-"}
+                          </TableCell>
+                          <TableCell align="center">
+                            <Chip
+                              label={lic.Estado}
+                              color={getEstadoColor(lic.Estado) as any}
+                              size="small"
+                              sx={{ fontWeight: 600 }}
+                            />
+                          </TableCell>
+                          <TableCell align="center">
+                            {lic.FechaRespuesta
+                              ? formatDate(lic.FechaRespuesta)
+                              : lic.Estado === "Pendiente"
+                              ? "Pendiente"
+                              : "-"}
+                          </TableCell>
+                          <TableCell align="center">
+                            {lic.MotivoRechazo || "-"}
+                          </TableCell>
+                          <TableCell align="center">
+                            {lic.Estado === "Pendiente" && (
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => handleEditar(lic)}
+                                sx={{
+                                  textTransform: "none",
+                                  fontSize: 14,
+                                  borderRadius: 2,
+                                }}
+                              >
+                                Editar
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </>
           )}
         </Box>
       </Box>
