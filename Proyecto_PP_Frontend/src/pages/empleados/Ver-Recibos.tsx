@@ -19,7 +19,6 @@ import {
   Alert,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { Link } from "react-router-dom";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import MenuUsuario from "../../components/MenuUsuario";
@@ -38,6 +37,7 @@ export default function RecibosSueldo() {
   const [recibos, setRecibos] = useState<Liquidacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [periodoMes, setPeriodoMes] = useState("");
 
   // Estados para menú y cambio de contraseña
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -199,6 +199,27 @@ export default function RecibosSueldo() {
     }).format(amount);
   };
 
+  const recibosFiltrados = recibos.filter((recibo) => {
+    const fechaRecibo = new Date(recibo.FechaLiquidacion);
+
+    if (periodoMes) {
+      const [anioStr, mesStr] = periodoMes.split("-");
+      const anio = Number(anioStr);
+      const mes = Number(mesStr);
+
+      if (
+        fechaRecibo.getFullYear() !== anio ||
+        fechaRecibo.getMonth() + 1 !== mes
+      ) {
+        return false;
+      }
+
+      return true;
+    }
+
+    return true;
+  });
+
   // Handlers para el menú
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -307,6 +328,9 @@ export default function RecibosSueldo() {
           py: 4,
           display: "flex",
           justifyContent: "center",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 2,
         }}
       >
         {loading ? (
@@ -320,67 +344,122 @@ export default function RecibosSueldo() {
             No tienes recibos de sueldo disponibles
           </Typography>
         ) : (
-          <TableContainer
-            component={Paper}
-            sx={{
-              width: "100%",
-              maxWidth: 900,
-              borderRadius: 2,
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-            }}
-          >
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: "#1565C0" }}>
-                  <TableCell
-                    sx={{ color: "#fff", fontWeight: 700, width: "40%" }}
-                  >
-                    Período
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: "#fff", fontWeight: 700, width: "30%" }}
-                  >
-                    Total
-                  </TableCell>
-                  <TableCell
-                    sx={{ color: "#fff", fontWeight: 700, width: "30%" }}
-                  >
-                    Acción
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {recibos.map((recibo) => (
-                  <TableRow
-                    key={recibo.Id_Liquidacion}
-                    sx={{
-                      "&:nth-of-type(odd)": { backgroundColor: "#f5f5f5" },
-                      "&:hover": { backgroundColor: "#e3f2fd" },
-                    }}
-                  >
-                    <TableCell>{formatDate(recibo.FechaLiquidacion)}</TableCell>
-                    <TableCell>{formatCurrency(recibo.Total)}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => handleDescargarPDF(recibo.Id_Liquidacion)}
+          <>
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: 900,
+                display: "flex",
+                gap: 2,
+                flexWrap: "wrap",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <TextField
+                label="Período (mes/año)"
+                type="month"
+                value={periodoMes}
+                onChange={(e) => setPeriodoMes(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{ minWidth: 220, bgcolor: "white", borderRadius: 1 }}
+              />
+              <Button
+                variant="contained"
+                onClick={() => {
+                  setPeriodoMes("");
+                }}
+                disabled={!periodoMes}
+                sx={{
+                  height: 56,
+                  px: 3,
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontFamily: "Tektur, sans-serif",
+                  fontWeight: 700,
+                  boxShadow: "0 2px 8px rgba(21,101,192,0.16)",
+                  background: "linear-gradient(135deg, #1976d2 0%, #1565C0 100%)",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #1565C0 0%, #0d47a1 100%)",
+                  },
+                  "&.Mui-disabled": {
+                    background: "#b0bec5",
+                    color: "#eceff1",
+                  },
+                }}
+              >
+                Limpiar filtros
+              </Button>
+            </Box>
+
+            {recibosFiltrados.length === 0 ? (
+              <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
+                No se encontraron recibos para el filtro seleccionado
+              </Typography>
+            ) : (
+              <TableContainer
+                component={Paper}
+                sx={{
+                  width: "100%",
+                  maxWidth: 900,
+                  borderRadius: 2,
+                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                }}
+              >
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: "#1565C0" }}>
+                      <TableCell
+                        sx={{ color: "#fff", fontWeight: 700, width: "40%" }}
+                      >
+                        Período
+                      </TableCell>
+                      <TableCell
+                        sx={{ color: "#fff", fontWeight: 700, width: "30%" }}
+                      >
+                        Total
+                      </TableCell>
+                      <TableCell
+                        sx={{ color: "#fff", fontWeight: 700, width: "30%" }}
+                      >
+                        Acción
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {recibosFiltrados.map((recibo) => (
+                      <TableRow
+                        key={recibo.Id_Liquidacion}
                         sx={{
-                          textTransform: "none",
-                          fontFamily: "Tektur, sans-serif",
-                          fontWeight: 600,
-                          borderRadius: 2,
-                          boxShadow: "0 2px 8px rgba(21,101,192,0.08)",
+                          "&:nth-of-type(odd)": { backgroundColor: "#f5f5f5" },
+                          "&:hover": { backgroundColor: "#e3f2fd" },
                         }}
                       >
-                        Descargar PDF
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                        <TableCell>{formatDate(recibo.FechaLiquidacion)}</TableCell>
+                        <TableCell>{formatCurrency(recibo.Total)}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => handleDescargarPDF(recibo.Id_Liquidacion)}
+                            sx={{
+                              textTransform: "none",
+                              fontFamily: "Tektur, sans-serif",
+                              fontWeight: 600,
+                              borderRadius: 2,
+                              boxShadow: "0 2px 8px rgba(21,101,192,0.08)",
+                            }}
+                          >
+                            Descargar PDF
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </>
         )}
       </Box>
 
