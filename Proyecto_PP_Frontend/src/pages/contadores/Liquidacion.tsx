@@ -424,6 +424,23 @@ const Liquidacion = () => {
         }, 1800);
       } else {
         const error = await response.json();
+
+        if (response.status === 409) {
+          const [anio, mes] = periodo.split("-");
+          const fechaPeriodo = new Date(Number(anio), Number(mes) - 1, 1);
+          const periodoFormateado = fechaPeriodo.toLocaleDateString("es-AR", {
+            month: "long",
+            year: "numeric",
+          });
+
+          setSnackbarMessage(
+            `Ya existe una liquidación para ${periodoFormateado}`,
+          );
+          setSnackbarSeverity("warning");
+          setSnackbarOpen(true);
+          return;
+        }
+
         setSnackbarMessage(`Error al guardar: ${error.message}`);
         setSnackbarSeverity("error");
         setSnackbarOpen(true);
