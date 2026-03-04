@@ -74,6 +74,10 @@ app.get("/", async (_req: Request, res: Response) => {
   }
 });
 
+app.get("/health", (_req: Request, res: Response) => {
+  res.status(200).json({ ok: true });
+});
+
 // 🔹 Buscar empresa por nombre usando query param
 app.get("/api/empresa/buscar", async (req: Request, res: Response) => {
   const nombre = req.query.nombre;
@@ -117,17 +121,20 @@ app.get("/api/empresa/buscar/:nombre", async (req: Request, res: Response) => {
   }
 });
 
-// Conexión a DB y arrancar servidor
-pool
-  .getConnection()
-  .then((connection) => {
-    console.log("Conexión a la base de datos establecida");
-    connection.release();
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Servidor corriendo en puerto ${PORT}`);
+if (process.env.NODE_ENV !== "test") {
+  pool
+    .getConnection()
+    .then((connection) => {
+      console.log("Conexión a la base de datos establecida");
+      connection.release();
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(`Servidor corriendo en puerto ${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error("Error al conectar a la base de datos:", err);
+      process.exit(1);
     });
-  })
-  .catch((err) => {
-    console.error("Error al conectar a la base de datos:", err);
-    process.exit(1);
-  });
+}
+
+export default app;
