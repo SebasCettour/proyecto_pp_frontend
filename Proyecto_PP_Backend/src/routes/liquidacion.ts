@@ -549,6 +549,22 @@ router.post("/guardar", authenticateToken, async (req: Request, res: Response) =
       });
     }
 
+    const [liquidacionExistente] = await connection.execute(
+      `SELECT Id_Liquidacion
+       FROM Liquidacion
+       WHERE Id_Empleado = ? AND Periodo = ?
+       LIMIT 1`,
+      [idEmpleado, periodo]
+    );
+
+    if (Array.isArray(liquidacionExistente) && liquidacionExistente.length > 0) {
+      await connection.rollback();
+      return res.status(409).json({
+        message: "Ya existe una liquidación para este período",
+        periodo
+      });
+    }
+
     // Insertar en tabla Liquidacion
     const [result] = await connection.execute(
       `INSERT INTO Liquidacion (
