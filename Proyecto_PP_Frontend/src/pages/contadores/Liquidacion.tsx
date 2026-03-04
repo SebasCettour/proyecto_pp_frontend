@@ -894,13 +894,6 @@ const Liquidacion = () => {
                 InputLabelProps={{ shrink: true }}
               />
 
-              {sacActivo && !esPeriodoSAC(periodo) && periodo && (
-                <Alert severity="warning" sx={{ maxWidth: 400 }}>
-                  ⚠️ El SAC generalmente se paga en <strong>junio</strong> y{" "}
-                  <strong>diciembre</strong>. Has seleccionado otro mes.
-                </Alert>
-              )}
-
               {employeeFound && (
                 <Card
                   sx={{
@@ -1782,6 +1775,7 @@ const Liquidacion = () => {
                                     alignItems: "center",
                                     gap: 1,
                                     mb: 1,
+                                    flexWrap: "wrap",
                                   }}
                                 >
                                   <Typography
@@ -1808,6 +1802,19 @@ const Liquidacion = () => {
                                     }}
                                     title="Activar SAC (se paga en junio y diciembre). Corresponde al 50% de la mejor remuneración del semestre"
                                   />
+                                  {sacActivo && !esPeriodoSAC(periodo) && periodo && (
+                                    <Alert
+                                      severity="warning"
+                                      sx={{
+                                        py: 0,
+                                        "& .MuiAlert-message": {
+                                          py: "2px",
+                                        },
+                                      }}
+                                    >
+                                      El SAC se paga en junio y diciembre.
+                                    </Alert>
+                                  )}
                                 </Box>
                                 <Typography
                                   variant="body2"
