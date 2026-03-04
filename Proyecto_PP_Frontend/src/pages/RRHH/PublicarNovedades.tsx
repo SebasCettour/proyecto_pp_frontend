@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import Snackbar from "@mui/material/Snackbar";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import {
   Box,
@@ -56,6 +55,11 @@ const PublicarNovedad: React.FC = () => {
   const [archivoNombre, setArchivoNombre] = useState<string>("");
   const [imagenPreview, setImagenPreview] = useState<string>("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+    setMensajeExito("");
+  };
 
   const {
     control,
@@ -187,9 +191,6 @@ const PublicarNovedad: React.FC = () => {
     }
   };
 
-  const navigate = useNavigate();
-  const handleIrAlTablon = () => navigate("/tablon");
-
   return (
     <Box
       sx={{
@@ -220,7 +221,6 @@ const PublicarNovedad: React.FC = () => {
       <Box component="main" sx={{ flexGrow: 1, px: 4, mt: 4, width: "100%", maxWidth: "800px", mx: "auto", p: 5, display: "flex", flexDirection: "column", alignItems: "center" }}>
         <Typography component="h1" variant="h4" sx={{ mb: 3, fontFamily: "Tektur, sans-serif", fontWeight: 700, color: "#333", letterSpacing: 1 }}>Publicar Novedad</Typography>
         {error && (<Alert severity="error" sx={{ width: "100%", mb: 3, borderRadius: 2, fontWeight: 500 }}>{error}</Alert>)}
-        {mensajeExito && (<Alert severity="success" sx={{ width: "100%", mb: 3, borderRadius: 2, fontWeight: 500 }}>{mensajeExito}</Alert>)}
         <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ width: "100%" }} encType="multipart/form-data">
           <Controller
             name="contenido"
@@ -344,7 +344,10 @@ const PublicarNovedad: React.FC = () => {
           </Box>
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
             <Button
-              onClick={handleIrAlTablon}
+              type="button"
+              onClick={() => {
+                window.location.href = "/tablon";
+              }}
               variant="contained"
               sx={{
                 py: 1,
@@ -415,6 +418,17 @@ const PublicarNovedad: React.FC = () => {
           <Footer />
         </Box>
       </Box>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: "100%" }}>
+          {mensajeExito || "Novedad publicada exitosamente"}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

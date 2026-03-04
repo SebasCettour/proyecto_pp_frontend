@@ -38,6 +38,7 @@ export default function Tablon() {
   const [novedades, setNovedades] = useState<Novedad[] | any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
 
   // Estado para edición
   const [editOpen, setEditOpen] = useState(false);
@@ -82,6 +83,14 @@ export default function Tablon() {
         setNovedades([]);
         setLoading(false);
       });
+  }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 60_000);
+
+    return () => window.clearInterval(intervalId);
   }, []);
 
   // Eliminar novedad
@@ -189,8 +198,15 @@ export default function Tablon() {
   };
 
   const formatearFecha = (fechaString: string) => {
-    const fecha = new Date(fechaString);
-    const ahora = new Date();
+    const fechaNormalizada = fechaString.includes(" ")
+      ? fechaString.replace(" ", "T")
+      : fechaString;
+    const fecha = new Date(fechaNormalizada);
+    const ahora = new Date(now);
+
+    if (Number.isNaN(fecha.getTime())) {
+      return "Fecha inválida";
+    }
 
     const diffMs = ahora.getTime() - fecha.getTime();
     const diffMins = Math.floor(diffMs / 60000);
