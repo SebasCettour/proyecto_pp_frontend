@@ -23,6 +23,11 @@ import {
   InputLabel,
   InputAdornment,
   Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Link, useNavigate } from "react-router-dom";
@@ -90,6 +95,7 @@ const Liquidacion = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState<
     "success" | "error" | "warning" | "info"
   >("info");
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
@@ -408,17 +414,14 @@ const Liquidacion = () => {
       );
 
       if (response.ok) {
-        const data = await response.json();
         setLiquidacionGuardada(true);
-        setSnackbarMessage(
-          `Liquidación guardada exitosamente. ID: ${data.idLiquidacion}`,
-        );
+        setSnackbarMessage("La liquidación se guardó correctamente");
         setSnackbarSeverity("success");
         setSnackbarOpen(true);
 
         setTimeout(() => {
           navigate("/contadores");
-        }, 100);
+        }, 1800);
       } else {
         const error = await response.json();
         setSnackbarMessage(`Error al guardar: ${error.message}`);
@@ -560,6 +563,19 @@ const Liquidacion = () => {
   const handleBack = () =>
     setActiveStep((prev) => Math.max(prev - 1, START_STEP));
 
+  const handleOpenConfirmDialog = () => {
+    setConfirmDialogOpen(true);
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setConfirmDialogOpen(false);
+  };
+
+  const handleConfirmarYGuardar = async () => {
+    setConfirmDialogOpen(false);
+    await guardarLiquidacion();
+  };
+
   // Calcular otrosConceptos para usar en múltiples steps
   const otrosConceptos = conceptos
     .filter((c) => !c.nombre.toLowerCase().includes("horas extras"))
@@ -575,6 +591,36 @@ const Liquidacion = () => {
       if (!aIsSAC && bIsSAC) return -1;
       return 0;
     });
+
+  const sueldoBasicoConfirmacionKey = Object.keys(valores).find(
+    (k) => k.toLowerCase() === "sueldo básico",
+  );
+  const sueldoBasicoConfirmacion = sueldoBasicoConfirmacionKey
+    ? parseFloat(valores[sueldoBasicoConfirmacionKey]) || 0
+    : 0;
+  const sumaFijaConfirmacion = sumaFijaNoRemunerativa
+    ? parseFloat(sumaFijaNoRemunerativa.replace(/\./g, "").replace(",", "."))
+    : 0;
+  const totalOtrosConceptosConfirmacion = otrosConceptos
+    .filter((c) => c.tipo !== "descuento")
+    .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
+  const horasExtras50Confirmacion = valoresCalculados["Horas extras al 50%"] || 0;
+  const horasExtras100Confirmacion =
+    valoresCalculados["Horas extras al 100%"] || 0;
+  const totalHaberesConfirmacion =
+    sueldoBasicoConfirmacion +
+    sumaFijaConfirmacion +
+    totalOtrosConceptosConfirmacion +
+    horasExtras50Confirmacion +
+    horasExtras100Confirmacion;
+  const totalDescuentosConfirmacion = otrosConceptos
+    .filter((c) => c.tipo === "descuento")
+    .reduce((sum, c) => sum + (valoresCalculados[c.nombre] || 0), 0);
+  const netoAPagarConfirmacion =
+    totalHaberesConfirmacion - totalDescuentosConfirmacion;
+  const periodoConfirmacion = periodo
+    ? `${periodo.split("-")[1]}/${periodo.split("-")[0]}`
+    : "No seleccionado";
 
   const renderStepContent = (step: number) => {
     switch (step) {
@@ -3261,7 +3307,7 @@ const Liquidacion = () => {
               <Button
                 variant="contained"
                 size="large"
-                onClick={guardarLiquidacion}
+                onClick={handleOpenConfirmDialog}
                 disabled={guardandoLiquidacion || liquidacionGuardada}
                 sx={{
                   backgroundColor: liquidacionGuardada ? "#4caf50" : "#1976d2",
@@ -3376,6 +3422,38 @@ const Liquidacion = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={confirmDialogOpen}
+        onClose={handleCloseConfirmDialog}
+        aria-labelledby="confirmar-guardar-liquidacion-title"
+      >
+        <DialogTitle id="confirmar-guardar-liquidacion-title">
+          Confirmar guardado
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Estás seguro de que querés confirmar y guardar esta liquidación?
+          </DialogContentText>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 0.5 }}>
+              Período: <strong>{periodoConfirmacion}</strong>
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 0.5 }}>
+              Empleado: <strong>{employeeFound ? `${employeeFound.apellido}, ${employeeFound.nombre}` : "No seleccionado"}</strong>
+            </Typography>
+            <Typography variant="body1" sx={{ fontWeight: 700 }}>
+              Neto a cobrar: ${netoAPagarConfirmacion.toLocaleString("es-AR")}
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirmDialog}>Cancelar</Button>
+          <Button onClick={handleConfirmarYGuardar} variant="contained" autoFocus>
+            Confirmar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Footer />
     </Box>
