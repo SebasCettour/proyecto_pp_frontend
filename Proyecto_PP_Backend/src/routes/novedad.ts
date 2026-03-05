@@ -30,14 +30,24 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+const isBadFieldError = (err: unknown): boolean => {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: string }).code === "ER_BAD_FIELD_ERROR"
+  );
+};
+
 // Publicar una novedad
 router.post(
   "/tablon",
   upload.fields([
     { name: "imagen", maxCount: 1 },
+    { name: "archivo", maxCount: 1 },
   ]),
   async (req: Request, res: Response) => {
-    const { idEmpleado, descripcion } = req.body;
+    const { idEmpleado, descripcion, fijada } = req.body;
 
     let imagen = null;
     if (
@@ -53,17 +63,39 @@ router.post(
     }
 
     try {
-      const fecha = new Date();
-      const [result]: any = await pool.query(
-        "INSERT INTO Novedad (Id_Empleado, Descripcion, Fecha, Imagen) VALUES (?, ?, ?, ?)",
-        [idEmpleado, descripcion, fecha, imagen]
+      let result: any;
+      try {
+        const [insertResult]: any = await pool.query(
+          "INSERT INTO Novedad (Id_Empleado, Descripcion, Fecha, Imagen, Fijada) VALUES (?, ?, NOW(), ?, ?)",
+          [idEmpleado, descripcion, imagen, Number(fijada) ? 1 : 0]
+        );
+        result = insertResult;
+      } catch (insertErr) {
+        if (!isBadFieldError(insertErr)) {
+          throw insertErr;
+        }
+
+        // Fallback para bases que todavia no tienen la columna Fijada.
+        const [insertResult]: any = await pool.query(
+          "INSERT INTO Novedad (Id_Empleado, Descripcion, Fecha, Imagen) VALUES (?, ?, NOW(), ?)",
+          [idEmpleado, descripcion, imagen]
+        );
+        result = insertResult;
+      }
+
+      const [rows]: any = await pool.query(
+        "SELECT Fecha FROM Novedad WHERE Id_Novedad = ?",
+        [result.insertId]
       );
+
+      const fecha = Array.isArray(rows) && rows[0]?.Fecha ? rows[0].Fecha : null;
       res.status(201).json({
         idNovedad: result.insertId,
         idEmpleado,
         descripcion,
         fecha,
         imagen,
+        fijada: Number(fijada) ? 1 : 0,
       });
     } catch (err) {
       console.error("Error al publicar la novedad:", err);
@@ -75,19 +107,44 @@ router.post(
 // Obtener todas las novedades con nombre y apellido del empleado
 router.get("/tablon", async (_req: Request, res: Response) => {
   try {
-    const [novedades] = await pool.query(
-      `SELECT 
-        n.Id_Novedad, 
-        n.Id_Empleado, 
-        n.Descripcion, 
-        n.Fecha, 
-        n.Imagen,
-        e.Nombre AS Nombre_Empleado,
-        e.Apellido AS Apellido_Empleado
-      FROM Novedad n
-      JOIN Empleado e ON n.Id_Empleado = e.Id_Empleado
-      ORDER BY n.Fecha DESC`
-    );
+    let novedades: any;
+    try {
+      const [rows] = await pool.query(
+        `SELECT 
+          n.Id_Novedad, 
+          n.Id_Empleado, 
+          n.Descripcion, 
+          n.Fecha, 
+          n.Imagen,
+          n.Fijada,
+          e.Nombre AS Nombre_Empleado,
+          e.Apellido AS Apellido_Empleado
+        FROM Novedad n
+        JOIN Empleado e ON n.Id_Empleado = e.Id_Empleado
+        ORDER BY n.Fijada DESC, n.Fecha DESC`
+      );
+      novedades = rows;
+    } catch (listErr) {
+      if (!isBadFieldError(listErr)) {
+        throw listErr;
+      }
+
+      const [rows] = await pool.query(
+        `SELECT 
+          n.Id_Novedad, 
+          n.Id_Empleado, 
+          n.Descripcion, 
+          n.Fecha, 
+          n.Imagen,
+          0 AS Fijada,
+          e.Nombre AS Nombre_Empleado,
+          e.Apellido AS Apellido_Empleado
+        FROM Novedad n
+        JOIN Empleado e ON n.Id_Empleado = e.Id_Empleado
+        ORDER BY n.Fecha DESC`
+      );
+      novedades = rows;
+    }
     
     // Ensure we always return an array
     if (!Array.isArray(novedades)) {
@@ -127,6 +184,32 @@ router.put("/tablon/:id", async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Error al actualizar novedad:", err);
     res.status(500).json({ error: "Error al actualizar la novedad" });
+  }
+});
+
+// Fijar o desfijar una novedad por id
+router.put("/tablon/:id/fijada", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { fijada } = req.body;
+
+  if (typeof fijada === "undefined") {
+    return res.status(400).json({ error: "Falta el valor de fijada" });
+  }
+
+  try {
+    await pool.query("UPDATE Novedad SET Fijada = ? WHERE Id_Novedad = ?", [
+      Number(fijada) ? 1 : 0,
+      id,
+    ]);
+    res.status(200).json({ message: "Estado de fijada actualizado correctamente" });
+  } catch (err) {
+    if (isBadFieldError(err)) {
+      return res.status(400).json({
+        error: "La base de datos no tiene la columna Fijada. Ejecuta la migracion add_fijada_novedad.sql",
+      });
+    }
+    console.error("Error al actualizar estado fijada:", err);
+    res.status(500).json({ error: "Error al actualizar estado fijada" });
   }
 });
 
