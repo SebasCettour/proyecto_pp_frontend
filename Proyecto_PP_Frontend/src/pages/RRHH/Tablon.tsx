@@ -15,20 +15,32 @@ import {
   Menu,
   MenuItem,
   InputAdornment,
+  Pagination,
+  Snackbar,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import { Settings, Visibility, VisibilityOff } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import BackButton from "../../components/BackButton";
+import { sanitizeNovedadHtml } from "../../utils/sanitizeNovedadHtml";
 
 interface Novedad {
   Id_Novedad: number;
   Descripcion: string;
   Fecha: string;
   Id_Empleado: number;
+  Fijada?: number | boolean;
   Imagen?: string;
   Nombre_Empleado?: string;
   Apellido_Empleado?: string;
@@ -39,6 +51,9 @@ export default function Tablon() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 3;
 
   // Estado para edición
   const [editOpen, setEditOpen] = useState(false);
@@ -55,11 +70,16 @@ export default function Tablon() {
   const [showNew, setShowNew] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [deleteSuccessOpen, setDeleteSuccessOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
   const userName =
     localStorage.getItem("nombre") ||
     localStorage.getItem("username") ||
     "Usuario";
+  const userRole = localStorage.getItem("role") || "";
+  const isRRHH = userRole.toLowerCase() === "rrhh";
 
   useEffect(() => {
     console.log("🔍 Iniciando fetch de novedades...");
@@ -71,6 +91,7 @@ export default function Tablon() {
         // Validar que data sea un array
         if (Array.isArray(data)) {
           setNovedades(data);
+          setCurrentPage(1);
           console.log("✅ Novedades seteadas:", data);
         } else {
           console.error("❌ La respuesta no es un array:", data);
@@ -93,18 +114,98 @@ export default function Tablon() {
     return () => window.clearInterval(intervalId);
   }, []);
 
+  const novedadesOrdenadas = Array.isArray(novedades)
+    ? [...novedades].sort((a, b) => {
+        const fijadaA = Number(a.Fijada) ? 1 : 0;
+        const fijadaB = Number(b.Fijada) ? 1 : 0;
+
+        if (fijadaA !== fijadaB) {
+          return fijadaB - fijadaA;
+        }
+
+        return new Date(b.Fecha).getTime() - new Date(a.Fecha).getTime();
+      })
+    : [];
+
+  const totalPages = Math.ceil(novedadesOrdenadas.length / ITEMS_PER_PAGE);
+
+  const novedadesPaginadas = novedadesOrdenadas.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+      );
+
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   // Eliminar novedad
   const handleDelete = async (id: number) => {
     setDeleting(id);
     try {
-      await fetch(`http://localhost:4000/api/novedad/tablon/${id}`, {
+      const response = await fetch(`http://localhost:4000/api/novedad/tablon/${id}`, {
         method: "DELETE",
       });
+
+      if (!response.ok) {
+        throw new Error("No se pudo eliminar la novedad");
+      }
+
       setNovedades((prev) => Array.isArray(prev) ? prev.filter((n) => n.Id_Novedad !== id) : []);
+      setDeleteSuccessOpen(true);
     } catch {
       // Manejo de error opcional
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleOpenDeleteConfirm = (id: number) => {
+    setDeleteTargetId(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleCloseDeleteConfirm = () => {
+    if (deleting !== null) return;
+    setDeleteConfirmOpen(false);
+    setDeleteTargetId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteTargetId === null) return;
+    await handleDelete(deleteTargetId);
+    setDeleteConfirmOpen(false);
+    setDeleteTargetId(null);
+  };
+
+  const handleToggleFijada = async (novedad: Novedad) => {
+    const nuevoEstado = Number(novedad.Fijada) ? 0 : 1;
+    try {
+      const res = await fetch(
+        `http://localhost:4000/api/novedad/tablon/${novedad.Id_Novedad}/fijada`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fijada: nuevoEstado }),
+        }
+      );
+
+      if (!res.ok) {
+        return;
+      }
+
+      setNovedades((prev) =>
+        Array.isArray(prev)
+          ? prev.map((n) =>
+              n.Id_Novedad === novedad.Id_Novedad
+                ? { ...n, Fijada: nuevoEstado }
+                : n
+            )
+          : []
+      );
+    } catch {
+      // Manejo de error opcional
     }
   };
 
@@ -325,7 +426,7 @@ export default function Tablon() {
             </Typography>
           </Fade>
         ) : (
-          novedades.map((novedad) => (
+          novedadesPaginadas.map((novedad) => (
             <Fade in key={novedad.Id_Novedad}>
               <Card
                 sx={{
@@ -395,6 +496,28 @@ export default function Tablon() {
                     </Typography>
                   </Box>
                   <Box sx={{ flexGrow: 1 }} />
+                  {isRRHH && (
+                    <Tooltip
+                      title={Number(novedad.Fijada) ? "Desfijar mensaje" : "Fijar mensaje importante"}
+                    >
+                      <span>
+                        <IconButton
+                          color={Number(novedad.Fijada) ? "primary" : "default"}
+                          size="small"
+                          onClick={() => handleToggleFijada(novedad)}
+                          sx={{
+                            mr: 1,
+                            background: Number(novedad.Fijada) ? "#e3f2fd" : "#f0f2f5",
+                            border: "1.5px solid #1976d2",
+                            "&:hover": { background: "#d6e9fa" },
+                          }}
+                        >
+                          {Number(novedad.Fijada) ? <PushPinIcon /> : <PushPinOutlinedIcon />}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  )}
+
                   <Tooltip title="Editar novedad">
                     <span>
                       <IconButton
@@ -418,7 +541,7 @@ export default function Tablon() {
                         color="error"
                         size="small"
                         disabled={deleting === novedad.Id_Novedad}
-                        onClick={() => handleDelete(novedad.Id_Novedad)}
+                        onClick={() => handleOpenDeleteConfirm(novedad.Id_Novedad)}
                         sx={{
                           background: "#f0f2f5",
                           border: "1.5px solid #f44336",
@@ -431,6 +554,20 @@ export default function Tablon() {
                   </Tooltip>
                 </Box>
                 <Divider sx={{ mb: 2, background: "#1877f2", opacity: 0.1 }} />
+
+                {Number(novedad.Fijada) ? (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      mb: 1,
+                      color: "#1565c0",
+                      fontWeight: 700,
+                      letterSpacing: 0.4,
+                    }}
+                  >
+                    MENSAJE FIJADO
+                  </Typography>
+                ) : null}
 
                 {novedad.Imagen && (
                   <Box sx={{ mb: 2, textAlign: "center" }}>
@@ -449,8 +586,7 @@ export default function Tablon() {
                   </Box>
                 )}
 
-                <Typography
-                  variant="body1"
+                <Box
                   sx={{
                     fontFamily: "Segoe UI, Arial, sans-serif",
                     color: "#050505",
@@ -458,13 +594,48 @@ export default function Tablon() {
                     mb: 1,
                     letterSpacing: 0.2,
                     lineHeight: 1.7,
+                    "& p": { m: 0, mb: 1 },
+                    "& div": { m: 0, mb: 1 },
+                    "& h1, & h2, & h3, & h4, & h5, & h6": {
+                      mt: 0,
+                      mb: 1,
+                      lineHeight: 1.35,
+                    },
+                    "& ul, & ol": { pl: 3, my: 1 },
                   }}
-                >
-                  {novedad.Descripcion}
-                </Typography>
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeNovedadHtml(novedad.Descripcion || ""),
+                  }}
+                />
               </Card>
             </Fade>
           ))
+        )}
+
+        {!loading && Array.isArray(novedades) && novedades.length > 0 && (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              mt: 1,
+            }}
+          >
+            <Typography variant="caption" sx={{ color: "#65676b" }}>
+              Pagina {currentPage} de {Math.max(totalPages, 1)}
+            </Typography>
+            <Pagination
+              count={Math.max(totalPages, 1)}
+              page={currentPage}
+              onChange={(_, page) => setCurrentPage(page)}
+              color="primary"
+              shape="rounded"
+              showFirstButton
+              showLastButton
+            />
+          </Box>
         )}
       </Box>
 
@@ -602,7 +773,44 @@ export default function Tablon() {
         </Box>
       </Modal>
 
+      <Dialog open={deleteConfirmOpen} onClose={handleCloseDeleteConfirm}>
+        <DialogTitle>Confirmar eliminacion</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Estas seguro de eliminar esta novedad? Esta accion no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteConfirm} disabled={deleting !== null}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            disabled={deleting !== null}
+          >
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Footer />
+
+      <Snackbar
+        open={deleteSuccessOpen}
+        autoHideDuration={3000}
+        onClose={() => setDeleteSuccessOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          severity="success"
+          onClose={() => setDeleteSuccessOpen(false)}
+          sx={{ width: "100%" }}
+        >
+          Novedad eliminada con exito
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

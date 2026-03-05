@@ -20,6 +20,7 @@ import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import MenuUsuario from "../../components/MenuUsuario";
 import BackButton from "../../components/BackButton";
+import { sanitizeNovedadHtml } from "../../utils/sanitizeNovedadHtml";
 
 interface Novedad {
   Id_Novedad: number;
@@ -345,8 +346,7 @@ export default function Tablon() {
                   </Box>
                 )}
 
-                <Typography
-                  variant="body1"
+                <Box
                   sx={{
                     fontFamily: "Segoe UI, Arial, sans-serif",
                     color: "#050505",
@@ -354,10 +354,19 @@ export default function Tablon() {
                     mb: 1,
                     letterSpacing: 0.2,
                     lineHeight: 1.7,
+                    "& p": { m: 0, mb: 1 },
+                    "& div": { m: 0, mb: 1 },
+                    "& h1, & h2, & h3, & h4, & h5, & h6": {
+                      mt: 0,
+                      mb: 1,
+                      lineHeight: 1.35,
+                    },
+                    "& ul, & ol": { pl: 3, my: 1 },
                   }}
-                >
-                  {novedad.Descripcion}
-                </Typography>
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeNovedadHtml(novedad.Descripcion || ""),
+                  }}
+                />
               </Card>
             </Fade>
           ))

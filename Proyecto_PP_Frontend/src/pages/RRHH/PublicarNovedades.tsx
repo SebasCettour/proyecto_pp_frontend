@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Snackbar from "@mui/material/Snackbar";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,16 +15,26 @@ import {
   Modal,
   IconButton,
   InputAdornment,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import BackButton from "../../components/BackButton";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
+import FormatBoldIcon from "@mui/icons-material/FormatBold";
+import FormatItalicIcon from "@mui/icons-material/FormatItalic";
+import FormatUnderlinedIcon from "@mui/icons-material/FormatUnderlined";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
+import FormatListNumberedIcon from "@mui/icons-material/FormatListNumbered";
 import { Settings, Visibility, VisibilityOff } from "@mui/icons-material";
+import { sanitizeNovedadHtml, stripHtml } from "../../utils/sanitizeNovedadHtml";
 
 const novedadSchema = z.object({
-  contenido: z.string().min(1, "El contenido es obligatorio"),
+  contenido: z
+    .string()
+    .refine((value) => stripHtml(value).length > 0, "El contenido es obligatorio"),
   imagen: z.any().optional(),
   archivo: z.any().optional(),
 });
@@ -55,6 +65,7 @@ const PublicarNovedad: React.FC = () => {
   const [archivoNombre, setArchivoNombre] = useState<string>("");
   const [imagenPreview, setImagenPreview] = useState<string>("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const editorRef = useRef<HTMLDivElement | null>(null);
 
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
@@ -67,7 +78,6 @@ const PublicarNovedad: React.FC = () => {
     formState: { errors },
     reset,
     setValue,
-    watch,
   } = useForm<NovedadFormData>({
     resolver: zodResolver(novedadSchema),
     defaultValues: { contenido: "", imagen: undefined, archivo: undefined },
@@ -89,7 +99,7 @@ const PublicarNovedad: React.FC = () => {
 
       const formData = new FormData();
       formData.append("idEmpleado", idEmpleado);
-      formData.append("descripcion", data.contenido);
+      formData.append("descripcion", sanitizeNovedadHtml(data.contenido));
 
       // Validación de imagen (tipo y tamaño)
       if (data.imagen && data.imagen[0]) {
@@ -130,11 +140,33 @@ const PublicarNovedad: React.FC = () => {
       setImagenNombre("");
       setArchivoNombre("");
       setImagenPreview("");
+      if (editorRef.current) {
+        editorRef.current.innerHTML = "";
+      }
+      setValue("contenido", "", { shouldValidate: false });
     } catch (err) {
       setError("Ocurrió un error al publicar la novedad.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const updateEditorValue = () => {
+    const html = editorRef.current?.innerHTML || "";
+    setValue("contenido", html, { shouldValidate: true });
+  };
+
+  const applyFormat = (
+    command:
+      | "bold"
+      | "italic"
+      | "underline"
+      | "insertUnorderedList"
+      | "insertOrderedList"
+  ) => {
+    editorRef.current?.focus();
+    document.execCommand(command, false);
+    updateEditorValue();
   };
 
   // Menú usuario
@@ -218,28 +250,125 @@ const PublicarNovedad: React.FC = () => {
       </Box>
       {/* Botón Ir al Tablón debajo del título */}
       <BackButton to="/rrhh-principal" />
-      <Box component="main" sx={{ flexGrow: 1, px: 4, mt: 4, width: "100%", maxWidth: "800px", mx: "auto", p: 5, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <Typography component="h1" variant="h4" sx={{ mb: 3, fontFamily: "Tektur, sans-serif", fontWeight: 700, color: "#333", letterSpacing: 1 }}>Publicar Novedad</Typography>
-        {error && (<Alert severity="error" sx={{ width: "100%", mb: 3, borderRadius: 2, fontWeight: 500 }}>{error}</Alert>)}
-        <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ width: "100%" }} encType="multipart/form-data">
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          width: "100%",
+          maxWidth: "920px",
+          mx: "auto",
+          px: { xs: 2, sm: 3, md: 4 },
+          pt: { xs: 1, sm: 2 },
+          pb: 2,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Typography component="h1" variant="h4" sx={{ mb: 2, fontFamily: "Tektur, sans-serif", fontWeight: 700, color: "#333", letterSpacing: 1 }}>
+          Publicar Novedad
+        </Typography>
+        {error && (<Alert severity="error" sx={{ width: "100%", mb: 2, borderRadius: 2, fontWeight: 500 }}>{error}</Alert>)}
+        <Box
+          component="form"
+          onSubmit={handleSubmit(onSubmit)}
+          sx={{
+            width: "100%",
+            maxWidth: "780px",
+            bgcolor: "rgba(255,255,255,0.9)",
+            border: "1px solid #dfe5ee",
+            borderRadius: 3,
+            px: { xs: 2, sm: 3 },
+            py: 2,
+          }}
+          encType="multipart/form-data"
+        >
           <Controller
             name="contenido"
             control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Contenido"
-                multiline
-                minRows={6}
-                fullWidth
-                error={!!errors.contenido}
-                helperText={errors.contenido?.message}
-                sx={{ mb: 4, "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f9f9f9" }, "& .MuiFormHelperText-root": { ml: 0 } }}
-                disabled={isLoading}
-              />
+            render={() => (
+              <Box sx={{ mb: 2.5 }}>
+                <Typography
+                  sx={{
+                    mb: 1,
+                    fontWeight: 600,
+                    fontFamily: "Tektur, sans-serif",
+                    color: "#1a1a1a",
+                  }}
+                >
+                  Contenido
+                </Typography>
+
+                <ToggleButtonGroup
+                  value={[]}
+                  size="small"
+                  sx={{ mb: 1, background: "#f5f7fa", borderRadius: 2 }}
+                >
+                  <ToggleButton value="bold" onClick={() => applyFormat("bold")}>
+                    <FormatBoldIcon fontSize="small" />
+                  </ToggleButton>
+                  <ToggleButton value="italic" onClick={() => applyFormat("italic")}>
+                    <FormatItalicIcon fontSize="small" />
+                  </ToggleButton>
+                  <ToggleButton value="underline" onClick={() => applyFormat("underline")}>
+                    <FormatUnderlinedIcon fontSize="small" />
+                  </ToggleButton>
+                  <ToggleButton
+                    value="ul"
+                    onClick={() => applyFormat("insertUnorderedList")}
+                  >
+                    <FormatListBulletedIcon fontSize="small" />
+                  </ToggleButton>
+                  <ToggleButton
+                    value="ol"
+                    onClick={() => applyFormat("insertOrderedList")}
+                  >
+                    <FormatListNumberedIcon fontSize="small" />
+                  </ToggleButton>
+                </ToggleButtonGroup>
+
+                <Box
+                  ref={editorRef}
+                  contentEditable={!isLoading}
+                  suppressContentEditableWarning
+                  onInput={updateEditorValue}
+                  onBlur={updateEditorValue}
+                  onPaste={(event) => {
+                    // En pegado forzamos texto plano para evitar HTML externo inseguro.
+                    event.preventDefault();
+                    const text = event.clipboardData.getData("text/plain");
+                    document.execCommand("insertText", false, text);
+                    updateEditorValue();
+                  }}
+                  sx={{
+                    minHeight: 140,
+                    p: 2,
+                    border: errors.contenido ? "1px solid #d32f2f" : "1px solid #c4c4c4",
+                    borderRadius: 2,
+                    backgroundColor: "#f9f9f9",
+                    fontFamily: "Segoe UI, Arial, sans-serif",
+                    fontSize: 16,
+                    lineHeight: 1.6,
+                    outline: "none",
+                    "&:focus": {
+                      borderColor: "#1976d2",
+                      boxShadow: "0 0 0 2px rgba(25,118,210,0.15)",
+                    },
+                    '&[contenteditable="true"]:empty:before': {
+                      content: '"Escribe la novedad aqui..."',
+                      color: "#8a8a8a",
+                    },
+                  }}
+                />
+
+                {errors.contenido?.message && (
+                  <Typography sx={{ color: "#d32f2f", mt: 0.8, fontSize: 12 }}>
+                    {errors.contenido.message}
+                  </Typography>
+                )}
+              </Box>
             )}
           />
-          <Box sx={{ display: "flex", gap: 2, mb: 4, justifyContent: "center", alignItems: "center" }}>
+          <Box sx={{ display: "flex", gap: 1.5, mb: 2.5, justifyContent: "center", alignItems: "center", flexWrap: "wrap" }}>
             <Controller
               name="imagen"
               control={control}
@@ -320,14 +449,14 @@ const PublicarNovedad: React.FC = () => {
               )}
             />
           </Box>
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
             <Button
               type="submit"
               variant="contained"
               disabled={isLoading}
               sx={{
                 py: 1.5,
-                width: 420,
+                width: { xs: "100%", sm: 420 },
                 fontFamily: "Tektur, sans-serif",
                 fontWeight: 600,
                 fontSize: "1.1rem",
@@ -342,7 +471,7 @@ const PublicarNovedad: React.FC = () => {
               {isLoading ? "Publicando..." : "Publicar Novedad"}
             </Button>
           </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1.5, mb: 0.5 }}>
             <Button
               type="button"
               onClick={() => {
@@ -414,10 +543,9 @@ const PublicarNovedad: React.FC = () => {
             </Box>
           </Box>
         </Modal>
-        <Box sx={{ width: '100%', position: 'fixed', left: 0, bottom: 0 }}>
-          <Footer />
-        </Box>
       </Box>
+
+      <Footer />
 
       <Snackbar
         open={snackbarOpen}
