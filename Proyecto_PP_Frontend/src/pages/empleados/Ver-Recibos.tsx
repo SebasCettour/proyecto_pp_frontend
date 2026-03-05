@@ -17,6 +17,7 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  Pagination,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import Footer from "../../components/Footer";
@@ -38,6 +39,9 @@ export default function RecibosSueldo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [periodoMes, setPeriodoMes] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const RECIBOS_POR_PAGINA = 6;
 
   // Estados para menú y cambio de contraseña
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -219,6 +223,23 @@ export default function RecibosSueldo() {
 
     return true;
   });
+
+  const totalPages = Math.ceil(recibosFiltrados.length / RECIBOS_POR_PAGINA);
+
+  const recibosPaginados = recibosFiltrados.slice(
+    (currentPage - 1) * RECIBOS_POR_PAGINA,
+    currentPage * RECIBOS_POR_PAGINA
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [periodoMes]);
+
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   // Handlers para el menú
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -427,7 +448,7 @@ export default function RecibosSueldo() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {recibosFiltrados.map((recibo) => (
+                    {recibosPaginados.map((recibo) => (
                       <TableRow
                         key={recibo.Id_Liquidacion}
                         sx={{
@@ -458,6 +479,28 @@ export default function RecibosSueldo() {
                   </TableBody>
                 </Table>
               </TableContainer>
+            )}
+
+            {recibosFiltrados.length > 0 && totalPages > 1 && (
+              <Box
+                sx={{
+                  width: "100%",
+                  maxWidth: 900,
+                  display: "flex",
+                  justifyContent: "center",
+                  mt: 1,
+                }}
+              >
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={(_, page) => setCurrentPage(page)}
+                  color="primary"
+                  shape="rounded"
+                  showFirstButton
+                  showLastButton
+                />
+              </Box>
             )}
           </>
         )}

@@ -13,6 +13,7 @@ import {
   Modal,
   TextField,
   InputAdornment,
+  Pagination,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
@@ -36,6 +37,9 @@ export default function Tablon() {
   const [novedades, setNovedades] = useState<Novedad[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 3;
 
   // Estados para menú y cambio de contraseña
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -90,6 +94,7 @@ export default function Tablon() {
         // Validar que data sea un array
         if (Array.isArray(data)) {
           setNovedades(data);
+          setCurrentPage(1);
         } else {
           console.error("❌ La respuesta no es un array:", data);
           console.error("❌ Tipo de data:", typeof data);
@@ -106,6 +111,19 @@ export default function Tablon() {
         setLoading(false);
       });
   };
+
+  const totalPages = Math.ceil(novedades.length / ITEMS_PER_PAGE);
+
+  const novedadesPaginadas = novedades.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   useEffect(() => {
     fetchNovedades();
@@ -258,7 +276,7 @@ export default function Tablon() {
             </Typography>
           </Fade>
         ) : (
-          novedades.map((novedad) => (
+          novedadesPaginadas.map((novedad) => (
             <Fade in key={novedad.Id_Novedad}>
               <Card
                 sx={{
@@ -370,6 +388,32 @@ export default function Tablon() {
               </Card>
             </Fade>
           ))
+        )}
+
+        {!loading && novedades.length > 0 && (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              mt: 1,
+            }}
+          >
+            <Typography variant="caption" sx={{ color: "#65676b" }}>
+              Pagina {currentPage} de {Math.max(totalPages, 1)}
+            </Typography>
+            <Pagination
+              count={Math.max(totalPages, 1)}
+              page={currentPage}
+              onChange={(_, page) => setCurrentPage(page)}
+              color="primary"
+              shape="rounded"
+              showFirstButton
+              showLastButton
+            />
+          </Box>
         )}
       </Box>
       {/* Modal para cambiar contraseña */}
