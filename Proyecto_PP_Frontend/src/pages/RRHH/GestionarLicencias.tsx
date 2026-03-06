@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Box,
   Button,
@@ -24,6 +24,7 @@ import {
   Snackbar,
   Alert,
   Tooltip,
+  TablePagination,
 } from "@mui/material";
 import { Settings, Visibility, VisibilityOff } from "@mui/icons-material";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -31,8 +32,8 @@ import Footer from "../../components/Footer";
 import Header from "../../components/Header";
 import BackButton from "../../components/BackButton";
 import ReusableTablePagination from "../../components/ReusableTablePagination";
-import useTablePagination from "../../hooks/useTablePagination";
-import paginate from "../../utils/paginate";
+// import useTablePagination from "../../hooks/useTablePagination";
+// import paginate from "../../utils/paginate";
 
 interface Licencia {
   Id_Licencia: number;
@@ -56,13 +57,8 @@ interface Licencia {
 
 export default function GestionarLicencias() {
   const [licencias, setLicencias] = useState<Licencia[]>([]);
-  const {
-    page,
-    rowsPerPage,
-    handleChangePage,
-    handleChangeRowsPerPage,
-    resetPagination,
-  } = useTablePagination();
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
   const [selectedLicencia, setSelectedLicencia] = useState<Licencia | null>(null);
   const [modalRespuestaOpen, setModalRespuestaOpen] = useState(false);
@@ -115,7 +111,7 @@ export default function GestionarLicencias() {
       if (response.ok) {
         const data = await response.json();
         setLicencias(data);
-        resetPagination();
+        setPage(0);
       }
     } catch (error) {
       // Manejo de error
@@ -281,8 +277,8 @@ export default function GestionarLicencias() {
   }, [licencias, filtroEmpleadoNormalizado, filtroEmpleadoEsDni, filtroApellidoInvalido, filtroMotivo, filtroEstado, filtroFechaDesde, filtroFechaHasta, rangoFechasInvalido]);
 
   useEffect(() => {
-    resetPagination();
-  }, [filtroEmpleado, filtroMotivo, filtroEstado, filtroFechaDesde, filtroFechaHasta, resetPagination]);
+    setPage(0);
+  }, [filtroEmpleado, filtroMotivo, filtroEstado, filtroFechaDesde, filtroFechaHasta]);
 
   // Menú usuario
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) =>
@@ -338,7 +334,27 @@ export default function GestionarLicencias() {
     }
   };
 
-  const licenciasPaginadas = paginate(licenciasFiltradas, page, rowsPerPage);
+  const licenciasPaginadas = useMemo(() => {
+    if (rowsPerPage <= 0) return licenciasFiltradas;
+    const start = page * rowsPerPage;
+    const end = start + rowsPerPage;
+    return licenciasFiltradas.slice(start, end);
+  }, [licenciasFiltradas, page, rowsPerPage]);
+
+  const handleChangePage = useCallback(
+    (_event: unknown, newPage: number) => {
+      setPage(newPage);
+    },
+    []
+  );
+
+  const handleChangeRowsPerPage = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setRowsPerPage(parseInt(event.target.value, 10));
+      setPage(0);
+    },
+    []
+  );
 
   return (
     <Box
