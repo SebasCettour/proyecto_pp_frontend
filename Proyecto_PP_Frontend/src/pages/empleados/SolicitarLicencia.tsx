@@ -764,7 +764,7 @@ export default function SolicitarLicencia() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "100svh",
         backgroundImage: "url('/fondo.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -775,17 +775,34 @@ export default function SolicitarLicencia() {
     >
       <Header />
 
-      <MenuUsuario
-        userName={userName}
-        anchorEl={anchorEl}
-        handleMenuOpen={handleMenuOpen}
-        handleMenuClose={handleMenuClose}
-        handleOpenModal={handleOpenModal}
-        handleCerrarSesion={handleCerrarSesion}
-      />
+      {/* separa el menú del header */}
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          minHeight: { xs: 60, sm: 68, md: 76 },
+          mt: { xs: 1.5, sm: 2, md: 2.5 },
+        }}
+      >
+        <MenuUsuario
+          userName={userName}
+          anchorEl={anchorEl}
+          handleMenuOpen={handleMenuOpen}
+          handleMenuClose={handleMenuClose}
+          handleOpenModal={handleOpenModal}
+          handleCerrarSesion={handleCerrarSesion}
+        />
+      </Box>
 
       {/* Botón para volver */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2, px: 4 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: { xs: "center", sm: "flex-end" },
+          mt: { xs: 1, sm: 1.5, md: 2 },
+          px: { xs: 2, sm: 3, md: 4 },
+        }}
+      >
         <Button
           component={Link}
           to="/empleados"
@@ -793,14 +810,14 @@ export default function SolicitarLicencia() {
           sx={{
             backgroundColor: "#1976d2",
             color: "#fff",
-            width: 180,
-            letterSpacing: 2,
-            fontSize: 18,
+            width: { xs: "100%", sm: 170, md: 180 },
+            maxWidth: 260,
+            letterSpacing: { xs: 1, sm: 1.5, md: 2 },
+            fontSize: { xs: 15, sm: 16, md: 18 },
             borderRadius: 3,
             fontFamily: "Tektur, sans-serif",
             fontWeight: 600,
             textTransform: "none",
-            ml: 2,
             boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
             "&:hover": { backgroundColor: "#115293" },
           }}
@@ -813,8 +830,9 @@ export default function SolicitarLicencia() {
       <Box
         sx={{
           flexGrow: 1,
-          px: 4,
-          mt: 3,
+          px: { xs: 1.5, sm: 2.5, md: 4 },
+          mt: { xs: 1.5, sm: 2.5, md: 3 },
+          mb: { xs: 2, sm: 3 },
           display: "flex",
           justifyContent: "center",
         }}
@@ -824,21 +842,22 @@ export default function SolicitarLicencia() {
           sx={{
             width: "100%",
             maxWidth: "1100px",
-            p: { xs: 3, sm: 5 },
-            borderRadius: 3,
+            p: { xs: 2, sm: 3.5, md: 5 },
+            borderRadius: { xs: 2, sm: 3 },
             backgroundColor: "#fff",
           }}
         >
           <Typography
             variant="h4"
             sx={{
-              mb: 4,
+              mb: { xs: 2.5, sm: 3.5, md: 4 },
               fontFamily: "Tektur, sans-serif",
               fontWeight: 700,
               textAlign: "center",
               color: "#1976d2",
-              fontSize: 32,
-              letterSpacing: 2,
+              fontSize: { xs: "1.55rem", sm: "1.9rem", md: 32 },
+              letterSpacing: { xs: 1, sm: 1.5, md: 2 },
+              lineHeight: 1.2,
             }}
           >
             Solicitar Licencia
@@ -848,7 +867,7 @@ export default function SolicitarLicencia() {
             sx={{
               display: "flex",
               flexWrap: "wrap",
-              gap: 3,
+              gap: { xs: 2, sm: 2.5, md: 3 },
               justifyContent: "space-between",
             }}
           >
@@ -1074,7 +1093,7 @@ export default function SolicitarLicencia() {
                   onChange={handleInputChange}
                   error={errors.fechaInicio}
                   helperText={errors.fechaInicio && "Campo obligatorio"}
-                  sx={{ flex: "1 1 30%" }}
+                  sx={{ flex: { xs: "1 1 100%", md: "1 1 30%" } }}
                   InputLabelProps={{
                     shrink: true,
                   }}
@@ -1087,7 +1106,7 @@ export default function SolicitarLicencia() {
                   onChange={handleInputChange}
                   error={errors.fechaFin}
                   helperText={errors.fechaFin && "Campo obligatorio"}
-                  sx={{ flex: "1 1 30%" }}
+                  sx={{ flex: { xs: "1 1 100%", md: "1 1 30%" } }}
                   InputLabelProps={{
                     shrink: true,
                   }}
@@ -1102,7 +1121,7 @@ export default function SolicitarLicencia() {
                   helperText={
                     errors.fechaReincorporacion && "Campo obligatorio"
                   }
-                  sx={{ flex: "1 1 30%" }}
+                  sx={{ flex: { xs: "1 1 100%", md: "1 1 30%" } }}
                   InputLabelProps={{
                     shrink: true,
                   }}
@@ -1275,13 +1294,13 @@ export default function SolicitarLicencia() {
                   }
                   sx={{
                     mt: 3,
-                    py: 1.5,
+                    py: { xs: 1.2, sm: 1.4, md: 1.5 },
                     width: "100%",
                     fontFamily: "Tektur, sans-serif",
                     fontWeight: 700,
-                    fontSize: 20,
+                    fontSize: { xs: 16, sm: 18, md: 20 },
                     borderRadius: 3,
-                    letterSpacing: 2,
+                    letterSpacing: { xs: 1, sm: 1.5, md: 2 },
                     backgroundColor: "#1976d2",
                     color: "#fff",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
@@ -1306,7 +1325,7 @@ export default function SolicitarLicencia() {
           </Box>
         </Paper>
       </Box>
-      {/* Modal para cambiar contraseña */}
+
       <Modal open={modalOpen} onClose={handleCloseModal}>
         <Box
           sx={{
@@ -1316,13 +1335,15 @@ export default function SolicitarLicencia() {
             transform: "translate(-50%, -50%)",
             bgcolor: "background.paper",
             boxShadow: 24,
-            borderRadius: 3,
-            p: 4,
-            minWidth: 350,
-            maxWidth: "90vw",
+            borderRadius: { xs: 2, sm: 3 },
+            p: { xs: 2, sm: 3, md: 4 },
+            width: { xs: "92vw", sm: 420 },
+            maxWidth: "92vw",
+            maxHeight: "85vh",
+            overflowY: "auto",
             display: "flex",
             flexDirection: "column",
-            gap: 2,
+            gap: { xs: 1.5, sm: 2 },
           }}
         >
           <Typography variant="h6" sx={{ mb: 2 }}>
@@ -1371,15 +1392,22 @@ export default function SolicitarLicencia() {
             </Typography>
           )}
           <Box
-            sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              flexDirection: { xs: "column-reverse", sm: "row" },
+              gap: 1.2,
+              mt: 1.5,
+            }}
           >
-            <Button onClick={handleCloseModal} disabled={loading}>
+            <Button onClick={handleCloseModal} disabled={loading} sx={{ width: { xs: "100%", sm: "auto" } }}>
               Cancelar
             </Button>
             <Button
               variant="contained"
               onClick={handleChangePassword}
               disabled={loading || !oldPassword || !newPassword}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
             >
               Cambiar
             </Button>
@@ -1387,7 +1415,6 @@ export default function SolicitarLicencia() {
         </Box>
       </Modal>
 
-      {/* Snackbar para notificaciones */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={5000}
@@ -1399,12 +1426,12 @@ export default function SolicitarLicencia() {
           severity={snackbarSeverity}
           sx={{
             width: "100%",
-            minWidth: "400px",
-            fontSize: "1.1rem",
+            minWidth: { xs: "calc(100vw - 24px)", sm: 400 },
+            fontSize: { xs: "0.95rem", sm: "1.05rem" },
             fontWeight: "bold",
             boxShadow: 6,
             "& .MuiAlert-message": {
-              fontSize: "1.1rem",
+              fontSize: { xs: "0.95rem", sm: "1.05rem" },
             },
           }}
         >

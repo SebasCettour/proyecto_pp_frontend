@@ -9,29 +9,31 @@ interface BackButtonProps {
 
 const BackButton: React.FC<BackButtonProps> = ({ to, label = "Volver" }) => {
   return (
-    <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: { xs: "center", sm: "flex-end" },
+        mt: { xs: 1, sm: 1.5, md: 2 },
+        px: { xs: 2, sm: 3, md: 4 },
+      }}
+    >
       <Button
         component={Link}
         to={to}
         variant="contained"
         sx={{
-          backgroundColor: "#1565C0",
-          color: "#ffffff",
-          width: 180,
-          letterSpacing: 2,
-          fontSize: 18,
+          backgroundColor: "#1976d2",
+          color: "#fff",
+          width: { xs: "100%", sm: 170, md: 180 },
+          maxWidth: 260,
+          letterSpacing: { xs: 1, sm: 1.5, md: 2 },
+          fontSize: { xs: 15, sm: 16, md: 18 },
           borderRadius: 3,
-          mr: 5,
           fontFamily: "Tektur, sans-serif",
           fontWeight: 600,
           textTransform: "none",
-          boxShadow: "0 2px 8px rgba(21,101,192,0.3)",
-          transition: "all 0.3s ease",
-          "&:hover": {
-            backgroundColor: "#0d47a1",
-            boxShadow: "0 4px 12px rgba(21,101,192,0.4)",
-            transform: "translateY(-2px)",
-          },
+          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+          "&:hover": { backgroundColor: "#115293" },
         }}
       >
         {label}

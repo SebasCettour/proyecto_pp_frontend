@@ -102,10 +102,24 @@ export const Empleados = () => {
   const handleIrAlTablon = () => navigate("/ver-novedades");
   const handleIrAtras = () => navigate("/superadmin");
 
+  const actionButtonSx = {
+    backgroundColor: "#1976d2",
+    color: "#fff",
+    borderRadius: 2,
+    py: { xs: 1.3, sm: 1.6, md: 2 },
+    minHeight: { xs: 44, sm: 48 },
+    fontFamily: "Tektur, sans-serif",
+    fontWeight: 600,
+    fontSize: { xs: "0.95rem", sm: "1rem", md: "1.1rem" },
+    textTransform: "none",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+    "&:hover": { backgroundColor: "#115293" },
+  };
+
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "100svh",
         backgroundImage: "url('/fondo.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -116,20 +130,28 @@ export const Empleados = () => {
     >
       <Header />
 
-      {/* Botón Volver solo para superadmin */}
       {userRole === "superadmin" && (
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            mt: { xs: 2.5, sm: 3.5, md: 4.5 },
+            px: { xs: 2, sm: 3, md: 4 },
+          }}
+        >
           <Button
             onClick={handleIrAtras}
             variant="contained"
             sx={{
               backgroundColor: "#1565C0",
               color: "#ffffff",
-              width: 180,
-              letterSpacing: 3,
-              fontSize: 20,
+              width: { xs: "100%", sm: 170, md: 180 },
+              maxWidth: 220,
+              letterSpacing: { xs: 1, sm: 2, md: 3 },
+              fontSize: { xs: 16, sm: 18, md: 20 },
               borderRadius: 3,
-              mr: 5,
+              mr: { xs: 0, sm: 1, md: 5 },
+              py: { xs: 1, sm: 1.2 },
               fontFamily: "Tektur, sans-serif",
               fontWeight: 500,
               textTransform: "none",
@@ -141,137 +163,84 @@ export const Empleados = () => {
         </Box>
       )}
 
-      <MenuUsuario
-        userName={userName}
-        anchorEl={anchorEl}
-        handleMenuOpen={handleMenuOpen}
-        handleMenuClose={handleMenuClose}
-        handleOpenModal={handleOpenModal}
-        handleCerrarSesion={handleCerrarSesion}
-      />
+      {/* Contenedor para separar el menú del header */}
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          minHeight: { xs: 58, sm: 66, md: 76 },
+          mt: { xs: 1.5, sm: 2, md: 2.5 },
+        }}
+      >
+        <MenuUsuario
+          userName={userName}
+          anchorEl={anchorEl}
+          handleMenuOpen={handleMenuOpen}
+          handleMenuClose={handleMenuClose}
+          handleOpenModal={handleOpenModal}
+          handleCerrarSesion={handleCerrarSesion}
+        />
+      </Box>
 
       <Container
         maxWidth="sm"
         sx={{
-          mt: 8,
-          mb: 8,
           flexGrow: 1,
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
+          justifyContent: { xs: "flex-start", sm: "center" },
           alignItems: "center",
+          mt: { xs: 1, sm: 2.5, md: 4 },
+          mb: { xs: 3, sm: 6, md: 8 },
+          px: { xs: 1.5, sm: 2.5 },
         }}
       >
         <Box
           sx={{
             backgroundColor: "#fff",
-            borderRadius: 3,
+            borderRadius: { xs: 2, sm: 3 },
             boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
-            p: 5,
+            p: { xs: 2, sm: 3.5, md: 5 },
             width: "100%",
+            maxWidth: { xs: "100%", sm: 560 },
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: 4,
+            gap: { xs: 1.8, sm: 2.4, md: 3 },
           }}
         >
-          {/* Título principal unificado */}
           <Typography
             component="h1"
-            variant="h4"
             sx={{
-              mb: 3,
+              mb: { xs: 1.5, sm: 2.5, md: 3 },
               fontFamily: "Tektur, sans-serif",
               fontWeight: 700,
               color: "#1565C0",
               textAlign: "center",
-              letterSpacing: 1,
+              letterSpacing: { xs: 0.5, sm: 1 },
               textShadow: "0 2px 8px rgba(21,101,192,0.08)",
+              fontSize: { xs: "1.35rem", sm: "1.8rem", md: "2rem" },
+              lineHeight: 1.2,
             }}
           >
             Portal Empleados
           </Typography>
 
-          <Button
-            onClick={handleIrALicencias}
-            variant="contained"
-            fullWidth
-            sx={{
-              backgroundColor: "#1976d2",
-              color: "#fff",
-              borderRadius: 2,
-              py: 2,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
-              textTransform: "none",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-              "&:hover": { backgroundColor: "#115293" },
-            }}
-          >
+          <Button onClick={handleIrALicencias} variant="contained" fullWidth sx={actionButtonSx}>
             Solicitar Licencia
           </Button>
-          <Button
-            onClick={handleIrAMisLicencias}
-            variant="contained"
-            fullWidth
-            sx={{
-              backgroundColor: "#1976d2",
-              color: "#fff",
-              borderRadius: 2,
-              py: 2,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
-              textTransform: "none",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-              "&:hover": { backgroundColor: "#115293" },
-            }}
-          >
+          <Button onClick={handleIrAMisLicencias} variant="contained" fullWidth sx={actionButtonSx}>
             Mis Licencias
           </Button>
-          <Button
-            onClick={handleIrARecibos}
-            variant="contained"
-            fullWidth
-            sx={{
-              backgroundColor: "#1976d2",
-              color: "#fff",
-              borderRadius: 2,
-              py: 2,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
-              textTransform: "none",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-              "&:hover": { backgroundColor: "#115293" },
-            }}
-          >
+          <Button onClick={handleIrARecibos} variant="contained" fullWidth sx={actionButtonSx}>
             Mis Recibos de Sueldo
           </Button>
-          <Button
-            onClick={handleIrAlTablon}
-            variant="contained"
-            fullWidth
-            sx={{
-              backgroundColor: "#1976d2",
-              color: "#fff",
-              borderRadius: 2,
-              py: 2,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 600,
-              fontSize: 18,
-              textTransform: "none",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-              "&:hover": { backgroundColor: "#115293" },
-            }}
-          >
+          <Button onClick={handleIrAlTablon} variant="contained" fullWidth sx={actionButtonSx}>
             Tablón de Novedades
           </Button>
         </Box>
       </Container>
 
-      {/* Modal para cambiar contraseña */}
       <Modal open={modalOpen} onClose={handleCloseModal}>
         <Box
           sx={{
@@ -281,24 +250,31 @@ export const Empleados = () => {
             transform: "translate(-50%, -50%)",
             bgcolor: "background.paper",
             boxShadow: 24,
-            borderRadius: 3,
-            p: 4,
-            minWidth: 350,
-            maxWidth: "90vw",
+            borderRadius: { xs: 2, sm: 3 },
+            p: { xs: 2, sm: 3, md: 4 },
+            width: { xs: "92vw", sm: 420 },
+            maxWidth: "92vw",
+            maxHeight: "85vh",
+            overflowY: "auto",
             display: "flex",
             flexDirection: "column",
-            gap: 2,
+            gap: { xs: 1.5, sm: 2 },
           }}
         >
-          <Typography variant="h6" sx={{ mb: 2 }}>
+          <Typography
+            variant="h6"
+            sx={{ mb: 1, fontSize: { xs: "1.05rem", sm: "1.25rem" } }}
+          >
             Cambiar Contraseña
           </Typography>
+
           <TextField
             label="Contraseña Actual"
             type={showOld ? "text" : "password"}
             value={oldPassword}
             onChange={(e) => setOldPassword(e.target.value)}
             fullWidth
+            size="small"
             autoComplete="current-password"
             InputProps={{
               endAdornment: (
@@ -318,12 +294,14 @@ export const Empleados = () => {
               ),
             }}
           />
+
           <TextField
             label="Nueva Contraseña"
             type={showNew ? "text" : "password"}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             fullWidth
+            size="small"
             inputProps={{ minLength: 6, maxLength: 20 }}
             autoComplete="new-password"
             InputProps={{
@@ -344,29 +322,38 @@ export const Empleados = () => {
               ),
             }}
           />
+
           {msg && (
             <Typography
-              color={
-                msg.includes("correctamente") ? "success.main" : "error.main"
-              }
-              sx={{ mt: 1 }}
+              color={msg.includes("correctamente") ? "success.main" : "error.main"}
+              sx={{ mt: 0.5, fontSize: { xs: "0.9rem", sm: "1rem" } }}
             >
               {msg}
             </Typography>
           )}
+
           <Box
-            sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              flexDirection: { xs: "column-reverse", sm: "row" },
+              gap: 1.2,
+              mt: 1.5,
+            }}
           >
             <Button
               type="button"
               onClick={handleCloseModal}
               disabled={loading}
+              fullWidth={false}
               sx={{
                 textTransform: "none",
                 fontFamily: "Tektur, sans-serif",
                 fontWeight: 600,
                 borderRadius: 2,
+                minHeight: 40,
                 boxShadow: "0 2px 8px rgba(21,101,192,0.08)",
+                width: { xs: "100%", sm: "auto" },
               }}
             >
               Cancelar
@@ -381,7 +368,9 @@ export const Empleados = () => {
                 fontFamily: "Tektur, sans-serif",
                 fontWeight: 600,
                 borderRadius: 2,
+                minHeight: 40,
                 boxShadow: "0 2px 8px rgba(21,101,192,0.08)",
+                width: { xs: "100%", sm: "auto" },
               }}
             >
               Cambiar

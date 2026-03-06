@@ -22,7 +22,9 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import Footer from "../../components/Footer";
@@ -30,8 +32,12 @@ import Header from "../../components/Header";
 import Autocomplete from "@mui/material/Autocomplete";
 import { SelectChangeEvent } from "@mui/material/Select";
 import MenuUsuario from "../../components/MenuUsuario";
+import BackButton from "../../components/BackButton";
 
 const MisLicencias: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [licencias, setLicencias] = useState<any[]>([]);
   const [diasVacacionesTotales, setDiasVacacionesTotales] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -459,62 +465,62 @@ const MisLicencias: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "100svh",
         backgroundImage: "url('/fondo.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         display: "flex",
         flexDirection: "column",
+        overflowX: "hidden",
       }}
     >
       <Header />
 
-      <MenuUsuario
-        userName={userName}
-        anchorEl={anchorEl}
-        handleMenuOpen={handleMenuOpen}
-        handleMenuClose={handleMenuClose}
-        handleOpenModal={handleOpenModal}
-        handleCerrarSesion={handleCerrarSesion}
-      />
+      {/* separa menú del header */}
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          minHeight: { xs: 60, sm: 68, md: 70 },
+          mt: { xs: 1.5, sm: 2, md: 1.5 },
+        }}
+      >
+        <MenuUsuario
+          userName={userName}
+          anchorEl={anchorEl}
+          handleMenuOpen={handleMenuOpen}
+          handleMenuClose={handleMenuClose}
+          handleOpenModal={handleOpenModal}
+          handleCerrarSesion={handleCerrarSesion}
+        />
+      </Box>
 
       {/* Contenido principal */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Botón Volver */}
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
-          <Button
-            component={Link}
-            to="/empleados"
-            variant="outlined"
-            sx={{
-              backgroundColor: "#1565C0",
-              color: "#ffffff",
-              width: 180,
-              letterSpacing: 3,
-              fontSize: 20,
-              borderRadius: 3,
-              mr: 5,
-              fontFamily: "Tektur, sans-serif",
-              fontWeight: 500,
-              textTransform: "none",
-            }}
-          >
-            Volver
-          </Button>
-        </Box>
+        <BackButton to="/empleados" />
 
         {/* Tabla de licencias */}
-        <Box sx={{ maxWidth: 900, mx: "auto", mt: 4, mb: 6, width: "100%" }}>
+        <Box
+          sx={{
+            maxWidth: 1100,
+            mx: "auto",
+            mt: { xs: 2, sm: 3, md: 2 },
+            mb: { xs: 3, sm: 5, md: 6 },
+            px: { xs: 1.5, sm: 2.5, md: 0 },
+            width: "100%",
+          }}
+        >
           <Typography
             variant="h4"
             sx={{
-              mb: 3,
+              mb: { xs: 2, sm: 2.5, md: 3 },
               fontFamily: "Tektur, sans-serif",
               fontWeight: 700,
               color: "#1976d2",
               textAlign: "center",
-              letterSpacing: 2,
-              fontSize: 32,
+              letterSpacing: { xs: 1, sm: 1.5, md: 2 },
+              fontSize: { xs: "1.6rem", sm: "2rem", md: 32 },
+              lineHeight: 1.2,
             }}
           >
             Mis Licencias
@@ -530,13 +536,15 @@ const MisLicencias: React.FC = () => {
               <Box
                 sx={{
                   display: "flex",
-                  gap: 2,
+                  gap: { xs: 1.2, sm: 2 },
                   flexWrap: "wrap",
                   mb: 2,
                   justifyContent: "center",
                 }}
               >
-                <FormControl sx={{ minWidth: 200, bgcolor: "white" }}>
+                <FormControl
+                  sx={{ minWidth: { xs: "100%", sm: 200 }, bgcolor: "white" }}
+                >
                   <InputLabel>Motivo</InputLabel>
                   <Select
                     value={filtroMotivo}
@@ -558,10 +566,12 @@ const MisLicencias: React.FC = () => {
                   value={filtroFechaInicio}
                   onChange={(e) => setFiltroFechaInicio(e.target.value)}
                   InputLabelProps={{ shrink: true }}
-                  sx={{ minWidth: 200, bgcolor: "white" }}
+                  sx={{ minWidth: { xs: "100%", sm: 200 }, bgcolor: "white" }}
                 />
 
-                <FormControl sx={{ minWidth: 200, bgcolor: "white" }}>
+                <FormControl
+                  sx={{ minWidth: { xs: "100%", sm: 200 }, bgcolor: "white" }}
+                >
                   <InputLabel>Estado</InputLabel>
                   <Select
                     value={filtroEstado}
@@ -586,7 +596,8 @@ const MisLicencias: React.FC = () => {
                   }}
                   disabled={!filtroMotivo && !filtroFechaInicio && !filtroEstado}
                   sx={{
-                    height: 56,
+                    height: { xs: 44, sm: 56 },
+                    width: { xs: "100%", sm: "auto" },
                     px: 3,
                     borderRadius: 2,
                     textTransform: "none",
@@ -595,7 +606,8 @@ const MisLicencias: React.FC = () => {
                     boxShadow: "0 2px 8px rgba(21,101,192,0.16)",
                     background: "linear-gradient(135deg, #1976d2 0%, #1565C0 100%)",
                     "&:hover": {
-                      background: "linear-gradient(135deg, #1565C0 0%, #0d47a1 100%)",
+                      background:
+                        "linear-gradient(135deg, #1565C0 0%, #0d47a1 100%)",
                     },
                     "&.Mui-disabled": {
                       background: "#b0bec5",
@@ -607,76 +619,80 @@ const MisLicencias: React.FC = () => {
                 </Button>
               </Box>
 
-              {licenciasFiltradas.length === 0 ? (
-                <Typography align="center" color="text.secondary" sx={{ mt: 2 }}>
-                  No se encontraron licencias con los filtros seleccionados.
-                </Typography>
+              {isMobile ? (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.2 }}>
+                  {licenciasFiltradas.map((lic) => (
+                    <Paper
+                      key={lic.Id_Licencia}
+                      sx={{
+                        p: 1.5,
+                        borderRadius: 2,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                        <Typography sx={{ fontWeight: 700 }}>{lic.Motivo}</Typography>
+                        <Chip
+                          label={lic.Estado}
+                          color={getEstadoColor(lic.Estado) as any}
+                          size="small"
+                          sx={{ fontWeight: 600 }}
+                        />
+                      </Box>
+
+                      <Typography variant="body2"><b>Fecha Inicio:</b> {formatDate(lic.FechaInicio)}</Typography>
+                      <Typography variant="body2"><b>Fecha Fin:</b> {formatDate(lic.FechaFin)}</Typography>
+                      <Typography variant="body2"><b>Días Pedidos:</b> {lic.diasPedidos ?? "-"}</Typography>
+                      <Typography variant="body2">
+                        <b>Días Restantes:</b> {diasRestantesPorLicencia[lic.Id_Licencia] ?? "-"}
+                      </Typography>
+                      <Typography variant="body2">
+                        <b>Fecha Respuesta:</b>{" "}
+                        {lic.FechaRespuesta
+                          ? formatDate(lic.FechaRespuesta)
+                          : lic.Estado === "Pendiente"
+                          ? "Pendiente"
+                          : "-"}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1.2 }}>
+                        <b>Motivo Rechazo:</b> {lic.MotivoRechazo || "-"}
+                      </Typography>
+
+                      {lic.Estado === "Pendiente" && (
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          size="small"
+                          onClick={() => handleEditar(lic)}
+                          sx={{ textTransform: "none", borderRadius: 2 }}
+                        >
+                          Editar
+                        </Button>
+                      )}
+                    </Paper>
+                  ))}
+                </Box>
               ) : (
                 <TableContainer
                   component={Paper}
                   sx={{
                     borderRadius: 3,
                     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                    overflow: "hidden",
+                    overflowX: "auto",
                   }}
                 >
-                  <Table>
+                  <Table sx={{ minWidth: 980 }}>
                     <TableHead sx={{ backgroundColor: "#858789ff" }}>
                       <TableRow>
-                        <TableCell
-                          align="center"
-                          sx={{ color: "#fff", fontWeight: 600 }}
-                        >
-                          Motivo
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{ color: "#fff", fontWeight: 600 }}
-                        >
-                          Fecha Inicio
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{ color: "#fff", fontWeight: 600 }}
-                        >
-                          Fecha Fin
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{ color: "#fff", fontWeight: 600 }}
-                        >
-                          Días Pedidos
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{ color: "#fff", fontWeight: 600 }}
-                        >
-                          Días Restantes
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{ color: "#fff", fontWeight: 600 }}
-                        >
-                          Estado
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{ color: "#fff", fontWeight: 600 }}
-                        >
-                          Fecha Respuesta
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{ color: "#fff", fontWeight: 600 }}
-                        >
-                          Motivo Rechazo
-                        </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{ color: "#fff", fontWeight: 600 }}
-                        >
-                          Acciones
-                        </TableCell>
+                        <TableCell align="center" sx={{ color: "#fff", fontWeight: 600 }}>Motivo</TableCell>
+                        <TableCell align="center" sx={{ color: "#fff", fontWeight: 600 }}>Fecha Inicio</TableCell>
+                        <TableCell align="center" sx={{ color: "#fff", fontWeight: 600 }}>Fecha Fin</TableCell>
+                        <TableCell align="center" sx={{ color: "#fff", fontWeight: 600 }}>Días Pedidos</TableCell>
+                        <TableCell align="center" sx={{ color: "#fff", fontWeight: 600 }}>Días Restantes</TableCell>
+                        <TableCell align="center" sx={{ color: "#fff", fontWeight: 600 }}>Estado</TableCell>
+                        <TableCell align="center" sx={{ color: "#fff", fontWeight: 600 }}>Fecha Respuesta</TableCell>
+                        <TableCell align="center" sx={{ color: "#fff", fontWeight: 600 }}>Motivo Rechazo</TableCell>
+                        <TableCell align="center" sx={{ color: "#fff", fontWeight: 600 }}>Acciones</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -689,47 +705,24 @@ const MisLicencias: React.FC = () => {
                           }}
                         >
                           <TableCell align="center">{lic.Motivo}</TableCell>
+                          <TableCell align="center">{formatDate(lic.FechaInicio)}</TableCell>
+                          <TableCell align="center">{formatDate(lic.FechaFin)}</TableCell>
+                          <TableCell align="center">{lic.diasPedidos ?? "-"}</TableCell>
+                          <TableCell align="center">{diasRestantesPorLicencia[lic.Id_Licencia] ?? "-"}</TableCell>
                           <TableCell align="center">
-                            {formatDate(lic.FechaInicio)}
+                            <Chip label={lic.Estado} color={getEstadoColor(lic.Estado) as any} size="small" sx={{ fontWeight: 600 }} />
                           </TableCell>
                           <TableCell align="center">
-                            {formatDate(lic.FechaFin)}
+                            {lic.FechaRespuesta ? formatDate(lic.FechaRespuesta) : lic.Estado === "Pendiente" ? "Pendiente" : "-"}
                           </TableCell>
-                          <TableCell align="center">
-                            {lic.diasPedidos ?? "-"}
-                          </TableCell>
-                          <TableCell align="center">
-                            {diasRestantesPorLicencia[lic.Id_Licencia] ?? "-"}
-                          </TableCell>
-                          <TableCell align="center">
-                            <Chip
-                              label={lic.Estado}
-                              color={getEstadoColor(lic.Estado) as any}
-                              size="small"
-                              sx={{ fontWeight: 600 }}
-                            />
-                          </TableCell>
-                          <TableCell align="center">
-                            {lic.FechaRespuesta
-                              ? formatDate(lic.FechaRespuesta)
-                              : lic.Estado === "Pendiente"
-                              ? "Pendiente"
-                              : "-"}
-                          </TableCell>
-                          <TableCell align="center">
-                            {lic.MotivoRechazo || "-"}
-                          </TableCell>
+                          <TableCell align="center">{lic.MotivoRechazo || "-"}</TableCell>
                           <TableCell align="center">
                             {lic.Estado === "Pendiente" && (
                               <Button
                                 variant="outlined"
                                 size="small"
                                 onClick={() => handleEditar(lic)}
-                                sx={{
-                                  textTransform: "none",
-                                  fontSize: 14,
-                                  borderRadius: 2,
-                                }}
+                                sx={{ textTransform: "none", fontSize: 14, borderRadius: 2 }}
                               >
                                 Editar
                               </Button>
@@ -756,10 +749,12 @@ const MisLicencias: React.FC = () => {
             transform: "translate(-50%, -50%)",
             bgcolor: "background.paper",
             boxShadow: 24,
-            borderRadius: 3,
-            p: 4,
-            minWidth: 400,
-            maxWidth: "90vw",
+            borderRadius: { xs: 2, sm: 3 },
+            p: { xs: 2, sm: 3, md: 4 },
+            width: { xs: "92vw", sm: 460 },
+            maxWidth: "92vw",
+            maxHeight: "85vh",
+            overflowY: "auto",
           }}
         >
           <Typography
@@ -797,11 +792,6 @@ const MisLicencias: React.FC = () => {
 
           {/* Motivo */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 3 }}>
-            <FormControl
-              fullWidth
-              variant="outlined"
-              sx={{ borderRadius: 2 }}
-            ></FormControl>
             <FormControl fullWidth variant="outlined" sx={{ borderRadius: 2 }}>
               <InputLabel>Motivo</InputLabel>
               <Select
@@ -818,95 +808,17 @@ const MisLicencias: React.FC = () => {
             </FormControl>
           </Box>
 
-          {/* Diagnóstico CIE-10 solo si motivo es Enfermedad */}
-          {editFields.motivo === "Enfermedad" && (
-            <Box sx={{ flex: "1 1 100%", mt: 2 }}>
-              <Typography
-                variant="h6"
-                sx={{
-                  mb: 2,
-                  fontFamily: "Tektur, sans-serif",
-                  fontWeight: 600,
-                  color: "#333",
-                }}
-              >
-                Diagnóstico CIE-10
-              </Typography>
-              <Autocomplete
-                options={cie10Results}
-                getOptionLabel={(option) =>
-                  `${option.codigo} - ${option.descripcion}`
-                }
-                value={editFields.diagnosticoCIE10}
-                onChange={(_, newValue) => {
-                  setEditFields((prev) => ({
-                    ...prev,
-                    diagnosticoCIE10: newValue,
-                  }));
-                }}
-                onInputChange={(_, newInputValue) => {
-                  setCie10Search(newInputValue);
-                }}
-                loading={cie10Loading}
-                loadingText="Buscando diagnósticos..."
-                noOptionsText="No se encontraron diagnósticos"
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Buscar diagnóstico CIE-10"
-                    placeholder="Ej: A15 o tuberculosis"
-                  />
-                )}
-                renderOption={(props, option) => {
-                  const { key, ...otherProps } = props;
-                  return (
-                    <Box key={key} component="li" {...otherProps}>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {option.codigo}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {option.descripcion}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  );
-                }}
-              />
-              {editFields.diagnosticoCIE10 && (
-                <Box sx={{ mt: 2 }}>
-                  <Chip
-                    label={`${editFields.diagnosticoCIE10.codigo} - ${editFields.diagnosticoCIE10.descripcion}`}
-                    onDelete={() => {
-                      setEditFields((prev) => ({
-                        ...prev,
-                        diagnosticoCIE10: null,
-                      }));
-                    }}
-                    color="primary"
-                    variant="outlined"
-                    sx={{
-                      fontFamily: "Tektur, sans-serif",
-                      fontWeight: 500,
-                    }}
-                  />
-                </Box>
-              )}
-            </Box>
-          )}
-
-          {/* Botón para subir PDF */}
           <Button
             component="label"
             variant="outlined"
             sx={{
               mt: 1,
-              py: 1.5,
-              width: "fit-content",
+              py: 1.2,
+              width: { xs: "100%", sm: "fit-content" },
               borderRadius: 2,
               fontFamily: "Tektur, sans-serif",
               fontWeight: 600,
-              letterSpacing: 1.5,
+              letterSpacing: 1,
               textTransform: "none",
               backgroundColor: "#e3f2fd",
               color: "#1976d2",
@@ -924,31 +836,33 @@ const MisLicencias: React.FC = () => {
             />
           </Button>
 
-          {/* Observaciones */}
-          <TextField
-            label="Observaciones"
-            name="observaciones"
-            value={editFields.observaciones}
-            onChange={handleEditInputChange}
-            fullWidth
-            multiline
-            rows={4}
-            sx={{ flex: "1 1 100%", mt: 2 }}
-          />
-
-          {/* Botones */}
           <Box
-            sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              flexDirection: { xs: "column-reverse", sm: "row" },
+              gap: 1.2,
+              mt: 3,
+            }}
           >
-            <Button variant="outlined" onClick={() => setEditModalOpen(false)}>
+            <Button
+              variant="outlined"
+              onClick={() => setEditModalOpen(false)}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
               Cancelar
             </Button>
-            <Button variant="contained" onClick={handleGuardarEdicion}>
+            <Button
+              variant="contained"
+              onClick={handleGuardarEdicion}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
               Guardar Cambios
             </Button>
           </Box>
         </Box>
       </Modal>
+
       {/* Footer */}
       <Box sx={{ mt: "auto" }}>
         {/* Modal para cambiar contraseña */}
@@ -961,13 +875,15 @@ const MisLicencias: React.FC = () => {
               transform: "translate(-50%, -50%)",
               bgcolor: "background.paper",
               boxShadow: 24,
-              borderRadius: 3,
-              p: 4,
-              minWidth: 350,
-              maxWidth: "90vw",
+              borderRadius: { xs: 2, sm: 3 },
+              p: { xs: 2, sm: 3, md: 4 },
+              width: { xs: "92vw", sm: 420 },
+              maxWidth: "92vw",
+              maxHeight: "85vh",
+              overflowY: "auto",
               display: "flex",
               flexDirection: "column",
-              gap: 2,
+              gap: { xs: 1.5, sm: 2 },
             }}
           >
             <Typography variant="h6" sx={{ mb: 2 }}>
@@ -1016,15 +932,26 @@ const MisLicencias: React.FC = () => {
               </Typography>
             )}
             <Box
-              sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                flexDirection: { xs: "column-reverse", sm: "row" },
+                gap: 1.2,
+                mt: 1.5,
+              }}
             >
-              <Button onClick={handleCloseModal} disabled={loadingPassword}>
+              <Button
+                onClick={handleCloseModal}
+                disabled={loadingPassword}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
                 Cancelar
               </Button>
               <Button
                 variant="contained"
                 onClick={handleChangePassword}
                 disabled={loadingPassword || !oldPassword || !newPassword}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
               >
                 Cambiar
               </Button>
@@ -1037,20 +964,20 @@ const MisLicencias: React.FC = () => {
           open={snackbarOpen}
           autoHideDuration={5000}
           onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
-          <Alert 
-            onClose={handleCloseSnackbar} 
-            severity={snackbarSeverity} 
-            sx={{ 
-              width: '100%',
-              minWidth: '400px',
-              fontSize: '1.1rem',
-              fontWeight: 'bold',
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={snackbarSeverity}
+            sx={{
+              width: "100%",
+              minWidth: { xs: "calc(100vw - 24px)", sm: 400 },
+              fontSize: { xs: "0.95rem", sm: "1.05rem" },
+              fontWeight: "bold",
               boxShadow: 6,
-              '& .MuiAlert-message': {
-                fontSize: '1.1rem'
-              }
+              "& .MuiAlert-message": {
+                fontSize: { xs: "0.95rem", sm: "1.05rem" },
+              },
             }}
           >
             {snackbarMessage}

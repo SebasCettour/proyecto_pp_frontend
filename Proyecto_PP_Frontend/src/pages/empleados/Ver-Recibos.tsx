@@ -18,7 +18,9 @@ import {
   Snackbar,
   Alert,
   Pagination,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
@@ -299,10 +301,13 @@ export default function RecibosSueldo() {
     }
   };
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "100svh",
         backgroundImage: "url('/fondo.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -313,45 +318,63 @@ export default function RecibosSueldo() {
     >
       <Header />
 
-      <MenuUsuario
-        userName={userName}
-        anchorEl={anchorEl}
-        handleMenuOpen={handleMenuOpen}
-        handleMenuClose={handleMenuClose}
-        handleOpenModal={handleOpenModal}
-        handleCerrarSesion={handleCerrarSesion}
-      />
+      {/* separa menú del header */}
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          minHeight: { xs: 120, sm: 126, md: 130 }, // antes: 60/68/70
+          mt: { xs: 1.5, sm: 2, md: 1.5 },
+        }}
+      >
+        <MenuUsuario
+          userName={userName}
+          anchorEl={anchorEl}
+          handleMenuOpen={handleMenuOpen}
+          handleMenuClose={handleMenuClose}
+          handleOpenModal={handleOpenModal}
+          handleCerrarSesion={handleCerrarSesion}
+        />
+      </Box>
 
-      {/* Botón Volver */}
-      <BackButton to="/empleados" />
+      <Box
+        sx={{
+          px: { xs: 1.5, sm: 5, md: 7 },
+        }}
+      >
+        <BackButton to="/empleados" />
+      </Box>
 
-      {/* Título principal unificado */}
       <Typography
         component="h1"
         variant="h4"
         sx={{
-          mb: 4,
+          mb: { xs: 2.5, sm: 3, md: 2.5 },
+          px: { xs: 1.5, sm: 2 },
           fontFamily: "Tektur, sans-serif",
           fontWeight: 700,
           color: "#1565C0",
           textAlign: "center",
-          letterSpacing: 1,
+          letterSpacing: { xs: 0.6, sm: 1, md: 1.4 },
           textShadow: "0 2px 8px rgba(21,101,192,0.08)",
+          fontSize: { xs: "1.4rem", sm: "1.9rem", md: "2.2rem" },
+          lineHeight: 1.2,
         }}
       >
         Ver y descargar Recibos de Sueldo
       </Typography>
 
-      {/* Tabla de recibos */}
       <Box
         sx={{
-          px: 4,
-          py: 4,
+          px: { xs: 1.5, sm: 2.5, md: 4 },
+          pt: { xs: 1.5, sm: 2.2, md: 1.2 },
+          pb: { xs: 1.5, sm: 2.5, md: 2.5 },
           display: "flex",
           justifyContent: "center",
           flexDirection: "column",
           alignItems: "center",
-          gap: 2,
+          gap: { xs: 1.5, sm: 2 },
+          width: "100%",
         }}
       >
         {loading ? (
@@ -361,7 +384,7 @@ export default function RecibosSueldo() {
             {error}
           </Typography>
         ) : recibos.length === 0 ? (
-          <Typography variant="h6" color="text.secondary">
+          <Typography variant="h6" color="text.secondary" sx={{ textAlign: "center", px: 1 }}>
             No tienes recibos de sueldo disponibles
           </Typography>
         ) : (
@@ -371,7 +394,7 @@ export default function RecibosSueldo() {
                 width: "100%",
                 maxWidth: 900,
                 display: "flex",
-                gap: 2,
+                gap: { xs: 1.2, sm: 2 },
                 flexWrap: "wrap",
                 alignItems: "center",
                 justifyContent: "center",
@@ -383,16 +406,19 @@ export default function RecibosSueldo() {
                 value={periodoMes}
                 onChange={(e) => setPeriodoMes(e.target.value)}
                 InputLabelProps={{ shrink: true }}
-                sx={{ minWidth: 220, bgcolor: "white", borderRadius: 1 }}
+                sx={{
+                  minWidth: { xs: "100%", sm: 220 },
+                  bgcolor: "white",
+                  borderRadius: 1,
+                }}
               />
               <Button
                 variant="contained"
-                onClick={() => {
-                  setPeriodoMes("");
-                }}
+                onClick={() => setPeriodoMes("")}
                 disabled={!periodoMes}
                 sx={{
-                  height: 56,
+                  height: { xs: 44, sm: 56 },
+                  width: { xs: "100%", sm: "auto" },
                   px: 3,
                   borderRadius: 2,
                   textTransform: "none",
@@ -414,9 +440,50 @@ export default function RecibosSueldo() {
             </Box>
 
             {recibosFiltrados.length === 0 ? (
-              <Typography variant="h6" color="text.secondary" sx={{ mt: 2 }}>
+              <Typography variant="h6" color="text.secondary" sx={{ mt: 2, textAlign: "center" }}>
                 No se encontraron recibos para el filtro seleccionado
               </Typography>
+            ) : isMobile ? (
+              <Box sx={{ width: "100%", maxWidth: 900, display: "flex", flexDirection: "column", gap: 1.2 }}>
+                {recibosPaginados.map((recibo) => (
+                  <Paper
+                    key={recibo.Id_Liquidacion}
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 2,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Período
+                    </Typography>
+                    <Typography sx={{ fontWeight: 700, mb: 1 }}>
+                      {formatDate(recibo.FechaLiquidacion)}
+                    </Typography>
+
+                    <Typography variant="body2" color="text.secondary">
+                      Total
+                    </Typography>
+                    <Typography sx={{ fontWeight: 700, mb: 1.2 }}>
+                      {formatCurrency(recibo.Total)}
+                    </Typography>
+
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={() => handleDescargarPDF(recibo.Id_Liquidacion)}
+                      sx={{
+                        textTransform: "none",
+                        fontFamily: "Tektur, sans-serif",
+                        fontWeight: 600,
+                        borderRadius: 2,
+                      }}
+                    >
+                      Descargar PDF
+                    </Button>
+                  </Paper>
+                ))}
+              </Box>
             ) : (
               <TableContainer
                 component={Paper}
@@ -425,24 +492,19 @@ export default function RecibosSueldo() {
                   maxWidth: 900,
                   borderRadius: 2,
                   boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                  overflowX: "auto",
                 }}
               >
-                <Table>
+                <Table sx={{ minWidth: 640 }}>
                   <TableHead>
                     <TableRow sx={{ backgroundColor: "#1565C0" }}>
-                      <TableCell
-                        sx={{ color: "#fff", fontWeight: 700, width: "40%" }}
-                      >
+                      <TableCell sx={{ color: "#fff", fontWeight: 700, minWidth: 210 }}>
                         Período
                       </TableCell>
-                      <TableCell
-                        sx={{ color: "#fff", fontWeight: 700, width: "30%" }}
-                      >
+                      <TableCell sx={{ color: "#fff", fontWeight: 700, minWidth: 170 }}>
                         Total
                       </TableCell>
-                      <TableCell
-                        sx={{ color: "#fff", fontWeight: 700, width: "30%" }}
-                      >
+                      <TableCell sx={{ color: "#fff", fontWeight: 700, minWidth: 190 }}>
                         Acción
                       </TableCell>
                     </TableRow>
@@ -469,6 +531,7 @@ export default function RecibosSueldo() {
                               fontWeight: 600,
                               borderRadius: 2,
                               boxShadow: "0 2px 8px rgba(21,101,192,0.08)",
+                              minWidth: 150,
                             }}
                           >
                             Descargar PDF
@@ -489,6 +552,8 @@ export default function RecibosSueldo() {
                   display: "flex",
                   justifyContent: "center",
                   mt: 1,
+                  overflowX: "auto",
+                  py: 0.5,
                 }}
               >
                 <Pagination
@@ -499,6 +564,7 @@ export default function RecibosSueldo() {
                   shape="rounded"
                   showFirstButton
                   showLastButton
+                  size="small"
                 />
               </Box>
             )}
@@ -506,9 +572,7 @@ export default function RecibosSueldo() {
         )}
       </Box>
 
-      {/* Footer */}
       <Box sx={{ mt: "auto" }}>
-        {/* Modal para cambiar contraseña */}
         <Modal open={modalOpen} onClose={handleCloseModal}>
           <Box
             sx={{
@@ -518,13 +582,15 @@ export default function RecibosSueldo() {
               transform: "translate(-50%, -50%)",
               bgcolor: "background.paper",
               boxShadow: 24,
-              borderRadius: 3,
-              p: 4,
-              minWidth: 350,
-              maxWidth: "90vw",
+              borderRadius: { xs: 2, sm: 3 },
+              p: { xs: 2, sm: 3, md: 4 },
+              width: { xs: "92vw", sm: 420 },
+              maxWidth: "92vw",
+              maxHeight: "85vh",
+              overflowY: "auto",
               display: "flex",
               flexDirection: "column",
-              gap: 2,
+              gap: { xs: 1.5, sm: 2 },
             }}
           >
             <Typography variant="h6" sx={{ mb: 2 }}>
@@ -582,17 +648,19 @@ export default function RecibosSueldo() {
               sx={{
                 display: "flex",
                 justifyContent: "flex-end",
-                gap: 2,
-                mt: 2,
+                flexDirection: { xs: "column-reverse", sm: "row" },
+                gap: 1.2,
+                mt: 1.5,
               }}
             >
-              <Button onClick={handleCloseModal} disabled={loadingPassword}>
+              <Button onClick={handleCloseModal} disabled={loadingPassword} sx={{ width: { xs: "100%", sm: "auto" } }}>
                 Cancelar
               </Button>
               <Button
                 variant="contained"
                 onClick={handleChangePassword}
                 disabled={loadingPassword || !oldPassword || !newPassword}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
               >
                 Cambiar
               </Button>
@@ -600,25 +668,24 @@ export default function RecibosSueldo() {
           </Box>
         </Modal>
 
-        {/* Snackbar para notificaciones */}
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={5000}
           onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
-          <Alert 
-            onClose={handleCloseSnackbar} 
-            severity={snackbarSeverity} 
-            sx={{ 
-              width: '100%',
-              minWidth: '400px',
-              fontSize: '1.1rem',
-              fontWeight: 'bold',
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={snackbarSeverity}
+            sx={{
+              width: "100%",
+              minWidth: { xs: "calc(100vw - 24px)", sm: 400 },
+              fontSize: { xs: "0.95rem", sm: "1.05rem" },
+              fontWeight: "bold",
               boxShadow: 6,
-              '& .MuiAlert-message': {
-                fontSize: '1.1rem'
-              }
+              "& .MuiAlert-message": {
+                fontSize: { xs: "0.95rem", sm: "1.05rem" },
+              },
             }}
           >
             {snackbarMessage}
