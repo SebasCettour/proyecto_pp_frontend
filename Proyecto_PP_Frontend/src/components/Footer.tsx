@@ -8,13 +8,15 @@ const Footer = () => {
     <Box
       component="footer"
       sx={{
-        mt: 8,
-        py: 3,
+        mt: { xs: 4, sm: 6, md: 8 },
+        py: { xs: 2, sm: 3 },
         backgroundColor: "#000000",
         display: "flex",
+        flexDirection: { xs: "column", md: "row" },
         justifyContent: "space-between",
         alignItems: "center",
-        px: 4,
+        gap: { xs: 1, sm: 1.5, md: 2 },
+        px: { xs: 2, sm: 3, md: 4 },
       }}
     >
       <Typography
@@ -23,8 +25,10 @@ const Footer = () => {
           color: "#ffffff",
           fontFamily: "Tektur, sans-serif",
           fontWeight: 400,
-          textAlign: "left",
+          textAlign: { xs: "center", md: "left" },
           flex: 1,
+          width: "100%",
+          fontSize: { xs: "0.8rem", sm: "0.875rem" },
         }}
       >
         Contacto: contacto@360sueldos.com
@@ -38,6 +42,8 @@ const Footer = () => {
           fontWeight: 400,
           textAlign: "center",
           flex: 1,
+          width: "100%",
+          fontSize: { xs: "0.8rem", sm: "0.875rem" },
         }}
       >
         © {currentYear} 360Sueldos. Todos los derechos reservados.
@@ -49,8 +55,10 @@ const Footer = () => {
           color: "#ffffff",
           fontFamily: "Tektur, sans-serif",
           fontWeight: 400,
-          textAlign: "right",
+          textAlign: { xs: "center", md: "right" },
           flex: 1,
+          width: "100%",
+          fontSize: { xs: "0.8rem", sm: "0.875rem" },
         }}
       >
         Política de privacidad

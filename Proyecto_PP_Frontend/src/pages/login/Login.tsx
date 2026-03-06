@@ -60,7 +60,6 @@ const Login: React.FC = () => {
 
       if (!response.ok) {
         setError(result.error || "Error al iniciar sesión");
-        // Si el backend responde 403, redirige a /forbidden
         if (response.status === 403) {
           navigate("/forbidden");
           return;
@@ -68,21 +67,16 @@ const Login: React.FC = () => {
         return;
       }
 
-      // Guardar token y rol en localStorage
       localStorage.setItem("token", result.token);
       localStorage.setItem("role", result.role);
 
-      // EXTRAER username del token y guardarlo
       try {
         const payload = JSON.parse(atob(result.token.split(".")[1]));
         if (payload.username) {
           localStorage.setItem("username", payload.username);
         }
-      } catch (e) {
+      } catch (e) {}
 
-      }
-
-      // Guardar nombre y/o username en localStorage
       if (result.user && result.user.nombre) {
         localStorage.setItem("nombre", result.user.nombre);
       }
@@ -94,7 +88,6 @@ const Login: React.FC = () => {
         localStorage.setItem("documento", result.user.documento);
       }
 
-      // Nuevo: Guardar idEmpleado en localStorage si existe
       if (result.user && result.user.idEmpleado) {
         localStorage.setItem("idEmpleado", result.user.idEmpleado.toString());
       }
@@ -102,10 +95,9 @@ const Login: React.FC = () => {
       console.log("Token guardado:", result.token);
       console.log("Rol guardado:", result.role);
 
-      // Actualizar el store de autenticación
       login({
-        id: 1, // ID temporal, debería venir del backend
-        email: data.username, // Usar username como email temporalmente
+        id: 1,
+        email: data.username,
         nombre: data.username,
         apellido: "",
         rol: {
@@ -122,7 +114,6 @@ const Login: React.FC = () => {
 
       console.log("Store actualizado");
 
-      // Redirigir según el rol
       if (result.role === "superadmin") {
         console.log("Redirigiendo a /superAdmin");
         navigate("/superAdmin");
@@ -150,11 +141,10 @@ const Login: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "100svh",
         backgroundImage: "url('/fondo.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
-
         display: "flex",
         flexDirection: "column",
         overflowX: "hidden",
@@ -162,26 +152,28 @@ const Login: React.FC = () => {
     >
       <Header />
 
-      {/* Contenido principal */}
       <Container
         maxWidth="sm"
         sx={{
-          mt: 8,
-          mb: 8,
-          flexGrow: 1,
+          flex: 1,
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
+          alignItems: "center",
+          justifyContent: { xs: "flex-start", sm: "center" },
+          py: { xs: 2, sm: 4, md: 6 },
+          px: { xs: 1.5, sm: 2.5 },
         }}
       >
         <Box
           component="form"
           onSubmit={handleSubmit(onSubmit)}
           sx={{
+            width: "100%",
+            maxWidth: { xs: "100%", sm: 460 },
+            mx: "auto",
             backgroundColor: "white",
-            borderRadius: 2,
-            p: 4,
-            boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+            borderRadius: { xs: 2, sm: 2.5 },
+            p: { xs: 2, sm: 3.5, md: 4 },
+            boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -189,24 +181,26 @@ const Login: React.FC = () => {
         >
           <Typography
             component="h1"
-            variant="h4"
             sx={{
-              mb: 4,
+              mb: { xs: 2.5, sm: 3.5 },
               fontFamily: "Tektur, sans-serif",
               fontWeight: 600,
               color: "#333",
+              fontSize: { xs: "1.35rem", sm: "1.8rem", md: "2rem" },
+              textAlign: "center",
+              lineHeight: 1.2,
             }}
           >
             Iniciar Sesión
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ width: "100%", mb: 3 }}>
+            <Alert severity="error" sx={{ width: "100%", mb: 2.5 }}>
               {error}
             </Alert>
           )}
 
-          <Box sx={{ width: "100%", mb: 3 }}>
+          <Box sx={{ width: "100%", mb: 2.5 }}>
             <Typography
               component="label"
               htmlFor="username"
@@ -216,6 +210,7 @@ const Login: React.FC = () => {
                 fontFamily: "Tektur, sans-serif",
                 fontWeight: 500,
                 color: "#333",
+                fontSize: { xs: "0.92rem", sm: "1rem" },
               }}
             >
               Nombre de Usuario:
@@ -228,15 +223,14 @@ const Login: React.FC = () => {
               error={!!errors.username}
               helperText={errors.username?.message}
               disabled={isLoading}
+              size="small"
               sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
+                "& .MuiOutlinedInput-root": { borderRadius: 1.2 },
               }}
             />
           </Box>
 
-          <Box sx={{ width: "100%", mb: 4 }}>
+          <Box sx={{ width: "100%", mb: 3 }}>
             <Typography
               component="label"
               htmlFor="password"
@@ -246,6 +240,7 @@ const Login: React.FC = () => {
                 fontFamily: "Tektur, sans-serif",
                 fontWeight: 500,
                 color: "#333",
+                fontSize: { xs: "0.92rem", sm: "1rem" },
               }}
             >
               Contraseña:
@@ -258,10 +253,9 @@ const Login: React.FC = () => {
               error={!!errors.password}
               helperText={errors.password?.message}
               disabled={isLoading}
+              size="small"
               sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1,
-                },
+                "& .MuiOutlinedInput-root": { borderRadius: 1.2 },
               }}
             />
           </Box>
@@ -272,24 +266,20 @@ const Login: React.FC = () => {
             fullWidth
             disabled={isLoading}
             sx={{
-              py: 1.5,
+              minHeight: 44,
+              py: { xs: 1.1, sm: 1.4 },
               fontFamily: "Tektur, sans-serif",
               fontWeight: 600,
-              fontSize: "1.1rem",
-              borderRadius: 1,
+              fontSize: { xs: "0.98rem", sm: "1.05rem" },
+              borderRadius: 1.2,
               textTransform: "none",
             }}
           >
-            {isLoading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Ingresar"
-            )}
+            {isLoading ? <CircularProgress size={22} color="inherit" /> : "Ingresar"}
           </Button>
         </Box>
       </Container>
 
-      {/* Footer */}
       <Footer />
     </Box>
   );

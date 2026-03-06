@@ -7,10 +7,6 @@ interface BackButtonProps {
   label?: string;
 }
 
-/**
- * Componente estandarizado para botón "Volver"
- * Uso: <BackButton to="/ruta" />
- */
 const BackButton: React.FC<BackButtonProps> = ({ to, label = "Volver" }) => {
   return (
     <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3, px: 4 }}>
